@@ -49,6 +49,10 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     window.location.href = "/auth/login";
   }
 
+  if (res.status === 303) {
+    return parsePayload(res) as Promise<T>;
+  }
+
   if (!res.ok) {
     const payload = await parsePayload(res);
     const message =
