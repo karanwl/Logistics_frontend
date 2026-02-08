@@ -1,0 +1,240 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ink-950: 8 15 30;
+  --ink-900: 15 23 42;
+  --steel-50: 248 250 252;
+  --steel-100: 241 245 249;
+  --steel-200: 226 232 240;
+  --steel-400: 148 163 184;
+  --accent: 14 116 144;
+  --accent-soft: 224 242 254;
+  --glow: 59 130 246;
+}
+
+body {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui;
+  @apply text-ink-900 antialiased;
+  background:
+    radial-gradient(circle at 10% -10%, rgba(14, 116, 144, 0.18), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(59, 130, 246, 0.16), transparent 35%),
+    linear-gradient(180deg, rgba(248, 250, 252, 1) 0%, rgba(241, 245, 249, 1) 100%);
+}
+
+.page-shell {
+  @apply min-h-screen relative overflow-hidden;
+}
+
+.bg-grid {
+  @apply pointer-events-none absolute inset-0 opacity-40;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.2) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+.bg-glow {
+  @apply pointer-events-none absolute rounded-full blur-3xl opacity-60;
+  background: radial-gradient(circle, rgba(14, 116, 144, 0.35) 0%, rgba(14, 116, 144, 0) 70%);
+}
+
+.glow-a {
+  @apply -top-24 -left-24 h-80 w-80;
+}
+
+.glow-b {
+  @apply bottom-0 right-0 h-[28rem] w-[28rem];
+  background: radial-gradient(circle, rgba(15, 23, 42, 0.22) 0%, rgba(15, 23, 42, 0) 70%);
+}
+
+.surface {
+  @apply bg-white/85 backdrop-blur border border-steel-100 shadow-card rounded-2xl;
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.08),
+    0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.panel-title {
+  @apply text-xs font-semibold uppercase tracking-[0.12em] text-steel-500;
+}
+
+.site-header {
+  @apply relative z-10 flex items-center justify-between px-6 py-4 border-b border-steel-100 bg-white/75 backdrop-blur;
+}
+
+.brand {
+  @apply flex items-center gap-3;
+}
+
+.brand-mark {
+  @apply h-11 w-11 rounded-2xl bg-ink-900 text-white grid place-items-center text-sm font-semibold;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+}
+
+.brand-title {
+  @apply text-sm font-semibold;
+}
+
+.brand-subtitle {
+  @apply text-xs text-steel-500;
+}
+
+.site-nav {
+  @apply flex items-center gap-4 text-sm text-steel-600;
+}
+
+.site-nav a {
+  @apply hover:text-ink-900 transition;
+}
+
+.shell {
+  @apply relative z-10 p-6;
+}
+
+.card {
+  @apply surface p-5 transition;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 26px 70px rgba(15, 23, 42, 0.1),
+    0 6px 12px rgba(15, 23, 42, 0.06);
+}
+
+.card-header {
+  @apply flex items-start justify-between gap-4 mb-4;
+}
+
+.card-subtitle {
+  @apply text-sm text-steel-500;
+}
+
+.page-actions {
+  @apply flex items-center gap-2;
+}
+
+.empty-state {
+  @apply text-sm text-steel-500;
+}
+
+.site-footer {
+  @apply relative z-10 flex items-center justify-between px-6 py-4 text-xs text-steel-500;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition border border-transparent px-3 py-2;
+}
+
+.btn-secondary {
+  @apply bg-white text-ink-900 hover:bg-steel-100 border border-steel-200 shadow-sm;
+}
+
+.btn-primary {
+  @apply text-white hover:opacity-95;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 1), rgba(14, 116, 144, 0.9));
+}
+
+.icon-only {
+  @apply h-10 w-10 p-0;
+}
+
+.schedule-toolbar {
+  @apply flex flex-col gap-4;
+}
+
+.board-filters,
+.calendar-filters {
+  @apply flex items-center gap-3;
+}
+
+.board-field {
+  @apply flex flex-col gap-1;
+}
+
+.view-toggle {
+  @apply inline-flex rounded-full border border-steel-200 bg-white/80 p-1 shadow-sm;
+}
+
+.toggle-btn {
+  @apply px-4 py-1.5 text-sm rounded-full text-steel-600;
+}
+
+.toggle-btn.is-active {
+  @apply bg-ink-900 text-white shadow;
+}
+
+.board-shell,
+.calendar-shell {
+  @apply mt-4;
+}
+
+.planner-board,
+.planner-calendar,
+.calendar-unscheduled {
+  @apply min-h-[420px] rounded-2xl border border-steel-100 bg-white/85;
+}
+
+.table-wrap {
+  @apply rounded-2xl border border-steel-100 bg-white/85;
+}
+
+.table-full {
+  @apply w-full overflow-auto;
+}
+
+.drawer {
+  @apply fixed inset-0 z-20 flex items-center justify-end;
+}
+
+.drawer.is-hidden {
+  @apply hidden;
+}
+
+.drawer-backdrop {
+  @apply absolute inset-0 bg-ink-900/40;
+}
+
+.drawer-panel {
+  @apply relative z-10 w-full max-w-xl h-full bg-white p-6 shadow-2xl;
+}
+
+.drawer-header {
+  @apply flex items-start justify-between mb-4;
+}
+
+.drawer-body {
+  @apply overflow-auto;
+}
+
+.scroll-area {
+  scrollbar-width: thin;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd6e4;
+  border-radius: 999px;
+}
+
+input,
+select,
+textarea {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.2);
+  border-color: rgba(14, 116, 144, 0.5);
+}
