@@ -99,7 +99,7 @@ export default function StopCard({
     >
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-steel-500">{arrival} -> {departure}</div>
+        <div className="text-xs text-steel-500">{arrival} {"\u2192"} {departure}</div>
       </div>
       {salesOrders.length > 0 && <div className="text-xs text-steel-500">SO: {salesOrders.join(", ")}</div>}
       <div className="text-xs text-steel-500">Deliveries: {deliveriesCount || deliveryStops.length}</div>
