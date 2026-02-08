@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { api } from "@/lib/api/client";
 import { useState } from "react";
 
 const schema = z.object({
@@ -30,11 +29,23 @@ export default function LoginPage() {
     body.set("csrf_token", "");
 
     try {
-      await api.post("/login", body.toString(), {
-        "content-type": "application/x-www-form-urlencoded"
+      const res = await fetch("/api-proxy/login", {
+        method: "POST",
+        body: body.toString(),
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          accept: "application/json"
+        },
+        credentials: "include",
+        cache: "no-store",
+        redirect: "manual"
       });
-      window.location.href = "/planner";
-    } catch (e: any) {
+      if (res.status >= 200 && res.status < 400) {
+        window.location.href = "/planner";
+        return;
+      }
+      setError("Login failed. Check credentials.");
+    } catch {
       setError("Login failed. Check credentials.");
     }
   };
