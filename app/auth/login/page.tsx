@@ -41,7 +41,7 @@ export default function LoginPage() {
         redirect: "manual"
       });
       if (res.status >= 200 && res.status < 400) {
-        window.location.href = "/planner";
+        window.location.href = "/";
         return;
       }
       setError("Login failed. Check credentials.");
@@ -54,7 +54,7 @@ export default function LoginPage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics"
           subtitle="Sign In"
           links={[
             { href: "/planner", label: "Planner" },
