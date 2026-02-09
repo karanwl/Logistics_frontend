@@ -12,11 +12,11 @@ export default function Header() {
     <header className="flex items-center justify-between px-6 py-4 border-b border-steel-100 bg-white/90 backdrop-blur">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-xl bg-ink-900 text-white grid place-items-center text-sm font-semibold">
-          CL
+          LP
         </div>
         <div>
-          <div className="text-sm font-semibold">Citywide Logistics</div>
-          <div className="text-xs text-steel-500">Planner Console</div>
+          <div className="text-sm font-semibold">Logistics Planner</div>
+          <div className="text-xs text-steel-500">Operations Console</div>
         </div>
       </div>
       <nav className="flex items-center gap-6 text-sm text-steel-600">
@@ -30,3 +30,4 @@ export default function Header() {
     </header>
   );
 }
+

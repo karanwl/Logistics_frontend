@@ -69,21 +69,61 @@ export default function LoginPage() {
         />
       }
     >
-      <div className="max-w-lg">
-        <div className="card">
+      <div className="auth-layout">
+        <section className="auth-hero">
+          <div className="auth-badge">Secure Access</div>
+          <h1 className="auth-title">Logistics Planner</h1>
+          <p className="auth-subtitle">
+            Plan routes, balance schedules, and stay ahead of every delivery with a single control
+            center.
+          </p>
+          <ul className="auth-list">
+            <li>Live schedule visibility for dispatch and admin teams</li>
+            <li>Route optimization views across planners and managers</li>
+            <li>Centralized status tracking for every delivery</li>
+          </ul>
+          <div className="auth-cta">
+            <span className="auth-cta-label">Need access?</span>
+            <a className="auth-cta-link" href="/auth/request-access">
+              Request an account
+            </a>
+          </div>
+        </section>
+
+        <section className="auth-card card">
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
+            <div>
+              <CardTitle>Sign in</CardTitle>
+              <div className="card-subtitle">Welcome back. Enter your details to continue.</div>
+            </div>
           </CardHeader>
           <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
-            <Input placeholder="Email" type="email" {...form.register("email")} />
-            <Input placeholder="Password" type="password" {...form.register("password")} />
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-steel-500" htmlFor="email">
+                Email
+              </label>
+              <Input id="email" placeholder="you@company.com" type="email" {...form.register("email")} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-steel-500" htmlFor="password">
+                Password
+              </label>
+              <Input
+                id="password"
+                placeholder="Enter your password"
+                type="password"
+                {...form.register("password")}
+              />
+            </div>
             {error && <div className="text-sm text-red-600">{error}</div>}
             <div className="page-actions">
               <Button type="submit">Sign In</Button>
-              <a className="text-xs text-steel-500" href="/auth/request-access">Request access</a>
+              <a className="text-xs text-steel-500" href="/auth/request-access">
+                Request access
+              </a>
             </div>
           </form>
-        </div>
+        </section>
       </div>
     </AppShell>
   );

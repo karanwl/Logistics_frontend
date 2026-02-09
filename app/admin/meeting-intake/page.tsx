@@ -150,7 +150,7 @@ export default function MeetingIntakePage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Meeting Intake"
           links={[
             { href: "/planner", label: "Planner" },
@@ -363,3 +363,4 @@ export default function MeetingIntakePage() {
     </AppShell>
   );
 }
+

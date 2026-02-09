@@ -15,7 +15,7 @@ export default function PlannerPage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Delivery Planner"
           links={[
             { href: "/planner", label: "Planner" },
@@ -99,3 +99,4 @@ function PlannerContent() {
     </div>
   );
 }
+

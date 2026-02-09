@@ -310,7 +310,7 @@ export default function SchedulePage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Delivery Planner"
           links={[
             { href: "/planner", label: "Plan" },
@@ -756,7 +756,7 @@ export default function SchedulePage() {
       </div>
 
       <footer className="site-footer">
-        <div>Citywide Logistics Planner</div>
+        <div>Logistics Planner</div>
         <div>Internal scheduling tools</div>
       </footer>
     </AppShell>
@@ -829,3 +829,4 @@ function CalendarJob({ item, dateKey, onClick }: { item: any; dateKey: string; o
     </button>
   );
 }
+

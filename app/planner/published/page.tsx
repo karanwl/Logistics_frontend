@@ -20,7 +20,7 @@ export default function PublishedPlansPage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Manager/Admin Console"
           links={[
             { href: "/planner", label: "Planner" },
@@ -184,3 +184,4 @@ function PublishedPlanPreview({ plan }: { plan: any }) {
     </div>
   );
 }
+

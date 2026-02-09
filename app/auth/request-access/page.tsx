@@ -7,7 +7,7 @@ export default function RequestAccessPage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Request Access"
           links={[
             { href: "/planner", label: "Planner" },
@@ -32,3 +32,4 @@ export default function RequestAccessPage() {
     </AppShell>
   );
 }
+

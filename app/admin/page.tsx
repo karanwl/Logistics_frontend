@@ -7,7 +7,7 @@ export default function AdminHomePage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Manager/Admin Console"
           links={[
             { href: "/planner", label: "Planner" },
@@ -38,3 +38,4 @@ export default function AdminHomePage() {
     </AppShell>
   );
 }
+

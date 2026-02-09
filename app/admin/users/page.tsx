@@ -31,7 +31,7 @@ export default function AdminUsersPage() {
     <AppShell
       header={
         <SiteHeader
-          title="Citywide Logistics"
+          title="Logistics Planner"
           subtitle="Admin Console"
           links={[
             { href: "/planner", label: "Planner" },
@@ -107,3 +107,4 @@ export default function AdminUsersPage() {
     </AppShell>
   );
 }
+

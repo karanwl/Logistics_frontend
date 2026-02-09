@@ -107,6 +107,52 @@ body {
     0 6px 12px rgba(15, 23, 42, 0.06);
 }
 
+.auth-layout {
+  @apply w-full max-w-5xl mx-auto grid gap-6 lg:grid-cols-[1.1fr_0.9fr] items-stretch;
+}
+
+.auth-hero {
+  @apply surface p-8 flex flex-col gap-4;
+}
+
+.auth-badge {
+  @apply inline-flex items-center rounded-full bg-ink-900 text-white text-xs font-semibold px-3 py-1 w-fit;
+}
+
+.auth-title {
+  @apply text-3xl font-semibold;
+}
+
+.auth-subtitle {
+  @apply text-sm text-steel-600 leading-relaxed;
+}
+
+.auth-list {
+  @apply list-none space-y-2 text-sm text-steel-600;
+}
+
+.auth-list li::before {
+  content: "-";
+  color: rgba(14, 116, 144, 0.8);
+  margin-right: 8px;
+}
+
+.auth-cta {
+  @apply mt-auto flex items-center gap-2 text-sm text-steel-600;
+}
+
+.auth-cta-label {
+  @apply text-steel-500;
+}
+
+.auth-cta-link {
+  @apply text-ink-900 font-semibold hover:text-ink-900;
+}
+
+.auth-card {
+  @apply p-6;
+}
+
 .card-header {
   @apply flex items-start justify-between gap-4 mb-4;
 }

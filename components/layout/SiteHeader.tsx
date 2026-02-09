@@ -17,7 +17,7 @@ export default function SiteHeader({
   return (
     <header className="site-header">
       <div className="brand">
-        <div className="brand-mark">CL</div>
+        <div className="brand-mark">LP</div>
         <div>
           <div className="brand-title">{title}</div>
           <div className="brand-subtitle">{subtitle}</div>
