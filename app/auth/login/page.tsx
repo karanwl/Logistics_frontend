@@ -42,14 +42,14 @@ export default function LoginPage() {
           ...(csrf ? { "X-CSRF-Token": csrf } : {})
         },
         credentials: "include",
-        cache: "no-store",
-        redirect: "follow"
+        cache: "no-store"
       });
-      if (res.redirected) {
+      if (res.ok) {
         window.location.href = "/schedule";
         return;
       }
-      setError("Login failed. Check credentials.");
+      const payload = await res.json().catch(() => ({}));
+      setError(payload?.detail || "Login failed. Check credentials.");
     } catch {
       setError("Login failed. Check credentials.");
     }

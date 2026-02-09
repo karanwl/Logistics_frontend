@@ -41,11 +41,22 @@ export default function SiteHeader({
               </button>
             );
           }
+          if (link.onClick && !isLogout) {
+            return (
+              <button key={link.href} type="button" onClick={link.onClick}>
+                {link.label}
+              </button>
+            );
+          }
           if (isLogout) {
             return (
-              <a key={link.href} href={link.href} rel="nofollow">
+              <button
+                key={link.href}
+                type="button"
+                onClick={link.onClick || (() => (window.location.href = "/auth/login"))}
+              >
                 {link.label}
-              </a>
+              </button>
             );
           }
           return (

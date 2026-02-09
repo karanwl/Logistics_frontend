@@ -26,6 +26,19 @@ export default function AppHeader() {
   const filteredLinks = useMemo(() => {
     const base = isAuthPage ? links.filter((link) => link.href !== "/api-proxy/logout") : links;
     return base.map((link) => {
+      if (link.href === "/api-proxy/logout") {
+        return {
+          ...link,
+          onClick: async () => {
+            try {
+              await fetch("/api-proxy/logout", { credentials: "include" });
+            } catch {
+              // no-op
+            }
+            window.location.href = "/auth/login";
+          }
+        };
+      }
       let requiresAdmin = false;
       let requiresManager = false;
       if (link.href === "/planner") {

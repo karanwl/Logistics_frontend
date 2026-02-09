@@ -108,6 +108,10 @@ body {
   @apply hover:text-ink-900 transition;
 }
 
+.site-nav button {
+  @apply hover:text-ink-900 transition;
+}
+
 .site-nav-blocked {
   @apply text-steel-400 cursor-not-allowed;
 }
