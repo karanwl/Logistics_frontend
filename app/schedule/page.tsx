@@ -8,6 +8,7 @@ import AppShell from "@/components/layout/AppShell";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
+import { useCurrentUser } from "@/lib/api/auth";
 import {
   useDeliveries,
   useRescheduleDelivery,
@@ -143,6 +144,9 @@ export default function SchedulePage() {
     key: "scheduled_date",
     dir: "asc"
   });
+  const { data: currentUser } = useCurrentUser();
+  const role = (currentUser?.user?.role || "").toLowerCase();
+  const canEdit = role === "admin" || role === "manager";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -385,11 +389,15 @@ export default function SchedulePage() {
               />
             </div>
             <div className="flex items-center justify-end gap-3">
-              <label className="text-xs text-steel-500">
-                <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} /> Edit mode
-              </label>
-              <Button variant="secondary" onClick={saveChanges} disabled={bulkUpdate.isPending}>Save changes</Button>
-              <div className="text-xs text-steel-500">{saveStatus}</div>
+              {canEdit ? (
+                <>
+                  <label className="text-xs text-steel-500">
+                    <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} /> Edit mode
+                  </label>
+                  <Button variant="secondary" onClick={saveChanges} disabled={bulkUpdate.isPending}>Save changes</Button>
+                  <div className="text-xs text-steel-500">{saveStatus}</div>
+                </>
+              ) : null}
               <div className="view-toggle" role="group" aria-label="Schedule view">
                 <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board</button>
                 <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar</button>
@@ -458,13 +466,13 @@ export default function SchedulePage() {
             <table className="w-full text-sm">
               <thead className="text-xs text-steel-500 sticky top-0 bg-white/90 backdrop-blur z-10">
                 <tr>
-                  {editMode && (
-                    <th className="text-left py-2">
-                      <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("ps_delivered")}>
-                        PS Delivered {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                      </button>
-                    </th>
-                  )}
+                {canEdit && editMode && (
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("ps_delivered")}>
+                      PS Delivered {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                )}
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("sales_order")}>
                       Sales Order {sort.key === "sales_order" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
@@ -536,7 +544,7 @@ export default function SchedulePage() {
               <tbody>
                 {listRows.map((d: any) => (
                   <tr key={d.delivery_id} className="border-t border-steel-100">
-                    {editMode && (
+                    {canEdit && editMode && (
                       <td className="py-2">
                         <input
                           type="checkbox"
@@ -547,7 +555,7 @@ export default function SchedulePage() {
                     )}
                     <td className="py-2">{d.sales_order || "--"}</td>
                     <td className="py-2">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <DatePickerInput
                           className="h-9 text-xs"
                           defaultValue={d.scheduled_date || ""}
@@ -567,7 +575,7 @@ export default function SchedulePage() {
                       </button>
                     </td>
                     <td className="py-2">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <div className="grid grid-cols-2 gap-2">
                           <select
                             className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
@@ -595,56 +603,56 @@ export default function SchedulePage() {
                       )}
                     </td>
                     <td className="py-2 w-20">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.med_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { med_skid: Number(e.target.value) })} />
                       ) : (
                         d.med_skid || 0
                       )}
                     </td>
                     <td className="py-2 w-20">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.small_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { small_skid: Number(e.target.value) })} />
                       ) : (
                         d.small_skid || 0
                       )}
                     </td>
                     <td className="py-2 w-20">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
                       ) : (
                         d.large_skid || 0
                       )}
                     </td>
                     <td className="py-2 w-16">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.door || 0} onChange={(e) => updateEdit(d.delivery_id, { door: Number(e.target.value) })} />
                       ) : (
                         d.door || 0
                       )}
                     </td>
                     <td className="py-2 w-16">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.frame || 0} onChange={(e) => updateEdit(d.delivery_id, { frame: Number(e.target.value) })} />
                       ) : (
                         d.frame || 0
                       )}
                     </td>
                     <td className="py-2 w-20">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.exp_frame || 0} onChange={(e) => updateEdit(d.delivery_id, { exp_frame: Number(e.target.value) })} />
                       ) : (
                         d.exp_frame || 0
                       )}
                     </td>
                     <td className="py-2 w-16">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.box || 0} onChange={(e) => updateEdit(d.delivery_id, { box: Number(e.target.value) })} />
                       ) : (
                         d.box || 0
                       )}
                     </td>
                     <td className="py-2">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <input
                           type="checkbox"
                           defaultChecked={Boolean(d.pickup)}
@@ -655,7 +663,7 @@ export default function SchedulePage() {
                       )}
                     </td>
                     <td className="py-2">
-                      {editMode ? (
+                      {canEdit && editMode ? (
                         <input
                           type="checkbox"
                           defaultChecked={Boolean(d.requires_empty_truck)}
