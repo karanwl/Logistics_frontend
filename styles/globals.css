@@ -282,6 +282,58 @@ body {
   @apply rounded-2xl border border-steel-100 bg-white/85;
 }
 
+@media (max-width: 900px) {
+  .site-header {
+    @apply flex-col items-start gap-3;
+  }
+
+  .site-nav {
+    @apply flex-wrap gap-3;
+  }
+
+  .brand-mark {
+    @apply h-10 w-10 text-xs;
+  }
+
+  .shell {
+    @apply p-4;
+  }
+
+  .card,
+  .admin-section {
+    @apply p-4;
+  }
+
+  .planner-board,
+  .planner-calendar,
+  .calendar-unscheduled,
+  .table-wrap {
+    @apply overflow-x-auto;
+  }
+
+  .admin-table-row {
+    @apply md:grid-cols-5;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-nav {
+    @apply w-full;
+  }
+
+  .page-actions {
+    @apply flex-wrap;
+  }
+
+  .admin-form-grid {
+    @apply grid-cols-1;
+  }
+
+  .auth-layout {
+    @apply grid-cols-1;
+  }
+}
+
 .table-full {
   @apply w-full overflow-auto;
 }
