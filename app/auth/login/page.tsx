@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
+import { getCookie } from "@/lib/api/client";
 
 const schema = z.object({
   email: z.string().email(),
@@ -23,10 +24,11 @@ export default function LoginPage() {
 
   const onSubmit = async (values: FormData) => {
     setError(null);
+    const csrf = getCookie("csrf_token");
     const body = new URLSearchParams();
     body.set("email", values.email);
     body.set("password", values.password);
-    body.set("csrf_token", "");
+    if (csrf) body.set("csrf_token", csrf);
 
     try {
       const res = await fetch("/api-proxy/login", {
@@ -34,7 +36,8 @@ export default function LoginPage() {
         body: body.toString(),
         headers: {
           "content-type": "application/x-www-form-urlencoded",
-          accept: "application/json"
+          accept: "application/json",
+          ...(csrf ? { "X-CSRF-Token": csrf } : {})
         },
         credentials: "include",
         cache: "no-store",

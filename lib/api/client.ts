@@ -17,7 +17,7 @@ async function parsePayload(res: Response) {
   return res.text();
 }
 
-function getCookie(name: string) {
+export function getCookie(name: string) {
   if (typeof document === "undefined") return "";
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : "";
