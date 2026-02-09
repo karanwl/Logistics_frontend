@@ -41,9 +41,9 @@ export default function LoginPage() {
         },
         credentials: "include",
         cache: "no-store",
-        redirect: "manual"
+        redirect: "follow"
       });
-      if (res.status >= 200 && res.status < 400) {
+      if (res.redirected) {
         window.location.href = "/schedule";
         return;
       }
