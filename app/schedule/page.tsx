@@ -320,7 +320,7 @@ export default function SchedulePage() {
     <AppShell>
       <section className="card schedule-toolbar" id="scheduleToolbar">
         <div className={view === "board" ? "" : "hidden"} id="boardToolbarControls">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="board-field board-search w-72">
               <label htmlFor="boardSearch" className="sr-only">Search deliveries</label>
               <Input id="boardSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -345,15 +345,19 @@ export default function SchedulePage() {
         </div>
 
         <div id="calendarToolbarControls" className={view === "calendar" ? "" : "hidden"}>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="calendar-filters w-72">
               <label htmlFor="calendarSearch" className="sr-only">Search deliveries</label>
               <Input id="calendarSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="calendar-title-wrap flex items-center gap-3 justify-center w-64">
-              <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, -1))} aria-label="Previous month">â€¹</button>
+              <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, -1))} aria-label="Previous month">
+                {"<"}
+              </button>
               <div className="calendar-title text-sm text-steel-600">{monthLabel(monthDate)}</div>
-              <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, 1))} aria-label="Next month">â€º</button>
+              <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, 1))} aria-label="Next month">
+                {">"}
+              </button>
             </div>
             <div className="flex items-center justify-end gap-3">
               <div className="view-toggle" role="group" aria-label="Schedule view">
@@ -366,7 +370,7 @@ export default function SchedulePage() {
         </div>
 
         <div id="listToolbarControls" className={view === "list" ? "" : "hidden"}>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="calendar-filters w-72">
               <label htmlFor="listSearch" className="sr-only">Search deliveries</label>
               <Input id="listSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
