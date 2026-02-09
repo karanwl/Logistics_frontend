@@ -20,6 +20,7 @@ export default function AccessGate({ children }: { children: ReactNode }) {
     if (pathname.startsWith("/admin/users")) return isAdmin ? "" : "Admin access required.";
     if (pathname.startsWith("/admin")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
     if (pathname.startsWith("/planner/published")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
+    if (pathname.startsWith("/planner")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
     return "";
   }, [isAdmin, isManagerOrAdmin, isPublic, pathname]);
 

@@ -28,7 +28,9 @@ export default function AppHeader() {
     return base.map((link) => {
       let requiresAdmin = false;
       let requiresManager = false;
-      if (link.href.startsWith("/admin/users")) {
+      if (link.href === "/planner") {
+        requiresManager = true;
+      } else if (link.href.startsWith("/admin/users")) {
         requiresAdmin = true;
       } else if (link.href.startsWith("/admin") || link.href.startsWith("/planner/published")) {
         requiresManager = true;
