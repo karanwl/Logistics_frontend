@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [userEdits, setUserEdits] = useState<Record<string, any>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
+  const [createError, setCreateError] = useState("");
 
   const users = data?.users || [];
   const roles = data?.roles || ["coordinator", "driver", "manager", "admin"];
@@ -39,6 +40,12 @@ export default function AdminUsersPage() {
   }, [baseUsers, isDirty]);
 
   const onCreate = async () => {
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
+    if (!form.name.trim() || !emailOk || form.password.trim().length < 6) {
+      setCreateError("Name, valid email, and password (min 6 chars) are required.");
+      return;
+    }
+    setCreateError("");
     await createUser.mutateAsync({ ...form, active: true });
     setForm({ name: "", email: "", password: "", role: "coordinator" });
     refetch();
@@ -53,6 +60,11 @@ export default function AdminUsersPage() {
   };
 
   const saveUpdates = async () => {
+    const invalidPasswords = Object.values(userEdits).some((edit: any) => edit?.password && edit.password.length < 6);
+    if (invalidPasswords) {
+      setSaveStatus("Passwords must be at least 6 characters.");
+      return;
+    }
     const updates = Object.entries(userEdits).map(([record_id, edits]) => {
       const base = baseUsers[record_id] || {};
       const patch: Record<string, any> = {};
@@ -89,15 +101,35 @@ export default function AdminUsersPage() {
         <div className="admin-form-grid">
           <div className="admin-field space-y-1.5">
             <label htmlFor="newUserName">Name</label>
-            <Input id="newUserName" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input
+              id="newUserName"
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={createError && !form.name.trim() ? "border-red-400" : ""}
+            />
           </div>
           <div className="admin-field space-y-1.5">
             <label htmlFor="newUserEmail">Email</label>
-            <Input id="newUserEmail" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input
+              id="newUserEmail"
+              placeholder="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className={createError && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) ? "border-red-400" : ""}
+            />
           </div>
           <div className="admin-field space-y-1.5">
             <label htmlFor="newUserPassword">Password</label>
-            <Input id="newUserPassword" placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <Input
+              id="newUserPassword"
+              placeholder="Password"
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className={createError && form.password.trim().length < 6 ? "border-red-400" : ""}
+            />
           </div>
           <div className="admin-field space-y-1.5">
             <label htmlFor="newUserRole">Role</label>
@@ -115,6 +147,7 @@ export default function AdminUsersPage() {
         </div>
         <div className="mt-4">
           <Button onClick={onCreate} disabled={createUser.isPending}>Create User</Button>
+          {createError ? <div className="mt-2 text-xs text-red-600">{createError}</div> : null}
         </div>
       </div>
       <div className="admin-section mt-6">
@@ -167,6 +200,12 @@ export default function AdminUsersPage() {
                 placeholder="Reset password"
                 value={userEdits[u.record_id]?.password ?? ""}
                 onChange={(e) => updateEdit(u.record_id, { password: e.target.value })}
+                className={
+                  (userEdits[u.record_id]?.password || "").length > 0 &&
+                  (userEdits[u.record_id]?.password || "").length < 6
+                    ? "border-red-400"
+                    : ""
+                }
               />
             </div>
           ))}

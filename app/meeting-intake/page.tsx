@@ -46,6 +46,8 @@ export default function MeetingIntakePage() {
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   const [openJobsiteIndex, setOpenJobsiteIndex] = useState<number | null>(null);
   const [publishMessage, setPublishMessage] = useState("");
+  const [jobsiteFormError, setJobsiteFormError] = useState("");
+  const [rowErrors, setRowErrors] = useState<Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }>>({});
   const jobsites = data?.jobsites || [];
   const jobsiteRefs = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -117,6 +119,22 @@ export default function MeetingIntakePage() {
   }, [openJobsiteIndex]);
 
   const publish = async () => {
+    const errors: Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }> = {};
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    rows.forEach((row, idx) => {
+      if (isRowEmpty(row)) return;
+      const rowError: { sales_order?: boolean; jobsite?: boolean; date?: boolean } = {};
+      if (!row.sales_order.trim()) rowError.sales_order = true;
+      if (!row.jobsite_id) rowError.jobsite = true;
+      if (!row.scheduled_date || !dateRegex.test(row.scheduled_date)) rowError.date = true;
+      if (Object.keys(rowError).length) errors[idx] = rowError;
+    });
+    if (Object.keys(errors).length) {
+      setRowErrors(errors);
+      setPublishMessage("Fix highlighted rows (jobsite, date, and sales order are required).");
+      return;
+    }
+    setRowErrors({});
     const deliveries = rows
       .filter((row) => !isRowEmpty(row))
       .map((row) => ({
@@ -174,7 +192,11 @@ export default function MeetingIntakePage() {
                   <Button
                     variant="secondary"
                     onClick={() => {
-                      if (!jobsiteName || !jobsiteAddress) return;
+                      if (!jobsiteName.trim() || !jobsiteAddress.trim()) {
+                        setJobsiteFormError("Jobsite name and address are required.");
+                        return;
+                      }
+                      setJobsiteFormError("");
                       createJobsite.mutate(
                         { name: jobsiteName, address: jobsiteAddress },
                         {
@@ -203,6 +225,7 @@ export default function MeetingIntakePage() {
                 </>
               )}
             </div>
+            {jobsiteFormError ? <div className="text-xs text-red-600">{jobsiteFormError}</div> : null}
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish</Button>
           </div>
         </div>
@@ -226,7 +249,7 @@ export default function MeetingIntakePage() {
               className="grid grid-cols-[minmax(90px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(70px,0.7fr)_minmax(40px,0.35fr)] gap-2"
             >
               <Input
-                className="h-9 text-xs"
+                className={`h-9 text-xs ${rowErrors[idx]?.sales_order ? "border-red-400" : ""}`}
                 value={row.sales_order}
                 onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
                 onFocus={() => setActiveRowIndex(idx)}
@@ -238,7 +261,7 @@ export default function MeetingIntakePage() {
                 }}
               >
                 <Input
-                  className="h-9 text-xs"
+                  className={`h-9 text-xs ${rowErrors[idx]?.jobsite ? "border-red-400" : ""}`}
                   placeholder="Type jobsite name"
                   value={row.jobsite_query}
                   onChange={(e) => {
@@ -279,7 +302,7 @@ export default function MeetingIntakePage() {
                 ) : null}
               </div>
               <DatePickerInput
-                className="h-9 text-xs"
+                className={`h-9 text-xs ${rowErrors[idx]?.date ? "border-red-400" : ""}`}
                 value={row.scheduled_date}
                 onChange={(value) => updateRow(idx, { scheduled_date: value })}
               />

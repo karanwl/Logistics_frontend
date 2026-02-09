@@ -11,8 +11,14 @@ export default function AdminJobsitesPage() {
   const createJobsite = useCreateJobsite();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+  const [error, setError] = useState("");
 
   const onCreate = async () => {
+    if (!name.trim() || !address.trim()) {
+      setError("Jobsite name and address are required.");
+      return;
+    }
+    setError("");
     await createJobsite.mutateAsync({ name, address });
     setName("");
     setAddress("");
@@ -31,16 +37,29 @@ export default function AdminJobsitesPage() {
         <div className="admin-form-grid">
           <div className="admin-field space-y-1.5">
             <label htmlFor="jobsiteName">Jobsite name</label>
-            <Input id="jobsiteName" placeholder="Jobsite name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              id="jobsiteName"
+              placeholder="Jobsite name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={error && !name.trim() ? "border-red-400" : ""}
+            />
           </div>
           <div className="admin-field space-y-1.5 md:col-span-2">
             <label htmlFor="jobsiteAddress">Jobsite address</label>
-            <Input id="jobsiteAddress" placeholder="Jobsite address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <Input
+              id="jobsiteAddress"
+              placeholder="Jobsite address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className={error && !address.trim() ? "border-red-400" : ""}
+            />
           </div>
           <div className="flex items-end">
             <Button onClick={onCreate} disabled={createJobsite.isPending}>Create</Button>
           </div>
         </div>
+        {error ? <div className="mt-2 text-xs text-red-600">{error}</div> : null}
         <div className="mt-2 text-xs text-steel-500">After creation, the server geocodes and updates Latitude/Longitude.</div>
       </div>
       <div className="admin-section mt-6">

@@ -140,6 +140,7 @@ export default function SchedulePage() {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerDelivery, setDrawerDelivery] = useState<any | null>(null);
+  const [drawerError, setDrawerError] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "scheduled_date",
     dir: "asc"
@@ -269,6 +270,25 @@ export default function SchedulePage() {
   };
 
   const saveChanges = async () => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    for (const updates of Object.values(edits)) {
+      const scheduled = (updates as any)?.scheduled_date;
+      if (scheduled && !dateRegex.test(String(scheduled))) {
+        setSaveStatus("Scheduled date must be YYYY-MM-DD.");
+        return;
+      }
+      const ws = (updates as any)?.window_start;
+      if (ws && !timeRegex.test(String(ws))) {
+        setSaveStatus("Window start must be HH:MM (24h).");
+        return;
+      }
+      const we = (updates as any)?.window_end;
+      if (we && !timeRegex.test(String(we))) {
+        setSaveStatus("Window end must be HH:MM (24h).");
+        return;
+      }
+    }
     const payload = Object.entries(edits).map(([delivery_id, updates]) => ({
       delivery_id,
       ...updates
@@ -299,6 +319,21 @@ export default function SchedulePage() {
 
   const saveDrawer = async () => {
     if (!drawerDelivery) return;
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (drawerDelivery.scheduled_date && !dateRegex.test(String(drawerDelivery.scheduled_date))) {
+      setDrawerError("Scheduled date must be YYYY-MM-DD.");
+      return;
+    }
+    if (drawerDelivery.window_start && !timeRegex.test(String(drawerDelivery.window_start))) {
+      setDrawerError("Window start must be HH:MM (24h).");
+      return;
+    }
+    if (drawerDelivery.window_end && !timeRegex.test(String(drawerDelivery.window_end))) {
+      setDrawerError("Window end must be HH:MM (24h).");
+      return;
+    }
+    setDrawerError("");
     const payload = {
       jobsite_id: drawerDelivery.jobsite_id,
       scheduled_date: drawerDelivery.scheduled_date,
@@ -757,6 +792,7 @@ export default function SchedulePage() {
                   <Button onClick={saveDrawer} disabled={updateDelivery.isPending}>Save</Button>
                   <Button variant="secondary" onClick={closeDrawer}>Cancel</Button>
                 </div>
+                {drawerError ? <div className="text-xs text-red-600">{drawerError}</div> : null}
               </div>
             )}
           </div>
