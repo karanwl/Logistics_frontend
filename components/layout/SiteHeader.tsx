@@ -3,6 +3,8 @@ import Link from "next/link";
 export interface NavLink {
   href: string;
   label: string;
+  blocked?: boolean;
+  onClick?: () => void;
 }
 
 export default function SiteHeader({
@@ -26,6 +28,19 @@ export default function SiteHeader({
       <nav className="site-nav">
         {links.map((link) => {
           const isLogout = link.href === "/api-proxy/logout";
+          if (link.blocked) {
+            return (
+              <button
+                key={link.href}
+                type="button"
+                className="site-nav-blocked"
+                aria-disabled="true"
+                onClick={link.onClick}
+              >
+                {link.label}
+              </button>
+            );
+          }
           if (isLogout) {
             return (
               <a key={link.href} href={link.href} rel="nofollow">

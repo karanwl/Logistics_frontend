@@ -56,15 +56,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     cache: "no-store"
   });
 
-  if (res.status === 403 && typeof window !== "undefined") {
-    try {
-      fetch("/api-proxy/logout", { method: "GET", credentials: "include" }).catch(() => null);
-    } catch {
-      // no-op
-    }
-    window.location.href = "/auth/login";
-  }
-
   if (res.status === 303) {
     return parsePayload(res) as Promise<T>;
   }
@@ -75,6 +66,15 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       typeof payload === "string"
         ? payload
         : (payload as any)?.detail || (payload as any)?.error || "Request failed";
+    if (typeof window !== "undefined") {
+      if (res.status === 401) {
+        window.location.href = "/auth/login";
+      }
+      if (res.status === 403) {
+        const encoded = encodeURIComponent(message || "Access denied.");
+        window.location.href = `/unauthorized?message=${encoded}`;
+      }
+    }
     throw new ApiError(message, res.status, payload);
   }
 

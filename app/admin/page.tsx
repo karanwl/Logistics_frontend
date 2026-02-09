@@ -1,7 +1,13 @@
+"use client";
+
 import AppShell from "@/components/layout/AppShell";
 import Link from "next/link";
+import { useCurrentUser } from "@/lib/api/auth";
 
 export default function AdminHomePage() {
+  const { data } = useCurrentUser();
+  const role = (data?.user?.role || "").toLowerCase();
+  const isAdmin = role === "admin";
   return (
     <AppShell>
       <div className="admin-section">
@@ -44,9 +50,21 @@ export default function AdminHomePage() {
           <div className="admin-tile">
             <div className="admin-tile-title">Manage Users</div>
             <div className="admin-tile-subtitle">Create accounts and control access.</div>
-            <Link href="/admin/users" className="admin-tile-link">
-              Manage users
-            </Link>
+            {isAdmin ? (
+              <Link href="/admin/users" className="admin-tile-link">
+                Manage users
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="admin-tile-link text-steel-400 cursor-not-allowed text-left"
+                onClick={() => {
+                  window.location.href = "/unauthorized?message=Admin%20access%20required.";
+                }}
+              >
+                Manage users
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import AppHeader from "@/components/layout/AppHeader";
+import AccessGate from "@/components/layout/AccessGate";
 
 export default function AppShell({
   children
@@ -12,7 +13,9 @@ export default function AppShell({
       <div className="bg-glow glow-a" />
       <div className="bg-glow glow-b" />
       <AppHeader />
-      <main className="shell">{children}</main>
+      <main className="shell">
+        <AccessGate>{children}</AccessGate>
+      </main>
     </div>
   );
 }
