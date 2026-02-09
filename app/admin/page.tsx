@@ -22,7 +22,7 @@ export default function AdminHomePage() {
           <div className="admin-tile">
             <div className="admin-tile-title">Create Jobsite</div>
             <div className="admin-tile-subtitle">Add new locations and keep delivery routing accurate.</div>
-            <Link href="/admin/jobsites" className="admin-tile-link">
+            <Link href="/jobsites" className="admin-tile-link">
               Open jobsites
             </Link>
           </div>
@@ -43,7 +43,7 @@ export default function AdminHomePage() {
           <div className="admin-tile">
             <div className="admin-tile-title">Meeting Intake</div>
             <div className="admin-tile-subtitle">Capture new orders and publish to the schedule.</div>
-            <Link href="/admin/meeting-intake" className="admin-tile-link">
+            <Link href="/meeting-intake" className="admin-tile-link">
               Start intake
             </Link>
           </div>
@@ -51,7 +51,7 @@ export default function AdminHomePage() {
             <div className="admin-tile-title">Manage Users</div>
             <div className="admin-tile-subtitle">Create accounts and control access.</div>
             {isAdmin ? (
-              <Link href="/admin/users" className="admin-tile-link">
+              <Link href="/users" className="admin-tile-link">
                 Manage users
               </Link>
             ) : (

@@ -86,6 +86,13 @@ export const useUsers = () =>
     staleTime: 10000
   });
 
+export const useDrivers = () =>
+  useQuery({
+    queryKey: ["drivers"],
+    queryFn: () => api.get<{ drivers: any[] }>("/drivers/list-full"),
+    staleTime: 30000
+  });
+
 export const useCreateUser = () =>
   useMutation({
     mutationFn: (payload: any) =>
@@ -125,7 +132,7 @@ export const useCreateJobsite = () =>
   useMutation({
     mutationFn: (payload: { name: string; address: string }) =>
       api.post(
-        "/admin/jobsites/create-json",
+        "/jobsites/create-json",
         new URLSearchParams(payload as any).toString(),
         { "content-type": "application/x-www-form-urlencoded" }
       )

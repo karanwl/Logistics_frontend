@@ -10,7 +10,7 @@ const links = [
   { href: "/schedule", label: "Schedule" },
   { href: "/planner/published", label: "Published" },
   { href: "/admin", label: "Admin" },
-  { href: "/admin/meeting-intake", label: "Meeting Intake" },
+  { href: "/meeting-intake", label: "Meeting Intake" },
   { href: "/api-proxy/logout", label: "Logout" }
 ];
 
@@ -30,9 +30,11 @@ export default function AppHeader() {
       let requiresManager = false;
       if (link.href === "/planner") {
         requiresManager = true;
-      } else if (link.href.startsWith("/admin/users")) {
+      } else if (link.href === "/admin") {
         requiresAdmin = true;
-      } else if (link.href.startsWith("/admin") || link.href.startsWith("/planner/published")) {
+      } else if (link.href.startsWith("/users")) {
+        requiresAdmin = true;
+      } else if (link.href.startsWith("/meeting-intake") || link.href.startsWith("/jobsites") || link.href.startsWith("/deliveries") || link.href.startsWith("/planner/published")) {
         requiresManager = true;
       }
 

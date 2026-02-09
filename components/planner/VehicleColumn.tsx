@@ -2,12 +2,12 @@ import { RouteDTO } from "@/lib/types/planner";
 import StopCard from "@/components/planner/StopCard";
 import { Badge } from "@/components/ui/badge";
 import { usePlannerState } from "@/hooks/usePlannerState";
-import { useUsers } from "@/lib/api/planner";
+import { useDrivers } from "@/lib/api/planner";
 import { useMemo } from "react";
 
 export default function VehicleColumn({ route }: { route: RouteDTO }) {
   const { plan, setPlan } = usePlannerState();
-  const usersQuery = useUsers();
+  const driversQuery = useDrivers();
   const deliveriesById = useMemo(() => {
     const map = new Map<string, any>();
     (plan?.deliveries || []).forEach((d) => map.set(String(d.id), d));
@@ -15,13 +15,12 @@ export default function VehicleColumn({ route }: { route: RouteDTO }) {
   }, [plan]);
 
   const driverOptions = useMemo(() => {
-    const users = (usersQuery.data as any)?.users || [];
-    const drivers = users.filter((u: any) => (u.role || "").toLowerCase() === "driver");
-    return (drivers.length ? drivers : users).map((u: any) => ({
+    const drivers = (driversQuery.data as any)?.drivers || [];
+    return drivers.map((u: any) => ({
       value: String(u.email || u.name || u.id || ""),
       label: u.name || u.email || String(u.id || "Driver")
     }));
-  }, [usersQuery.data]);
+  }, [driversQuery.data]);
 
   const formatDuration = (seconds?: number) => {
     const totalMinutes = Math.round((seconds || 0) / 60);

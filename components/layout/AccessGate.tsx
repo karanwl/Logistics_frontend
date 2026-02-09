@@ -17,8 +17,11 @@ export default function AccessGate({ children }: { children: ReactNode }) {
 
   const denial = useMemo(() => {
     if (isPublic) return "";
-    if (pathname.startsWith("/admin/users")) return isAdmin ? "" : "Admin access required.";
-    if (pathname.startsWith("/admin")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
+    if (pathname.startsWith("/admin")) return isAdmin ? "" : "Admin access required.";
+    if (pathname.startsWith("/users")) return isAdmin ? "" : "Admin access required.";
+    if (pathname.startsWith("/meeting-intake")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
+    if (pathname.startsWith("/jobsites")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
+    if (pathname.startsWith("/deliveries")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
     if (pathname.startsWith("/planner/published")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
     if (pathname.startsWith("/planner")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
     return "";
