@@ -44,7 +44,7 @@ export default function LoginPage() {
         redirect: "manual"
       });
       if (res.status >= 200 && res.status < 400) {
-        window.location.href = "/";
+        window.location.href = "/schedule";
         return;
       }
       setError("Login failed. Check credentials.");
