@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { getCookie } from "@/lib/api/client";
+import { ensureCsrfCookie, getCookie } from "@/lib/api/client";
 
 const schema = z.object({
   email: z.string().email(),
@@ -24,7 +24,10 @@ export default function LoginPage() {
 
   const onSubmit = async (values: FormData) => {
     setError(null);
-    const csrf = getCookie("csrf_token");
+    let csrf = getCookie("csrf_token");
+    if (!csrf) {
+      csrf = await ensureCsrfCookie();
+    }
     const body = new URLSearchParams();
     body.set("email", values.email);
     body.set("password", values.password);

@@ -25,18 +25,25 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }) {
 
   const res = await fetch(url, init);
   const responseHeaders = new Headers();
-  res.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "set-cookie") {
-      responseHeaders.append("set-cookie", value);
-    } else if (
-      key.toLowerCase() === "content-encoding" ||
-      key.toLowerCase() === "content-length" ||
-      key.toLowerCase() === "transfer-encoding"
-    ) {
-      // Let Next/Fetch handle encoding/length for the proxied response.
-    } else {
-      responseHeaders.set(key, value);
+  const setCookie = (res.headers as any).getSetCookie?.() ?? [];
+  if (Array.isArray(setCookie)) {
+    for (const cookie of setCookie) {
+      responseHeaders.append("set-cookie", cookie);
     }
+  } else if (typeof setCookie === "string" && setCookie.length > 0) {
+    responseHeaders.append("set-cookie", setCookie);
+  }
+  res.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower === "set-cookie") {
+      // Handled via getSetCookie() above.
+      return;
+    }
+    if (lower === "content-encoding" || lower === "content-length" || lower === "transfer-encoding") {
+      // Let Next/Fetch handle encoding/length for the proxied response.
+      return;
+    }
+    responseHeaders.set(key, value);
   });
 
   return new NextResponse(res.body, {

@@ -23,13 +23,29 @@ export function getCookie(name: string) {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+export async function ensureCsrfCookie(): Promise<string> {
+  let csrf = getCookie("csrf_token");
+  if (csrf) return csrf;
+  try {
+    await fetch("/api-proxy/health", { method: "GET", credentials: "include", cache: "no-store" });
+  } catch {
+    // no-op
+  }
+  csrf = getCookie("csrf_token");
+  return csrf;
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers || {});
   if (!headers.has("accept")) {
     headers.set("accept", "application/json");
   }
   if (!headers.has("X-CSRF-Token")) {
-    const csrf = getCookie("csrf_token");
+    const method = (init.method || "GET").toUpperCase();
+    let csrf = getCookie("csrf_token");
+    if (!csrf && ["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      csrf = await ensureCsrfCookie();
+    }
     if (csrf) headers.set("X-CSRF-Token", csrf);
   }
 
