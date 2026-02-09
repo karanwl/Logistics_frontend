@@ -24,11 +24,21 @@ export default function SiteHeader({
         </div>
       </div>
       <nav className="site-nav">
-        {links.map((link) => (
-          <Link key={link.href} href={link.href}>
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => {
+          const isLogout = link.href === "/api-proxy/logout";
+          if (isLogout) {
+            return (
+              <a key={link.href} href={link.href} rel="nofollow">
+                {link.label}
+              </a>
+            );
+          }
+          return (
+            <Link key={link.href} href={link.href}>
+              {link.label}
+            </Link>
+          );
+        })}
       </nav>
     </header>
   );
