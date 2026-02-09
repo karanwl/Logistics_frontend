@@ -1,21 +1,8 @@
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 
 export default function StatusPage() {
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Manager/Admin Console"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <div className="card">
         <div className="card-header">
           <div>

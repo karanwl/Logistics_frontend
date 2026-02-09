@@ -1,7 +1,6 @@
 "use client";
 
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import PlannerHeader from "@/components/planner/PlannerHeader";
 import FleetPanel from "@/components/planner/FleetPanel";
 import RouteBoard from "@/components/planner/RouteBoard";
@@ -12,22 +11,7 @@ import { usePlannerState } from "@/hooks/usePlannerState";
 
 export default function PlannerPage() {
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Delivery Planner"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/schedule", label: "Schedule" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/admin/meeting-intake", label: "Meeting Intake" },
-            { href: "/planner/published", label: "Published Plans" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <PlannerStateProvider>
         <div className="grid gap-6">
           <PlannerHeader />

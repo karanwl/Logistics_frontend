@@ -165,6 +165,58 @@ body {
   @apply flex items-center gap-2;
 }
 
+.admin-grid {
+  @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+}
+
+.admin-tile {
+  @apply surface p-5 flex flex-col gap-3;
+}
+
+.admin-tile-title {
+  @apply text-lg font-semibold;
+}
+
+.admin-tile-subtitle {
+  @apply text-sm text-steel-500;
+}
+
+.admin-tile-link {
+  @apply text-sm font-semibold text-ink-900;
+}
+
+.admin-section {
+  @apply card;
+}
+
+.admin-form-grid {
+  @apply grid gap-3 md:grid-cols-2 xl:grid-cols-4;
+}
+
+.admin-field label {
+  @apply text-xs font-semibold text-steel-500;
+}
+
+.admin-select {
+  @apply h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-ink-900;
+}
+
+.admin-table {
+  @apply grid gap-2;
+}
+
+.admin-table-head {
+  @apply hidden text-xs font-semibold text-steel-500 md:grid md:grid-cols-5 gap-2;
+}
+
+.admin-table-row {
+  @apply grid gap-2 md:grid-cols-5 items-center rounded-xl border border-steel-100 bg-white/70 p-3;
+}
+
+.admin-pill {
+  @apply inline-flex items-center rounded-full bg-steel-100 px-2 py-1 text-xs text-steel-600;
+}
+
 .empty-state {
   @apply text-sm text-steel-500;
 }

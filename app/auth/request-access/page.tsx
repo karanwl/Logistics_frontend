@@ -1,21 +1,9 @@
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function RequestAccessPage() {
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Request Access"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/auth/login", label: "Sign In" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <div className="max-w-lg">
         <div className="card">
           <CardHeader>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useJobsites, useCreateJobsite } from "@/lib/api/planner";
@@ -21,42 +20,39 @@ export default function AdminJobsitesPage() {
   };
 
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Manager/Admin Console"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/schedule", label: "Schedule" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
-      <div className="card">
+    <AppShell>
+      <div className="admin-section">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Create Jobsite</div>
+            <div className="card-subtitle">Add a new location to the routing network.</div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Input placeholder="Jobsite name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Jobsite address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          <Button onClick={onCreate} disabled={createJobsite.isPending}>Create</Button>
+        <div className="admin-form-grid">
+          <div className="admin-field space-y-1.5">
+            <label htmlFor="jobsiteName">Jobsite name</label>
+            <Input id="jobsiteName" placeholder="Jobsite name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="admin-field space-y-1.5 md:col-span-2">
+            <label htmlFor="jobsiteAddress">Jobsite address</label>
+            <Input id="jobsiteAddress" placeholder="Jobsite address" value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={onCreate} disabled={createJobsite.isPending}>Create</Button>
+          </div>
         </div>
         <div className="mt-2 text-xs text-steel-500">After creation, the server geocodes and updates Latitude/Longitude.</div>
       </div>
-      <div className="card mt-6">
+      <div className="admin-section mt-6">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Jobsites</div>
+            <div className="card-subtitle">Latest locations available for scheduling.</div>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {(data?.jobsites || []).map((j: any) => (
-            <div key={j.id} className="rounded-lg border border-steel-100 p-3">
+            <div key={j.id} className="admin-tile">
               <div className="text-sm font-semibold">{j.name}</div>
               <div className="text-xs text-steel-500">{j.address}</div>
             </div>

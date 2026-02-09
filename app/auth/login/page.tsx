@@ -1,7 +1,6 @@
 "use client";
 
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,18 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics"
-          subtitle="Sign In"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/auth/request-access", label: "Create Account" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <div className="auth-layout">
         <section className="auth-hero">
           <div className="auth-badge">Secure Access</div>

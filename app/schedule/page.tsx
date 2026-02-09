@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
@@ -145,6 +144,14 @@ export default function SchedulePage() {
     dir: "asc"
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextView = params.get("view");
+    if (nextView === "board" || nextView === "calendar" || nextView === "list") {
+      setView(nextView);
+    }
+  }, []);
+
   const { data, refetch } = useDeliveries();
   const reschedule = useRescheduleDelivery();
   const bulkUpdate = useBulkUpdateDeliveries();
@@ -271,6 +278,9 @@ export default function SchedulePage() {
     setEdits({});
     setSaveStatus("Saved.");
     refetch();
+    if (view === "list") {
+      setView("calendar");
+    }
   };
 
   const openDrawer = (delivery: any) => {
@@ -307,21 +317,7 @@ export default function SchedulePage() {
   };
 
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Delivery Planner"
-          links={[
-            { href: "/planner", label: "Plan" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/admin/meeting-intake", label: "Meeting Intake" },
-            { href: "/planner/published", label: "Published Plans" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <section className="card schedule-toolbar" id="scheduleToolbar">
         <div className={view === "board" ? "" : "hidden"} id="boardToolbarControls">
           <div className="flex items-center justify-between gap-4">

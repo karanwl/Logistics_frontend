@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { usePublishedPlan, usePublishedPlansList } from "@/lib/api/planner";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
@@ -17,20 +16,7 @@ export default function PublishedPlansPage() {
   const items = (listQuery.data?.items || []) as any[];
 
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Manager/Admin Console"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/schedule", label: "Schedule" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
+    <AppShell>
       <PlannerStateProvider>
         <div className="grid grid-cols-[320px_minmax(0,1fr)] gap-6">
           <div className="card">

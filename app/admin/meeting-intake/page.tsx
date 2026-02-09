@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import SiteHeader from "@/components/layout/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -140,27 +139,15 @@ export default function MeetingIntakePage() {
     try {
       await bulkCreate.mutateAsync({ deliveries });
       setPublishMessage("Published successfully.");
-      window.location.reload();
+      window.location.href = "/schedule?view=calendar";
     } catch (e: any) {
       setPublishMessage(e?.message || "Publish failed.");
     }
   };
 
   return (
-    <AppShell
-      header={
-        <SiteHeader
-          title="Logistics Planner"
-          subtitle="Meeting Intake"
-          links={[
-            { href: "/planner", label: "Planner" },
-            { href: "/admin", label: "Manager/Admin Home" },
-            { href: "/api-proxy/logout", label: "Logout" }
-          ]}
-        />
-      }
-    >
-      <div className="card" id="meetingIntake">
+    <AppShell>
+      <div className="admin-section" id="meetingIntake">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Morning Meeting Intake</div>
@@ -219,7 +206,7 @@ export default function MeetingIntakePage() {
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish</Button>
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(90px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(70px,0.7fr)_minmax(40px,0.35fr)] gap-2 text-xs text-steel-500">
+        <div className="grid grid-cols-[minmax(90px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(70px,0.7fr)_minmax(40px,0.35fr)] gap-2 text-xs font-semibold text-steel-500">
           <div>Sales Order</div>
           <div>Jobsite</div>
           <div>Date</div>
