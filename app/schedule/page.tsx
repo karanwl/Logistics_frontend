@@ -74,22 +74,19 @@ function jobBorderColor(label: string) {
   return palette[idx];
 }
 
-const TIME_OPTIONS = [
-  "",
-  "06:00",
-  "07:00",
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00"
-];
+function buildTimeOptions(startHour: number, endHour: number, stepMinutes: number) {
+  const options: string[] = [];
+  const start = startHour * 60;
+  const end = endHour * 60;
+  for (let minutes = start; minutes <= end; minutes += stepMinutes) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    options.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+  return options;
+}
+
+const TIME_OPTIONS = ["", ...buildTimeOptions(6, 18, 15)];
 
 function DeliveryCard({ delivery, columnKey, index }: { delivery: any; columnKey: string; index: number }) {
   const id = `${delivery.delivery_id}`;
