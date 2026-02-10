@@ -10,12 +10,21 @@ export interface NavLink {
 export default function SiteHeader({
   title,
   subtitle,
-  links
+  links,
+  currentPath
 }: {
   title: string;
   subtitle: string;
   links: NavLink[];
+  currentPath?: string;
 }) {
+  const isActiveLink = (href: string) => {
+    if (!currentPath) return false;
+    if (href === "/api-proxy/logout") return false;
+    if (href === "/") return currentPath === "/";
+    return currentPath === href || currentPath.startsWith(`${href}/`);
+  };
+
   return (
     <header className="site-header">
       <div className="brand">
@@ -28,12 +37,14 @@ export default function SiteHeader({
       <nav className="site-nav">
         {links.map((link) => {
           const isLogout = link.href === "/api-proxy/logout";
+          const active = isActiveLink(link.href);
+          const className = `site-nav-link${active ? " is-active" : ""}${isLogout ? " is-logout" : ""}`;
           if (link.blocked) {
             return (
               <button
                 key={link.href}
                 type="button"
-                className="site-nav-blocked"
+                className={`${className} site-nav-blocked`}
                 aria-disabled="true"
                 onClick={link.onClick}
               >
@@ -43,7 +54,7 @@ export default function SiteHeader({
           }
           if (link.onClick && !isLogout) {
             return (
-              <button key={link.href} type="button" onClick={link.onClick}>
+              <button key={link.href} type="button" onClick={link.onClick} className={className}>
                 {link.label}
               </button>
             );
@@ -53,6 +64,7 @@ export default function SiteHeader({
               <button
                 key={link.href}
                 type="button"
+                className={className}
                 onClick={link.onClick || (() => (window.location.href = "/auth/login"))}
               >
                 {link.label}
@@ -60,7 +72,7 @@ export default function SiteHeader({
             );
           }
           return (
-            <Link key={link.href} href={link.href}>
+            <Link key={link.href} href={link.href} className={className}>
               {link.label}
             </Link>
           );

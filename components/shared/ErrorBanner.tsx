@@ -7,7 +7,7 @@ export function ErrorBanner({ error }: { error: unknown }) {
   const err = error as ApiError & { payload?: any };
   const detail = err?.payload?.detail || err?.payload?.error || err?.message || "Request failed";
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div className="rounded-xl border border-red-200 bg-red-50/95 px-3 py-2 text-sm text-red-700 shadow-sm">
       {detail}
     </div>
   );

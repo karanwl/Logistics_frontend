@@ -107,7 +107,7 @@ export function DatePickerInput({
             <div
               ref={dropdownRef}
               style={dropdownStyle}
-              className="rounded-lg border border-steel-200 bg-white p-2 shadow-soft"
+              className="rounded-xl border border-steel-200 bg-white/95 p-2 shadow-soft backdrop-blur"
             >
               <DayPicker
                 mode="single"
