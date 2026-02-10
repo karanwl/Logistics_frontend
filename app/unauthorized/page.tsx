@@ -1,25 +1,12 @@
-"use client";
-
-import { useMemo } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import UnauthorizedBackButton from "@/app/unauthorized/UnauthorizedBackButton";
 
-export default function UnauthorizedPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const message = useMemo(
-    () => searchParams.get("message") || "You do not have access to this page.",
-    [searchParams]
-  );
-
-  const goBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/schedule");
-  };
+export default function UnauthorizedPage({
+  searchParams
+}: {
+  searchParams?: { message?: string };
+}) {
+  const message = searchParams?.message || "You do not have access to this page.";
 
   return (
     <div className="page-shell">
@@ -36,9 +23,7 @@ export default function UnauthorizedPage() {
           </div>
           <div className="empty-state">{message}</div>
           <div className="page-actions mt-4">
-            <Button type="button" onClick={goBack}>
-              Go back
-            </Button>
+            <UnauthorizedBackButton />
             <Link className="text-xs text-steel-500 hover:text-ink-900" href="/auth/request-access">
               Request access
             </Link>
