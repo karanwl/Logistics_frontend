@@ -51,6 +51,34 @@ export default function MeetingIntakePage() {
   const jobsites = data?.jobsites || [];
   const jobsiteRefs = useRef<Array<HTMLDivElement | null>>([]);
 
+  const enforceJobsiteValue = (index: number) => {
+    setRows((prev) => {
+      if (index < 0 || index >= prev.length) return prev;
+      const next = [...prev];
+      const row = next[index];
+      const query = String(row.jobsite_query || "").trim();
+
+      if (!query) {
+        if (row.jobsite_id) {
+          next[index] = { ...row, jobsite_id: "" };
+        }
+        return next;
+      }
+
+      const match = jobsites.find(
+        (j: any) => String(j.name || "").trim().toLowerCase() === query.toLowerCase()
+      );
+      if (match) {
+        next[index] = { ...row, jobsite_id: String(match.id), jobsite_query: String(match.name || query) };
+        return next;
+      }
+
+      // Prevent arbitrary values from persisting; user must pick from jobsite list.
+      next[index] = { ...row, jobsite_id: "", jobsite_query: "" };
+      return next;
+    });
+  };
+
   const emptyRow = useMemo(
     () => ({
       sales_order: "",
@@ -111,12 +139,13 @@ export default function MeetingIntakePage() {
       const container = jobsiteRefs.current[openJobsiteIndex];
       if (!container) return;
       if (!container.contains(event.target as Node)) {
+        enforceJobsiteValue(openJobsiteIndex);
         setOpenJobsiteIndex(null);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [openJobsiteIndex]);
+  }, [openJobsiteIndex, jobsites]);
 
   const publish = async () => {
     const errors: Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }> = {};
@@ -165,7 +194,7 @@ export default function MeetingIntakePage() {
 
   return (
     <AppShell>
-      <div className="admin-section" id="meetingIntake">
+      <div className="admin-section overflow-visible" id="meetingIntake">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Morning Meeting Intake</div>
@@ -229,7 +258,7 @@ export default function MeetingIntakePage() {
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish</Button>
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(120px,1fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 text-xs font-semibold text-steel-600 [&>div]:border [&>div]:border-steel-200 [&>div]:bg-white/90 [&>div]:px-2 [&>div]:py-2">
+        <div className="grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 text-xs font-semibold text-steel-600 [&>div]:border [&>div]:border-steel-200 [&>div]:bg-white/90 [&>div]:px-2 [&>div]:py-2">
           <div>Planned Date</div>
           <div>Jobsite Name</div>
           <div>Sales Order #</div>
@@ -238,7 +267,7 @@ export default function MeetingIntakePage() {
           <div>Small Skids</div>
           <div>Doors</div>
           <div>Frames</div>
-          <div>Express Frames</div>
+          <div>Other Frames</div>
           <div>Boxes</div>
           <div>Remove</div>
         </div>
@@ -246,7 +275,7 @@ export default function MeetingIntakePage() {
           {rows.map((row, idx) => (
             <div
               key={idx}
-              className="grid grid-cols-[minmax(120px,1fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem]"
+              className="relative z-0 grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem]"
             >
               <DatePickerInput
                 className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
@@ -276,9 +305,15 @@ export default function MeetingIntakePage() {
                     setActiveRowIndex(idx);
                     setOpenJobsiteIndex(idx);
                   }}
+                  onBlur={() => {
+                    window.setTimeout(() => {
+                      enforceJobsiteValue(idx);
+                      setOpenJobsiteIndex((prev) => (prev === idx ? null : prev));
+                    }, 120);
+                  }}
                 />
                 {openJobsiteIndex === idx && row.jobsite_query ? (
-                  <div className="absolute z-10 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
+                  <div className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
                     {jobsites
                       .filter((j: any) =>
                         (j.name || "").toLowerCase().includes(row.jobsite_query.toLowerCase())

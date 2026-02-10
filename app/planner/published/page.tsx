@@ -18,7 +18,7 @@ export default function PublishedPlansPage() {
   return (
     <AppShell>
       <PlannerStateProvider>
-        <div className="grid grid-cols-[320px_minmax(0,1fr)] gap-6">
+        <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
           <div className="card">
             <div className="card-header">
               <div>
@@ -224,12 +224,12 @@ function PublishedPlanPreview({ plan }: { plan: any }) {
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_360px] grid-rows-[minmax(420px,1fr)] gap-6">
-      <div className="grid grid-cols-[280px_minmax(0,1fr)] gap-6">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <UnassignedPanel />
         <RouteBoard />
       </div>
-      <div className="row-span-1 flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         <MapPanel />
       </div>
     </div>
