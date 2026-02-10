@@ -275,7 +275,9 @@ export default function MeetingIntakePage() {
           {rows.map((row, idx) => (
             <div
               key={idx}
-              className="relative z-0 grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem]"
+              className={`relative grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem] ${
+                openJobsiteIndex === idx ? "z-20" : "z-0"
+              }`}
             >
               <DatePickerInput
                 className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
