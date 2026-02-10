@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, useDroppable } from "@dnd-kit/core";
@@ -498,21 +498,16 @@ export default function SchedulePage() {
       <div id="listView" className={view === "list" ? "" : "hidden"}>
         <section className="card">
           <div id="scheduleList" className="table-wrap table-full p-4 max-h-[70vh] overflow-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm border-collapse [&_th]:border [&_th]:border-steel-200 [&_th]:bg-white/95 [&_th]:px-2 [&_th]:py-2 [&_td]:border [&_td]:border-steel-100 [&_td]:px-2 [&_td]:py-2">
               <thead className="text-xs text-steel-500 sticky top-0 bg-white/90 backdrop-blur z-10">
                 <tr>
                 {canEdit && editMode && (
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("ps_delivered")}>
-                      PS Delivered {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Packing Slip Delivered {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                 )}
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("sales_order")}>
-                      Sales Order {sort.key === "sales_order" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("scheduled_date")}>
                       Scheduled Date {sort.key === "scheduled_date" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
@@ -520,57 +515,62 @@ export default function SchedulePage() {
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("job_name")}>
-                      Job {sort.key === "job_name" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Job Name {sort.key === "job_name" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("sales_order")}>
+                      Sales Order # {sort.key === "sales_order" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("window_start")}>
-                      Time Window {sort.key === "window_start" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("med_skid")}>
-                      Med Skid {sort.key === "med_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("small_skid")}>
-                      Small Skid {sort.key === "small_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("large_skid")}>
-                      Large Skid {sort.key === "large_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("door")}>
-                      Door {sort.key === "door" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("frame")}>
-                      Frame {sort.key === "frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("exp_frame")}>
-                      Exp Frame {sort.key === "exp_frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
-                    </button>
-                  </th>
-                  <th className="text-left py-2">
-                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("box")}>
-                      Box {sort.key === "box" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Delivery Window {sort.key === "window_start" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("pickup")}>
-                      Pickup {sort.key === "pickup" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Pickup? {sort.key === "pickup" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("requires_empty_truck")}>
-                      Empty Truck {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Needs Empty Truck? {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("large_skid")}>
+                      Large Skids {sort.key === "large_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("med_skid")}>
+                      Medium Skids {sort.key === "med_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("small_skid")}>
+                      Small Skids {sort.key === "small_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("door")}>
+                      Doors {sort.key === "door" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("frame")}>
+                      Frames {sort.key === "frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("exp_frame")}>
+                      Express Frames {sort.key === "exp_frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("box")}>
+                      Boxes {sort.key === "box" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">Actions</th>
@@ -588,7 +588,6 @@ export default function SchedulePage() {
                         />
                       </td>
                     )}
-                    <td className="py-2">{d.sales_order || "--"}</td>
                     <td className="py-2">
                       {canEdit && editMode ? (
                         <DatePickerInput
@@ -609,6 +608,7 @@ export default function SchedulePage() {
                         {d.job_name}
                       </button>
                     </td>
+                    <td className="py-2">{d.sales_order || "--"}</td>
                     <td className="py-2">
                       {canEdit && editMode ? (
                         <div className="grid grid-cols-2 gap-2">
@@ -637,6 +637,35 @@ export default function SchedulePage() {
                         `${d.window_start || "--"} - ${d.window_end || "--"}`
                       )}
                     </td>
+                    <td className="py-2">
+                      {canEdit && editMode ? (
+                        <input
+                          type="checkbox"
+                          defaultChecked={Boolean(d.pickup)}
+                          onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
+                        />
+                      ) : (
+                        d.pickup ? "Yes" : "No"
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {canEdit && editMode ? (
+                        <input
+                          type="checkbox"
+                          defaultChecked={Boolean(d.requires_empty_truck)}
+                          onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
+                        />
+                      ) : (
+                        d.requires_empty_truck ? "Yes" : "No"
+                      )}
+                    </td>
+                    <td className="py-2 w-20">
+                      {canEdit && editMode ? (
+                        <Input type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
+                      ) : (
+                        d.large_skid || 0
+                      )}
+                    </td>
                     <td className="py-2 w-20">
                       {canEdit && editMode ? (
                         <Input type="number" defaultValue={d.med_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { med_skid: Number(e.target.value) })} />
@@ -649,13 +678,6 @@ export default function SchedulePage() {
                         <Input type="number" defaultValue={d.small_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { small_skid: Number(e.target.value) })} />
                       ) : (
                         d.small_skid || 0
-                      )}
-                    </td>
-                    <td className="py-2 w-20">
-                      {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
-                      ) : (
-                        d.large_skid || 0
                       )}
                     </td>
                     <td className="py-2 w-16">
@@ -684,28 +706,6 @@ export default function SchedulePage() {
                         <Input type="number" defaultValue={d.box || 0} onChange={(e) => updateEdit(d.delivery_id, { box: Number(e.target.value) })} />
                       ) : (
                         d.box || 0
-                      )}
-                    </td>
-                    <td className="py-2">
-                      {canEdit && editMode ? (
-                        <input
-                          type="checkbox"
-                          defaultChecked={Boolean(d.pickup)}
-                          onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
-                        />
-                      ) : (
-                        d.pickup ? "Yes" : "No"
-                      )}
-                    </td>
-                    <td className="py-2">
-                      {canEdit && editMode ? (
-                        <input
-                          type="checkbox"
-                          defaultChecked={Boolean(d.requires_empty_truck)}
-                          onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
-                        />
-                      ) : (
-                        d.requires_empty_truck ? "Yes" : "No"
                       )}
                     </td>
                     <td className="py-2">
@@ -873,4 +873,5 @@ function CalendarJob({ item, dateKey, onClick }: { item: any; dateKey: string; o
     </button>
   );
 }
+
 

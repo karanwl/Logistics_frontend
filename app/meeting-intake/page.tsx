@@ -229,30 +229,29 @@ export default function MeetingIntakePage() {
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish</Button>
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(90px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(70px,0.7fr)_minmax(40px,0.35fr)] gap-2 text-xs font-semibold text-steel-500">
-          <div>Sales Order</div>
-          <div>Jobsite</div>
-          <div>Date</div>
-          <div>Door</div>
-          <div>Frame</div>
-          <div>Med</div>
-          <div>Small</div>
-          <div>Large</div>
-          <div>Box</div>
-          <div>Exp Frame</div>
-          <div></div>
+        <div className="grid grid-cols-[minmax(120px,1fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 text-xs font-semibold text-steel-600 [&>div]:border [&>div]:border-steel-200 [&>div]:bg-white/90 [&>div]:px-2 [&>div]:py-2">
+          <div>Planned Date</div>
+          <div>Jobsite Name</div>
+          <div>Sales Order #</div>
+          <div>Large Skids</div>
+          <div>Medium Skids</div>
+          <div>Small Skids</div>
+          <div>Doors</div>
+          <div>Frames</div>
+          <div>Express Frames</div>
+          <div>Boxes</div>
+          <div>Remove</div>
         </div>
         <div className="mt-3 space-y-2">
           {rows.map((row, idx) => (
             <div
               key={idx}
-              className="grid grid-cols-[minmax(90px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(60px,0.6fr)_minmax(70px,0.7fr)_minmax(40px,0.35fr)] gap-2"
+              className="grid grid-cols-[minmax(120px,1fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem]"
             >
-              <Input
-                className={`h-9 text-xs ${rowErrors[idx]?.sales_order ? "border-red-400" : ""}`}
-                value={row.sales_order}
-                onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
-                onFocus={() => setActiveRowIndex(idx)}
+              <DatePickerInput
+                className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
+                value={row.scheduled_date}
+                onChange={(value) => updateRow(idx, { scheduled_date: value })}
               />
               <div
                 className="relative"
@@ -261,7 +260,7 @@ export default function MeetingIntakePage() {
                 }}
               >
                 <Input
-                  className={`h-9 text-xs ${rowErrors[idx]?.jobsite ? "border-red-400" : ""}`}
+                  className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
                   placeholder="Type jobsite name"
                   value={row.jobsite_query}
                   onChange={(e) => {
@@ -301,63 +300,64 @@ export default function MeetingIntakePage() {
                   </div>
                 ) : null}
               </div>
-              <DatePickerInput
-                className={`h-9 text-xs ${rowErrors[idx]?.date ? "border-red-400" : ""}`}
-                value={row.scheduled_date}
-                onChange={(value) => updateRow(idx, { scheduled_date: value })}
-              />
               <Input
-                className="h-9 text-xs"
-                type="number"
-                value={row.door}
-                onChange={(e) => updateRow(idx, { door: Number(e.target.value) })}
+                className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.sales_order ? "bg-red-50" : ""}`}
+                value={row.sales_order}
+                onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
                 onFocus={() => setActiveRowIndex(idx)}
               />
               <Input
-                className="h-9 text-xs"
-                type="number"
-                value={row.frame}
-                onChange={(e) => updateRow(idx, { frame: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs"
-                type="number"
-                value={row.med_skid}
-                onChange={(e) => updateRow(idx, { med_skid: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs"
-                type="number"
-                value={row.small_skid}
-                onChange={(e) => updateRow(idx, { small_skid: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs"
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
                 type="number"
                 value={row.large_skid}
                 onChange={(e) => updateRow(idx, { large_skid: Number(e.target.value) })}
                 onFocus={() => setActiveRowIndex(idx)}
               />
               <Input
-                className="h-9 text-xs"
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
                 type="number"
-                value={row.box}
-                onChange={(e) => updateRow(idx, { box: Number(e.target.value) })}
+                value={row.med_skid}
+                onChange={(e) => updateRow(idx, { med_skid: Number(e.target.value) })}
                 onFocus={() => setActiveRowIndex(idx)}
               />
               <Input
-                className="h-9 text-xs"
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                type="number"
+                value={row.small_skid}
+                onChange={(e) => updateRow(idx, { small_skid: Number(e.target.value) })}
+                onFocus={() => setActiveRowIndex(idx)}
+              />
+              <Input
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                type="number"
+                value={row.door}
+                onChange={(e) => updateRow(idx, { door: Number(e.target.value) })}
+                onFocus={() => setActiveRowIndex(idx)}
+              />
+              <Input
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                type="number"
+                value={row.frame}
+                onChange={(e) => updateRow(idx, { frame: Number(e.target.value) })}
+                onFocus={() => setActiveRowIndex(idx)}
+              />
+              <Input
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
                 type="number"
                 value={row.exp_frame}
                 onChange={(e) => updateRow(idx, { exp_frame: Number(e.target.value) })}
                 onFocus={() => setActiveRowIndex(idx)}
               />
+              <Input
+                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                type="number"
+                value={row.box}
+                onChange={(e) => updateRow(idx, { box: Number(e.target.value) })}
+                onFocus={() => setActiveRowIndex(idx)}
+              />
               <button
                 type="button"
-                className="h-9 rounded-md border border-steel-200 text-xs text-steel-500 hover:border-ink-900 hover:text-ink-900"
+                className="h-9 w-full rounded-none border-0 text-xs text-steel-500 hover:bg-steel-100 hover:text-ink-900"
                 onClick={() => removeRow(idx)}
                 disabled={rows.length === 1 && isRowEmpty(row)}
               >
