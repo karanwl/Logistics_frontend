@@ -194,7 +194,7 @@ export default function MeetingIntakePage() {
 
   return (
     <AppShell>
-      <div className="admin-section overflow-visible" id="meetingIntake">
+      <div className="admin-section overflow-visible" id="meetingIntake" style={{ overflow: "visible" }}>
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Morning Meeting Intake</div>
