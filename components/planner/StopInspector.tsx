@@ -18,6 +18,7 @@ export default function StopInspector() {
   }, [selectedStopId, plan]);
 
   const delivery = stopGroup?.find((s) => s.type === "delivery");
+  const depotLabel = stopGroup?.find((s) => s.type === "depot")?.label || "Depot";
 
   return (
     <Card className="h-full">
@@ -33,7 +34,7 @@ export default function StopInspector() {
         <div className="space-y-3">
           <div>
             <div className="text-xs text-steel-500">Stop</div>
-            <div className="text-sm font-semibold">{delivery?.job_name || "Depot"}</div>
+            <div className="text-sm font-semibold">{delivery?.job_name || depotLabel}</div>
           </div>
           <div className="text-xs text-steel-500">Items in stop: {stopGroup.length}</div>
           <Button variant="secondary" size="sm" disabled>

@@ -55,6 +55,7 @@ function normalizePublishedPlan(plan: any) {
     const t = String(token || "").trim();
     if (!t) return { type: "delivery", label: "Stop" };
     if (t.toLowerCase() === "depot") return { type: "depot", label: "Depot" };
+    if (t.toLowerCase() === "depot - reload") return { type: "depot", label: "Depot - Reload" };
     const baseId = t.split("_Part")[0].trim();
     const d = deliveriesById.get(baseId);
     const item: RouteStopItem = {

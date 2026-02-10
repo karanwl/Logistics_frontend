@@ -18,7 +18,7 @@ export default function MapPanel() {
       mapboxgl.default.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
       mapInstance.current = new mapboxgl.default.Map({
         container: mapRef.current as HTMLElement,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/mapbox/outdoors-v12",
         center: [-79.3832, 43.6532],
         zoom: 9
       });
@@ -55,7 +55,10 @@ export default function MapPanel() {
         pointFeatures.push({
           type: "Feature",
           geometry: { type: "Point", coordinates: [d.lon, d.lat] },
-          properties: { label: `${routeIndex + 1}.${idx + 1}`, route: routeIndex + 1 }
+          properties: {
+            label: delivery.job_name || d.job_name || `Route ${routeIndex + 1} Stop ${idx + 1}`,
+            route: routeIndex + 1
+          }
         });
       });
       if (depotLon != null && depotLat != null) {
