@@ -47,6 +47,21 @@ export default function MapPanel() {
     plan.routes.forEach((route, routeIndex) => {
       const coords: number[][] = [];
       route.stops.forEach((group, idx) => {
+        const depotStop = group.find((s) => s.type === "depot");
+        if (depotStop) {
+          if (depotLon == null || depotLat == null) return;
+          coords.push([depotLon, depotLat]);
+          pointFeatures.push({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [depotLon, depotLat] },
+            properties: {
+              label: depotStop.label || "Depot",
+              route: routeIndex + 1
+            }
+          });
+          return;
+        }
+
         const delivery = group.find((s) => s.type === "delivery" && s.id);
         if (!delivery || !delivery.id) return;
         const d = deliveriesById.get(delivery.id);
@@ -61,15 +76,7 @@ export default function MapPanel() {
           }
         });
       });
-      if (depotLon != null && depotLat != null) {
-        coords.unshift([depotLon, depotLat]);
-        coords.push([depotLon, depotLat]);
-        pointFeatures.push({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [depotLon, depotLat] },
-          properties: { label: "Depot", route: routeIndex + 1 }
-        });
-      }
+
       if (coords.length >= 2) {
         lineFeatures.push({
           type: "Feature",
