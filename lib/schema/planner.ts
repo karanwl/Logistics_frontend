@@ -31,6 +31,13 @@ export const routeStopItemSchema = z.object({
   part_no: z.number().optional(),
   qty: z.number().optional(),
   units: z.number().optional(),
+  med_skid: z.number().optional(),
+  small_skid: z.number().optional(),
+  large_skid: z.number().optional(),
+  door: z.number().optional(),
+  frame: z.number().optional(),
+  exp_frame: z.number().optional(),
+  box: z.number().optional(),
   label: z.string().optional()
 });
 
@@ -45,7 +52,9 @@ export const routeSchema = z.object({
     arrival_hhmm: z.string().optional(),
     departure_hhmm: z.string().optional(),
     arrival_s: z.number().optional(),
-    departure_s: z.number().optional()
+    departure_s: z.number().optional(),
+    stop_units: z.number().optional(),
+    stop_units_signed: z.number().optional()
   })).optional(),
   stop_nodes: z.array(z.number()).optional()
 });

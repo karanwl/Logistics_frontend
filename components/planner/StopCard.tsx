@@ -63,8 +63,30 @@ export default function StopCard({
 
   const salesOrders = deliveries.map((d) => d.sales_order).filter(Boolean);
 
+  const hasExplicitCounts = deliveryStops.some(
+    (stopItem) =>
+      stopItem.med_skid != null ||
+      stopItem.large_skid != null ||
+      stopItem.small_skid != null ||
+      stopItem.door != null ||
+      stopItem.frame != null ||
+      stopItem.exp_frame != null ||
+      stopItem.box != null
+  );
+
   const totals = deliveryStops.reduce(
     (acc, stopItem) => {
+      if (hasExplicitCounts) {
+        acc.med_skid += stopItem.med_skid || 0;
+        acc.small_skid += stopItem.small_skid || 0;
+        acc.large_skid += stopItem.large_skid || 0;
+        acc.door += stopItem.door || 0;
+        acc.frame += stopItem.frame || 0;
+        acc.exp_frame += stopItem.exp_frame || 0;
+        acc.box += stopItem.box || 0;
+        return acc;
+      }
+
       if (!stopItem.id || !deliveriesById) return acc;
       const delivery = deliveriesById.get(String(stopItem.id));
       if (!delivery) return acc;
@@ -99,9 +121,13 @@ export default function StopCard({
 
   const formatQty = (value: number) => {
     if (Number.isNaN(value)) return "";
-    const rounded = Math.round(value * 10) / 10;
-    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+    const rounded = Math.round(value);
+    return String(rounded);
   };
+
+  const hasFractional = Object.values(totals).some(
+    (value) => Math.abs((value || 0) - Math.round(value || 0)) > 1e-6
+  );
 
   const totalsLine = [
     totals.door ? `Door ${formatQty(totals.door)}` : "",
@@ -129,7 +155,11 @@ export default function StopCard({
       </div>
       {salesOrders.length > 0 && <div className="text-xs text-steel-500">SO: {salesOrders.join(", ")}</div>}
       <div className="text-xs text-steel-500">Deliveries: {deliveriesCount || deliveryStops.length}</div>
-      <div className="text-xs text-steel-500">{totalsLine || "No items"}</div>
+      <div className="text-xs text-steel-500">
+        {hasFractional && stopTime?.stop_units != null
+          ? `Units ${stopTime.stop_units}`
+          : (totalsLine || "No items")}
+      </div>
     </div>
   );
 }

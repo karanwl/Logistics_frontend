@@ -83,6 +83,48 @@ function normalizePublishedPlan(plan: any) {
         if (!Number.isNaN(units)) item.units = units;
       } catch {}
     }
+    if (t.includes("_Med")) {
+      try {
+        const v = Number((t.split("_Med").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.med_skid = v;
+      } catch {}
+    }
+    if (t.includes("_Large")) {
+      try {
+        const v = Number((t.split("_Large").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.large_skid = v;
+      } catch {}
+    }
+    if (t.includes("_Small")) {
+      try {
+        const v = Number((t.split("_Small").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.small_skid = v;
+      } catch {}
+    }
+    if (t.includes("_Frame")) {
+      try {
+        const v = Number((t.split("_Frame").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.frame = v;
+      } catch {}
+    }
+    if (t.includes("_Exp")) {
+      try {
+        const v = Number((t.split("_Exp").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.exp_frame = v;
+      } catch {}
+    }
+    if (t.includes("_Door")) {
+      try {
+        const v = Number((t.split("_Door").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.door = v;
+      } catch {}
+    }
+    if (t.includes("_Box")) {
+      try {
+        const v = Number((t.split("_Box").pop() || "").split("_", 2)[0]);
+        if (!Number.isNaN(v)) item.box = v;
+      } catch {}
+    }
     return item;
   };
 

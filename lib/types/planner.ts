@@ -29,6 +29,13 @@ export interface RouteStopItem {
   part_no?: number;
   qty?: number;
   units?: number;
+  med_skid?: number;
+  small_skid?: number;
+  large_skid?: number;
+  door?: number;
+  frame?: number;
+  exp_frame?: number;
+  box?: number;
   label?: string;
 }
 
@@ -44,6 +51,8 @@ export interface RouteDTO {
     departure_hhmm?: string;
     arrival_s?: number;
     departure_s?: number;
+    stop_units?: number;
+    stop_units_signed?: number;
   }[];
   stop_nodes?: number[];
 }
