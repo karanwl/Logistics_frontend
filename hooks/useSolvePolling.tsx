@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { api } from "@/lib/api/client";
+import { useRouter } from "next/navigation";
+import { ApiError, api } from "@/lib/api/client";
 import { SolveJobDTO } from "@/lib/types/planner";
 
 export function useSolvePolling(
@@ -9,6 +10,8 @@ export function useSolvePolling(
   status?: SolveJobDTO["status"],
   onSuccess?: (job: SolveJobDTO) => void
 ) {
+  const router = useRouter();
+
   useEffect(() => {
     if (!jobId) return;
     if (status === "success" || status === "failed") return;
@@ -26,7 +29,13 @@ export function useSolvePolling(
           return;
         }
         timer = setTimeout(poll, 2000);
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          active = false;
+          if (timer) clearTimeout(timer);
+          router.replace("/schedule");
+          return;
+        }
         timer = setTimeout(poll, 3000);
       }
     };
@@ -36,5 +45,5 @@ export function useSolvePolling(
       active = false;
       if (timer) clearTimeout(timer);
     };
-  }, [jobId, onSuccess]);
+  }, [jobId, status, onSuccess, router]);
 }
