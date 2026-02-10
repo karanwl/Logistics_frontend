@@ -15,7 +15,14 @@ export default function StopCard({
   index: number;
   stop: RouteStopItem[];
   deliveriesById?: Map<string, DeliveryDTO>;
-  stopTime?: { arrival_hhmm?: string; departure_hhmm?: string; arrival_s?: number; departure_s?: number };
+  stopTime?: {
+    arrival_hhmm?: string;
+    departure_hhmm?: string;
+    arrival_s?: number;
+    departure_s?: number;
+    stop_units?: number;
+    stop_units_signed?: number;
+  };
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
