@@ -18,6 +18,7 @@ export const deliverySchema = z.object({
   box: z.number().optional(),
   requires_truck: z.boolean().optional(),
   pickup: z.boolean().optional(),
+  pickup_vehicle: z.string().optional(),
   requires_empty_truck: z.boolean().optional(),
   window_start: z.string().optional(),
   window_end: z.string().optional(),

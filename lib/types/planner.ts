@@ -16,6 +16,7 @@ export interface DeliveryDTO {
   box?: number;
   requires_truck?: boolean;
   pickup?: boolean;
+  pickup_vehicle?: string;
   requires_empty_truck?: boolean;
   window_start?: string;
   window_end?: string;

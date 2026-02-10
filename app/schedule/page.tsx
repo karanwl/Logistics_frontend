@@ -88,6 +88,19 @@ function buildTimeOptions(startHour: number, endHour: number, stepMinutes: numbe
 
 const TIME_OPTIONS = ["", ...buildTimeOptions(6, 18, 15)];
 
+const PICKUP_VEHICLE_OPTIONS = [
+  { value: "both", label: "Both" },
+  { value: "van", label: "Van only" },
+  { value: "truck", label: "Truck only" }
+];
+
+function pickupVehicleLabel(value: string | undefined | null) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return "--";
+  const match = PICKUP_VEHICLE_OPTIONS.find((opt) => opt.value === normalized);
+  return match ? match.label : normalized;
+}
+
 function DeliveryCard({ delivery, columnKey, index }: { delivery: any; columnKey: string; index: number }) {
   const id = `${delivery.delivery_id}`;
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -222,6 +235,8 @@ export default function SchedulePage() {
           return Number(row[key] || 0);
         case "pickup":
           return row.pickup ? 1 : 0;
+        case "pickup_vehicle":
+          return row.pickup_vehicle || "";
         case "requires_empty_truck":
           return row.requires_empty_truck ? 1 : 0;
         default:
@@ -531,6 +546,11 @@ export default function SchedulePage() {
                     </button>
                   </th>
                   <th className="text-left py-2">
+                    <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("pickup_vehicle")}>
+                      Pickup Vehicle {sort.key === "pickup_vehicle" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </button>
+                  </th>
+                  <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("requires_empty_truck")}>
                       Needs Empty Truck? {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
@@ -643,6 +663,22 @@ export default function SchedulePage() {
                         />
                       ) : (
                         d.pickup ? "Yes" : "No"
+                      )}
+                    </td>
+                    <td className="py-2">
+                      {canEdit && editMode ? (
+                        <select
+                          className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                          defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
+                          onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
+                        >
+                          <option value="">--</option>
+                          {PICKUP_VEHICLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        d.pickup ? pickupVehicleLabel(d.pickup_vehicle || "both") : "--"
                       )}
                     </td>
                     <td className="py-2">
