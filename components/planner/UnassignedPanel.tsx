@@ -16,7 +16,7 @@ export default function UnassignedPanel() {
   const unassigned = (plan?.deliveries || []).filter((d) => !assigned.has(d.id));
 
   return (
-    <section className="card h-full">
+    <section className="card">
       <div className="card-header">
         <div>
           <div className="text-xl font-semibold">Unscheduled Deliveries</div>
@@ -24,9 +24,11 @@ export default function UnassignedPanel() {
         </div>
         <Badge>{unassigned.length}</Badge>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {!plan ? (
           <div className="empty-state">No plan loaded.</div>
+        ) : unassigned.length === 0 ? (
+          <div className="empty-state">All deliveries were assigned.</div>
         ) : (
           unassigned.map((stop) => (
             <div key={stop.id} className="rounded-lg border border-steel-100 p-3">

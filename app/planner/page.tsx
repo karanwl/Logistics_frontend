@@ -25,20 +25,11 @@ export default function PlannerPage() {
 function PlannerLayout() {
   const { plan } = usePlannerState();
   if (!plan) {
-    return (
-      <div className="grid gap-6">
-        <PlannerContent />
-      </div>
-    );
+    return <PlannerContent />;
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <PlannerContent />
-      <div className="flex flex-col gap-6">
-        <MapPanel />
-      </div>
-    </div>
+    <PlannerContent />
   );
 }
 
@@ -48,15 +39,19 @@ function PlannerContent() {
 
   if (!plan && !isBuilding) {
     return (
-      <div className="flex items-center justify-center">
-        <div className="card w-full max-w-2xl">
-          <div className="card-header">
-            <div>
-              <div className="text-xl font-semibold">Fleet Inputs</div>
-              <div className="card-subtitle">Set vehicles and run a plan.</div>
-            </div>
-          </div>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="xl:col-span-5">
           <FleetPanel />
+        </div>
+        <div className="card xl:col-span-7">
+          <div className="panel-title mb-2">Ready To Plan</div>
+          <div className="text-xl font-semibold">Configure fleet and run solve</div>
+          <p className="card-subtitle mt-2">
+            Set truck and van counts, choose the plan date, and run a solve to generate route assignments.
+          </p>
+          <div className="mt-4 text-sm text-steel-500">
+            Routes, map, and unscheduled deliveries will appear automatically after the solve completes.
+          </div>
         </div>
       </div>
     );
@@ -64,22 +59,25 @@ function PlannerContent() {
 
   if (isBuilding && !plan) {
     return (
-      <div className="flex items-center justify-center">
-        <div className="card w-full max-w-2xl flex items-center gap-4">
+      <div className="card flex items-center gap-4">
           <div className="h-12 w-12 rounded-full border-4 border-steel-200 border-t-ink-900 animate-spin" />
           <div>
             <div className="text-xl font-semibold">Building plan</div>
             <div className="card-subtitle">Optimizing routes and stop assignments.</div>
           </div>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-      <UnassignedPanel />
-      <RouteBoard />
+    <div className="grid gap-6 xl:grid-cols-12">
+      <div className="space-y-6 xl:col-span-8">
+        <RouteBoard />
+      </div>
+      <div className="space-y-6 xl:col-span-4">
+        <MapPanel />
+        <UnassignedPanel />
+      </div>
     </div>
   );
 }

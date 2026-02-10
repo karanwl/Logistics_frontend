@@ -15,7 +15,7 @@ export default function RouteBoard() {
         {routes.length === 0 ? (
           <div className="empty-state">Run a plan to generate routes.</div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
             {routes.map((route) => (
               <SortableContext
                 key={route.vehicle_id}

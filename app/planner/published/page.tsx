@@ -18,8 +18,8 @@ export default function PublishedPlansPage() {
   return (
     <AppShell>
       <PlannerStateProvider>
-        <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-          <div className="card">
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="card xl:col-span-3">
             <div className="card-header">
               <div>
                 <div className="text-xl font-semibold">Published Plans</div>
@@ -30,7 +30,7 @@ export default function PublishedPlansPage() {
               {items.map((item) => (
                 <button
                   key={item.record_id || item.plan_date}
-                  className="w-full text-left rounded-lg border border-steel-100 px-3 py-2 hover:border-ink-900"
+                  className="w-full text-left rounded-lg border border-steel-100 bg-white/75 px-3 py-2 transition hover:border-ink-900 hover:bg-white"
                   onClick={() => setSelectedDate(item.plan_date)}
                 >
                   <div className="text-sm font-semibold">{item.plan_date}</div>
@@ -39,7 +39,9 @@ export default function PublishedPlansPage() {
               ))}
             </div>
           </div>
-          <PublishedPlanPreview plan={planQuery.data} />
+          <div className="xl:col-span-9">
+            <PublishedPlanPreview plan={planQuery.data} />
+          </div>
         </div>
       </PlannerStateProvider>
     </AppShell>
@@ -224,13 +226,13 @@ function PublishedPlanPreview({ plan }: { plan: any }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <UnassignedPanel />
+    <div className="grid gap-6 xl:grid-cols-12">
+      <div className="space-y-6 xl:col-span-8">
         <RouteBoard />
       </div>
-      <div className="flex flex-col gap-6">
+      <div className="space-y-6 xl:col-span-4">
         <MapPanel />
+        <UnassignedPanel />
       </div>
     </div>
   );

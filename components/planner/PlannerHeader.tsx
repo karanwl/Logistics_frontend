@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { usePlannerState } from "@/hooks/usePlannerState";
 import { useSolveRun, usePublishPlan } from "@/lib/api/planner";
@@ -62,20 +61,20 @@ export default function PlannerHeader() {
 
   return (
     <section className="card">
-      <div className="card-header grid grid-cols-3 items-center gap-4">
+      <div className="card-header grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
         <div>
           <div className="text-xl font-semibold">Plan</div>
           <div className="card-subtitle">Draft vs Published planning controls.</div>
         </div>
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
           <label className="text-xs text-steel-500">Plan Date</label>
-          <DatePickerInput
-            className="w-40"
-            value={selectedDate}
-            onChange={(value) => setSelectedDate(value)}
-          />
-        </div>
-        <div className="page-actions justify-self-end">
+          <div className="w-full sm:w-auto">
+            <DatePickerInput
+              className="w-full sm:w-auto"
+              value={selectedDate}
+              onChange={(value) => setSelectedDate(value)}
+            />
+          </div>
           <Badge>{statusLabel}</Badge>
           <Button onClick={runSolve} disabled={solveRun.isPending}>
             Run Plan

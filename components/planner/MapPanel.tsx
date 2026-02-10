@@ -139,12 +139,28 @@ export default function MapPanel() {
     }
   }, [plan, mapReady]);
 
+  useEffect(() => {
+    if (!mapInstance.current || !mapReady) return;
+    const handleResize = () => {
+      try {
+        mapInstance.current.resize();
+      } catch {
+        // ignore map resize errors during teardown
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mapReady, plan]);
+
   return (
-    <Card className="h-full overflow-hidden">
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle>Route Map</CardTitle>
       </CardHeader>
-      <div ref={mapRef} className="h-[360px] w-full rounded-lg" />
+      <div className="px-5 pb-5">
+        <div ref={mapRef} className="w-full aspect-[16/10] rounded-lg border border-steel-100" />
+      </div>
     </Card>
   );
 }
