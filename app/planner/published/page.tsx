@@ -57,11 +57,33 @@ function normalizePublishedPlan(plan: any) {
     if (t.toLowerCase() === "depot") return { type: "depot", label: "Depot" };
     const baseId = t.split("_Part")[0].trim();
     const d = deliveriesById.get(baseId);
-    return {
+    const item: RouteStopItem = {
       type: "delivery",
       id: baseId,
       job_name: d?.job_name || `Unknown (${baseId})`
     };
+    if (t.includes("_Part")) {
+      try {
+        const partStr = t.split("_Part", 2)[1] || "";
+        const partNo = Number((partStr.split("_", 2)[0] || "").trim());
+        if (!Number.isNaN(partNo)) item.part_no = partNo;
+      } catch {}
+    }
+    if (t.includes("_Qty")) {
+      try {
+        const qtyStr = t.split("_Qty").pop() || "";
+        const qty = Number((qtyStr.split("_", 2)[0] || "").trim());
+        if (!Number.isNaN(qty)) item.qty = qty;
+      } catch {}
+    }
+    if (t.includes("_Units")) {
+      try {
+        const unitsStr = t.split("_Units").pop() || "";
+        const units = Number((unitsStr.split("_", 2)[0] || "").trim());
+        if (!Number.isNaN(units)) item.units = units;
+      } catch {}
+    }
+    return item;
   };
 
   const normalizeStops = (route: any) => {

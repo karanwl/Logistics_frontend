@@ -63,28 +63,54 @@ export default function StopCard({
 
   const salesOrders = deliveries.map((d) => d.sales_order).filter(Boolean);
 
-  const totals = deliveries.reduce(
-    (acc, d) => {
-      acc.med_skid += d.med_skid || 0;
-      acc.small_skid += d.small_skid || 0;
-      acc.large_skid += d.large_skid || 0;
-      acc.door += d.door || 0;
-      acc.frame += d.frame || 0;
-      acc.exp_frame += d.exp_frame || 0;
-      acc.box += d.box || 0;
+  const totals = deliveryStops.reduce(
+    (acc, stopItem) => {
+      if (!stopItem.id || !deliveriesById) return acc;
+      const delivery = deliveriesById.get(String(stopItem.id));
+      if (!delivery) return acc;
+
+      const deliveryUnits = delivery.capacity_units || 0;
+      const medSkidTotal = delivery.med_skid || 0;
+      let scale = 1;
+
+      if (stopItem.units != null && deliveryUnits > 0) {
+        scale = Number(stopItem.units) / deliveryUnits;
+      } else if (stopItem.qty != null && medSkidTotal > 0) {
+        scale = Number(stopItem.qty) / medSkidTotal;
+      }
+
+      const scaled = (value?: number) => (value || 0) * scale;
+
+      if (stopItem.qty != null) {
+        acc.med_skid += Number(stopItem.qty) || 0;
+      } else {
+        acc.med_skid += scaled(delivery.med_skid);
+      }
+      acc.small_skid += scaled(delivery.small_skid);
+      acc.large_skid += scaled(delivery.large_skid);
+      acc.door += scaled(delivery.door);
+      acc.frame += scaled(delivery.frame);
+      acc.exp_frame += scaled(delivery.exp_frame);
+      acc.box += scaled(delivery.box);
       return acc;
     },
     { med_skid: 0, small_skid: 0, large_skid: 0, door: 0, frame: 0, exp_frame: 0, box: 0 }
   );
 
+  const formatQty = (value: number) => {
+    if (Number.isNaN(value)) return "";
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  };
+
   const totalsLine = [
-    totals.door ? `Door ${totals.door}` : "",
-    totals.frame ? `Frame ${totals.frame}` : "",
-    totals.exp_frame ? `Exp ${totals.exp_frame}` : "",
-    totals.med_skid ? `Med ${totals.med_skid}` : "",
-    totals.small_skid ? `Small ${totals.small_skid}` : "",
-    totals.large_skid ? `Large ${totals.large_skid}` : "",
-    totals.box ? `Box ${totals.box}` : ""
+    totals.door ? `Door ${formatQty(totals.door)}` : "",
+    totals.frame ? `Frame ${formatQty(totals.frame)}` : "",
+    totals.exp_frame ? `Exp ${formatQty(totals.exp_frame)}` : "",
+    totals.med_skid ? `Med ${formatQty(totals.med_skid)}` : "",
+    totals.small_skid ? `Small ${formatQty(totals.small_skid)}` : "",
+    totals.large_skid ? `Large ${formatQty(totals.large_skid)}` : "",
+    totals.box ? `Box ${formatQty(totals.box)}` : ""
   ].filter(Boolean).join(" - ");
 
   const deliveriesCount = uniqueIds.length;
