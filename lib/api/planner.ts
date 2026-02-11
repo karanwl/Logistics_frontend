@@ -137,6 +137,22 @@ export const useCreateJobsite = () =>
         { "content-type": "application/x-www-form-urlencoded" }
       )
   });
+
+export const useUpdateJobsite = () =>
+  useMutation({
+    mutationFn: (payload: { jobsite_id: string; updates: any }) =>
+      api.patch(
+        `/jobsites/${payload.jobsite_id}`,
+        JSON.stringify(payload.updates),
+        { "content-type": "application/json" }
+      )
+  });
+
+export const useDeleteJobsite = () =>
+  useMutation({
+    mutationFn: (payload: { jobsite_id: string }) =>
+      api.delete(`/jobsites/${payload.jobsite_id}`)
+  });
 export const useBulkUpdateDeliveries = () =>
   useMutation({
     mutationFn: (payload: { deliveries: any[] }) =>

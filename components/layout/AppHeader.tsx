@@ -10,6 +10,7 @@ const links = [
   { href: "/schedule", label: "Schedule" },
   { href: "/planner/published", label: "Published" },
   { href: "/admin", label: "Admin" },
+  { href: "/jobsites", label: "Jobsites" },
   { href: "/meeting-intake", label: "Meeting Intake" },
   { href: "/api-proxy/logout", label: "Logout" }
 ];
