@@ -14,6 +14,7 @@ export default function AdminJobsitesPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
     name: "",
@@ -75,6 +76,16 @@ export default function AdminJobsitesPage() {
     refetch();
   };
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const jobsites = (data?.jobsites || [])
+    .filter((j: any) => {
+      if (!normalizedSearch) return true;
+      const nameMatch = String(j.name || "").toLowerCase().includes(normalizedSearch);
+      const addressMatch = String(j.address || "").toLowerCase().includes(normalizedSearch);
+      return nameMatch || addressMatch;
+    })
+    .sort((a: any, b: any) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" }));
+
   return (
     <AppShell>
       <div className="admin-section">
@@ -119,8 +130,17 @@ export default function AdminJobsitesPage() {
             <div className="card-subtitle">Latest locations available for scheduling.</div>
           </div>
         </div>
+        <div className="mb-3">
+          <label className="text-xs text-steel-500" htmlFor="jobsiteSearch">Search</label>
+          <Input
+            id="jobsiteSearch"
+            placeholder="Search by name or address"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {(data?.jobsites || []).map((j: any) => (
+          {jobsites.map((j: any) => (
             <div key={j.id} className="admin-tile space-y-2">
               {editingId === String(j.id) ? (
                 <>
