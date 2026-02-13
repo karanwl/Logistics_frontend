@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { useDeliveries, usePublishedPlan } from "@/lib/api/planner";
 import { formatDate } from "@/lib/utils/dates";
@@ -24,6 +24,9 @@ type ProgressRoute = {
   durationLabel: string;
   deliveries: ProgressDelivery[];
 };
+
+const MAX_ROUTE_PANELS = 10;
+const MAX_ROUTE_STOPS = 11;
 
 function asText(value: unknown): string {
   if (value == null) return "";
@@ -146,7 +149,12 @@ function extractRouteDeliveryOrder(route: any): string[] {
   return ordered;
 }
 
-function normalizeRouteProgress(route: any, liveById: Map<string, any>, planById: Map<string, any>): ProgressRoute {
+function normalizeRouteProgress(
+  route: any,
+  liveById: Map<string, any>,
+  planById: Map<string, any>,
+  routeIndex: number
+): ProgressRoute {
   const deliveryIds = extractRouteDeliveryOrder(route);
   const deliveries = deliveryIds.map((deliveryId) => {
     const live = liveById.get(deliveryId);
@@ -181,7 +189,7 @@ function normalizeRouteProgress(route: any, liveById: Map<string, any>, planById
   const vehicleType = asText((route?.vehicle_type ?? route?.v_type ?? route?.vehicleType) || "vehicle");
 
   return {
-    routeKey: routeId || Math.random().toString(36).slice(2),
+    routeKey: routeId || `route-${routeIndex}`,
     vehicleLabel: `${vehicleType.toUpperCase()} #${routeId || "-"}`,
     driverLabel: routeDriver(route),
     distanceLabel: routeDistanceLabel(route),
@@ -193,7 +201,7 @@ function normalizeRouteProgress(route: any, liveById: Map<string, any>, planById
 function buildLiveMap(deliveries: any[]): Map<string, any> {
   const map = new Map<string, any>();
   for (const item of deliveries || []) {
-    const id = asText(item?.delivery_id || item?.id || item?.record_id);
+    const id = asText(item?.delivery_id || item?.id || item?.record_id || item?.["Delivery ID"]);
     if (!id) continue;
     map.set(id, item);
   }
@@ -204,6 +212,7 @@ export default function PlannerLiveProgressPage() {
   const today = useMemo(() => formatDate(new Date()), []);
   const planQuery = usePublishedPlan(today);
   const deliveriesQuery = useDeliveries();
+  const [selectedRouteKey, setSelectedRouteKey] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -222,9 +231,19 @@ export default function PlannerLiveProgressPage() {
   const planById = useMemo(() => buildLiveMap(planDeliveries), [planDeliveries]);
 
   const progressRoutes: ProgressRoute[] = useMemo(
-    () => routes.map((route: any) => normalizeRouteProgress(route, liveById, planById)),
+    () => routes.map((route: any, index: number) => normalizeRouteProgress(route, liveById, planById, index)),
     [routes, liveById, planById]
   );
+
+  useEffect(() => {
+    if (!progressRoutes.length) {
+      setSelectedRouteKey("");
+      return;
+    }
+    if (!selectedRouteKey || !progressRoutes.some((route) => route.routeKey === selectedRouteKey)) {
+      setSelectedRouteKey(progressRoutes[0].routeKey);
+    }
+  }, [progressRoutes, selectedRouteKey]);
 
   const doneCount = progressRoutes.reduce(
     (sum: number, route: ProgressRoute) =>
@@ -247,20 +266,24 @@ export default function PlannerLiveProgressPage() {
     0
   );
   const total = doneCount + currentCount + upcomingCount + failedCount;
+  const selectedRoute = progressRoutes.find((route) => route.routeKey === selectedRouteKey) ?? progressRoutes[0] ?? null;
+  const visibleRoutes = progressRoutes.slice(0, MAX_ROUTE_PANELS);
+  const hiddenRouteCount = Math.max(0, progressRoutes.length - visibleRoutes.length);
+  const selectedVisibleStops = selectedRoute ? selectedRoute.deliveries.slice(0, MAX_ROUTE_STOPS) : [];
+  const hiddenStopCount = selectedRoute ? Math.max(0, selectedRoute.deliveries.length - selectedVisibleStops.length) : 0;
+  const selectedCurrentStop = selectedRoute?.deliveries.find((d) => d.status === "current");
 
   return (
     <AppShell>
-      <div className="grid gap-6">
-        <section className="card">
-          <div className="card-header">
+      <div className="h-[calc(100dvh-10rem)] overflow-hidden grid grid-rows-[auto_1fr] gap-4">
+        <section className="card !p-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xl font-semibold">Today&apos;s Live Route Progress</div>
-              <div className="card-subtitle">
-                Date {today}. Auto-refreshes every 15 seconds.
-              </div>
+              <div className="text-lg font-semibold">Today&apos;s Live Route Progress</div>
+              <div className="card-subtitle">Date {today}. Auto-refreshes every 15 seconds.</div>
             </div>
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary h-9 min-h-0 px-3 py-1.5 text-xs"
               onClick={() => {
                 planQuery.refetch();
                 deliveriesQuery.refetch();
@@ -270,109 +293,182 @@ export default function PlannerLiveProgressPage() {
             </button>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
-              <div className="font-semibold text-emerald-900">Done</div>
-              <div className="text-emerald-800">{doneCount}</div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <div className="text-xs font-semibold text-emerald-900">Done</div>
+              <div className="text-sm text-emerald-800">{doneCount}</div>
             </div>
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm">
-              <div className="font-semibold text-amber-900">Current</div>
-              <div className="text-amber-800">{currentCount}</div>
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+              <div className="text-xs font-semibold text-amber-900">Current</div>
+              <div className="text-sm text-amber-800">{currentCount}</div>
             </div>
-            <div className="rounded-lg border border-steel-200 bg-steel-50 px-3 py-2 text-sm">
-              <div className="font-semibold text-steel-700">Upcoming</div>
-              <div className="text-steel-600">{upcomingCount}</div>
+            <div className="rounded-lg border border-steel-200 bg-steel-50 px-3 py-2">
+              <div className="text-xs font-semibold text-steel-700">Upcoming</div>
+              <div className="text-sm text-steel-600">{upcomingCount}</div>
             </div>
-            <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm">
-              <div className="font-semibold text-rose-900">Failed</div>
-              <div className="text-rose-800">{failedCount}</div>
+            <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2">
+              <div className="text-xs font-semibold text-rose-900">Failed</div>
+              <div className="text-sm text-rose-800">{failedCount}</div>
             </div>
           </div>
 
           {total > 0 && (
-            <div className="mt-3 text-xs text-steel-500">
+            <div className="mt-2 text-xs text-steel-500">
               Completion: {percent(doneCount, total)} ({doneCount}/{total})
             </div>
           )}
         </section>
 
         {planQuery.isLoading && (
-          <section className="card">
+          <section className="card !p-4">
             <div className="empty-state">Loading today&apos;s published route...</div>
           </section>
         )}
 
         {!planQuery.isLoading && !plan?.published && (
-          <section className="card">
+          <section className="card !p-4">
             <div className="empty-state">No published plan found for today ({today}).</div>
           </section>
         )}
 
         {!planQuery.isLoading && plan?.published && progressRoutes.length === 0 && (
-          <section className="card">
+          <section className="card !p-4">
             <div className="empty-state">No routes found in today&apos;s published plan.</div>
           </section>
         )}
 
-        {progressRoutes.map((route: ProgressRoute) => {
-          const routeDone = route.deliveries.filter((d: ProgressDelivery) => d.status === "done").length;
-          const routeCurrent = route.deliveries.filter((d: ProgressDelivery) => d.status === "current").length;
-          const routeUpcoming = route.deliveries.filter((d: ProgressDelivery) => d.status === "upcoming").length;
-          const routeFailed = route.deliveries.filter((d: ProgressDelivery) => d.status === "failed").length;
-          const routeCurrentStop = route.deliveries.find((d: ProgressDelivery) => d.status === "current");
-
-          return (
-            <section key={route.routeKey} className="card">
-              <div className="card-header">
-                <div>
-                  <div className="text-lg font-semibold">{route.vehicleLabel}</div>
-                  <div className="card-subtitle">
-                    Driver: {route.driverLabel} | {route.distanceLabel} | {route.durationLabel}
-                  </div>
-                </div>
-                <div className="text-right text-xs text-steel-500">
-                  <div>Done: {routeDone}</div>
-                  <div>Current: {routeCurrent}</div>
-                  <div>Upcoming: {routeUpcoming}</div>
-                  {routeFailed > 0 && <div className="text-rose-600">Failed: {routeFailed}</div>}
-                </div>
+        {!planQuery.isLoading && plan?.published && progressRoutes.length > 0 && (
+          <section className="min-h-0 grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)]">
+            <aside className="card !p-4 min-h-0 overflow-hidden">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-ink-900">Routes In Motion</div>
+                <div className="text-xs text-steel-500">{progressRoutes.length} active routes</div>
               </div>
 
-              <div className="mb-3 rounded-lg border border-steel-100 bg-white/75 px-3 py-2 text-sm">
-                <span className="font-semibold">Current Delivery: </span>
-                {routeCurrentStop ? `#${routeCurrentStop.deliveryId} ${routeCurrentStop.jobName}` : "No active delivery"}
-              </div>
+              <div className="grid gap-2">
+                {visibleRoutes.map((route: ProgressRoute) => {
+                  const routeDone = route.deliveries.filter((d: ProgressDelivery) => d.status === "done").length;
+                  const routeCurrent = route.deliveries.filter((d: ProgressDelivery) => d.status === "current").length;
+                  const routeUpcoming = route.deliveries.filter((d: ProgressDelivery) => d.status === "upcoming").length;
+                  const routeFailed = route.deliveries.filter((d: ProgressDelivery) => d.status === "failed").length;
+                  const routeTotal = route.deliveries.length || 1;
+                  const isActive = selectedRoute?.routeKey === route.routeKey;
 
-              {route.deliveries.length === 0 ? (
-                <div className="empty-state">No delivery stops found for this route.</div>
-              ) : (
-                <div className="grid gap-2">
-                  {route.deliveries.map((delivery: ProgressDelivery, index: number) => (
-                    <div
-                      key={`${route.routeKey}-${delivery.deliveryId}-${index}`}
-                      className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
+                  return (
+                    <button
+                      key={route.routeKey}
+                      className={`w-full rounded-xl border px-3 py-2 text-left transition ${
+                        isActive
+                          ? "border-ink-900 bg-ink-900 text-white shadow-soft"
+                          : "border-steel-200 bg-white/85 text-ink-900 hover:border-steel-300"
+                      }`}
+                      onClick={() => setSelectedRouteKey(route.routeKey)}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold">
-                            #{delivery.deliveryId} {delivery.jobName}
-                          </div>
-                          <div className="text-xs opacity-90">
-                            {delivery.salesOrder ? `SO ${delivery.salesOrder}` : "Sales Order --"}
-                          </div>
-                        </div>
-                        <div className="text-right text-xs">
-                          <div className="font-semibold">{delivery.statusLabel}</div>
-                          <div>{delivery.statusTime || "--"}</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="truncate text-sm font-semibold">{route.vehicleLabel}</div>
+                        <div className={`text-[11px] ${isActive ? "text-white/80" : "text-steel-500"}`}>
+                          {percent(routeDone, routeTotal)}
                         </div>
                       </div>
+                      <div className={`truncate text-xs ${isActive ? "text-white/80" : "text-steel-500"}`}>
+                        {route.driverLabel} | {route.distanceLabel} | {route.durationLabel}
+                      </div>
+                      <div className="mt-2 grid grid-cols-4 gap-1 text-[11px]">
+                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-emerald-300/30" : "bg-emerald-50 text-emerald-700"}`}>
+                          {routeDone}
+                        </div>
+                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-amber-300/30" : "bg-amber-50 text-amber-700"}`}>
+                          {routeCurrent}
+                        </div>
+                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-steel-300/35" : "bg-steel-100 text-steel-700"}`}>
+                          {routeUpcoming}
+                        </div>
+                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-rose-300/30" : "bg-rose-50 text-rose-700"}`}>
+                          {routeFailed}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {hiddenRouteCount > 0 && (
+                <div className="mt-2 text-xs text-steel-500">+{hiddenRouteCount} more routes hidden to keep this screen fixed.</div>
+              )}
+            </aside>
+
+            <section className="card !p-4 min-h-0 overflow-hidden">
+              {!selectedRoute ? (
+                <div className="empty-state">Select a route to view live stop progression.</div>
+              ) : (
+                <>
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-base font-semibold">{selectedRoute.vehicleLabel}</div>
+                      <div className="card-subtitle">
+                        Driver: {selectedRoute.driverLabel} | {selectedRoute.distanceLabel} | {selectedRoute.durationLabel}
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  <div className="mb-3 grid grid-cols-4 gap-2">
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
+                      Done: {selectedRoute.deliveries.filter((d) => d.status === "done").length}
+                    </div>
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                      Current: {selectedRoute.deliveries.filter((d) => d.status === "current").length}
+                    </div>
+                    <div className="rounded-lg border border-steel-200 bg-steel-50 px-2 py-1 text-xs text-steel-700">
+                      Upcoming: {selectedRoute.deliveries.filter((d) => d.status === "upcoming").length}
+                    </div>
+                    <div className="rounded-lg border border-rose-300 bg-rose-50 px-2 py-1 text-xs text-rose-900">
+                      Failed: {selectedRoute.deliveries.filter((d) => d.status === "failed").length}
+                    </div>
+                  </div>
+
+                  <div className="mb-3 rounded-lg border border-steel-100 bg-white/80 px-3 py-2 text-sm">
+                    <span className="font-semibold">Current Delivery: </span>
+                    {selectedCurrentStop ? `#${selectedCurrentStop.deliveryId} ${selectedCurrentStop.jobName}` : "No active delivery"}
+                  </div>
+
+                  {selectedRoute.deliveries.length === 0 ? (
+                    <div className="empty-state">No delivery stops found for this route.</div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {selectedVisibleStops.map((delivery: ProgressDelivery, index: number) => (
+                        <div
+                          key={`${selectedRoute.routeKey}-${delivery.deliveryId}-${index}`}
+                          className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold">
+                                #{delivery.deliveryId} {delivery.jobName}
+                              </div>
+                              <div className="text-xs opacity-90">
+                                {delivery.salesOrder ? `SO ${delivery.salesOrder}` : "Sales Order --"}
+                              </div>
+                            </div>
+                            <div className="text-right text-xs">
+                              <div className="font-semibold">{delivery.statusLabel}</div>
+                              <div>{delivery.statusTime || "--"}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {hiddenStopCount > 0 && (
+                    <div className="mt-2 text-xs text-steel-500">
+                      +{hiddenStopCount} more stops hidden to keep this screen fixed.
+                    </div>
+                  )}
+                </>
               )}
             </section>
-          );
-        })}
+          </section>
+        )}
       </div>
     </AppShell>
   );
