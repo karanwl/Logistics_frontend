@@ -25,9 +25,6 @@ type ProgressRoute = {
   deliveries: ProgressDelivery[];
 };
 
-const MAX_ROUTE_PANELS = 10;
-const MAX_ROUTE_STOPS = 11;
-
 function asText(value: unknown): string {
   if (value == null) return "";
   return String(value).trim();
@@ -267,15 +264,11 @@ export default function PlannerLiveProgressPage() {
   );
   const total = doneCount + currentCount + upcomingCount + failedCount;
   const selectedRoute = progressRoutes.find((route) => route.routeKey === selectedRouteKey) ?? progressRoutes[0] ?? null;
-  const visibleRoutes = progressRoutes.slice(0, MAX_ROUTE_PANELS);
-  const hiddenRouteCount = Math.max(0, progressRoutes.length - visibleRoutes.length);
-  const selectedVisibleStops = selectedRoute ? selectedRoute.deliveries.slice(0, MAX_ROUTE_STOPS) : [];
-  const hiddenStopCount = selectedRoute ? Math.max(0, selectedRoute.deliveries.length - selectedVisibleStops.length) : 0;
   const selectedCurrentStop = selectedRoute?.deliveries.find((d) => d.status === "current");
 
   return (
     <AppShell>
-      <div className="h-[calc(100dvh-10rem)] overflow-hidden grid grid-rows-[auto_1fr] gap-4">
+      <div className="grid gap-4 lg:h-[calc(100dvh-10rem)] lg:grid-rows-[auto_1fr]">
         <section className="card !p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -338,15 +331,15 @@ export default function PlannerLiveProgressPage() {
         )}
 
         {!planQuery.isLoading && plan?.published && progressRoutes.length > 0 && (
-          <section className="min-h-0 grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)]">
-            <aside className="card !p-4 min-h-0 overflow-hidden">
+          <section className="min-h-0 grid gap-4 lg:grid-cols-[minmax(14rem,0.68fr)_minmax(0,1.62fr)] 2xl:grid-cols-[minmax(15rem,0.6fr)_minmax(0,1.8fr)]">
+            <aside className="card !p-4 min-h-[15rem] lg:min-h-0 overflow-hidden flex flex-col">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="text-sm font-semibold text-ink-900">Routes In Motion</div>
                 <div className="text-xs text-steel-500">{progressRoutes.length} active routes</div>
               </div>
 
-              <div className="grid gap-2">
-                {visibleRoutes.map((route: ProgressRoute) => {
+              <div className="grid gap-2 overflow-y-auto pr-1 scroll-area">
+                {progressRoutes.map((route: ProgressRoute) => {
                   const routeDone = route.deliveries.filter((d: ProgressDelivery) => d.status === "done").length;
                   const routeCurrent = route.deliveries.filter((d: ProgressDelivery) => d.status === "current").length;
                   const routeUpcoming = route.deliveries.filter((d: ProgressDelivery) => d.status === "upcoming").length;
@@ -391,13 +384,9 @@ export default function PlannerLiveProgressPage() {
                   );
                 })}
               </div>
-
-              {hiddenRouteCount > 0 && (
-                <div className="mt-2 text-xs text-steel-500">+{hiddenRouteCount} more routes hidden to keep this screen fixed.</div>
-              )}
             </aside>
 
-            <section className="card !p-4 min-h-0 overflow-hidden">
+            <section className="card !p-4 min-h-0 overflow-hidden flex flex-col">
               {!selectedRoute ? (
                 <div className="empty-state">Select a route to view live stop progression.</div>
               ) : (
@@ -434,8 +423,9 @@ export default function PlannerLiveProgressPage() {
                   {selectedRoute.deliveries.length === 0 ? (
                     <div className="empty-state">No delivery stops found for this route.</div>
                   ) : (
-                    <div className="grid gap-2">
-                      {selectedVisibleStops.map((delivery: ProgressDelivery, index: number) => (
+                    <div className="min-h-0 overflow-y-auto pr-1 scroll-area">
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {selectedRoute.deliveries.map((delivery: ProgressDelivery, index: number) => (
                         <div
                           key={`${selectedRoute.routeKey}-${delivery.deliveryId}-${index}`}
                           className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
@@ -455,13 +445,8 @@ export default function PlannerLiveProgressPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {hiddenStopCount > 0 && (
-                    <div className="mt-2 text-xs text-steel-500">
-                      +{hiddenStopCount} more stops hidden to keep this screen fixed.
+                        ))}
+                      </div>
                     </div>
                   )}
                 </>
