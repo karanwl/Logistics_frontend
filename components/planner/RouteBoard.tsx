@@ -5,8 +5,8 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useDndPlanner } from "@/hooks/useDndPlanner";
 import VehicleColumn from "@/components/planner/VehicleColumn";
 
-export default function RouteBoard() {
-  const { routes, onDragEnd } = useDndPlanner();
+export default function RouteBoard({ editable = true }: { editable?: boolean }) {
+  const { routes, onDragEnd } = useDndPlanner(editable);
 
   return (
     <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -23,7 +23,7 @@ export default function RouteBoard() {
                 strategy={verticalListSortingStrategy}
               >
                 <div className="min-w-0">
-                  <VehicleColumn route={route} />
+                  <VehicleColumn route={route} editable={editable} />
                 </div>
               </SortableContext>
             ))}

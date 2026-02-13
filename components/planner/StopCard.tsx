@@ -8,7 +8,9 @@ export default function StopCard({
   index,
   stop,
   deliveriesById,
-  stopTime
+  stopTime,
+  editable = true,
+  onAddPickupCustomStop
 }: {
   id: string;
   vehicleId: string | number;
@@ -23,10 +25,13 @@ export default function StopCard({
     stop_units?: number;
     stop_units_signed?: number;
   };
+  editable?: boolean;
+  onAddPickupCustomStop?: (deliveryId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
-    data: { vehicleId, index }
+    data: { vehicleId, index },
+    disabled: !editable
   });
 
   const style = {
@@ -66,6 +71,10 @@ export default function StopCard({
   const uniqueIds = Array.from(new Set(deliveryStops.map((s) => String(s.id))));
   const deliveries = deliveriesById
     ? uniqueIds.map((id) => deliveriesById.get(id)).filter(Boolean) as DeliveryDTO[]
+    : [];
+  const isCustomStop = stop.some((item) => Boolean(item.custom_stop));
+  const pickupDeliveryIds = deliveriesById
+    ? (isCustomStop ? [] : uniqueIds.filter((deliveryId) => Boolean(deliveriesById.get(deliveryId)?.pickup)))
     : [];
 
   const salesOrders = deliveries.map((d) => d.sales_order).filter(Boolean);
@@ -153,12 +162,33 @@ export default function StopCard({
       ref={setNodeRef}
       style={style}
       className="w-full text-left rounded-lg border border-steel-100 bg-white px-3 py-2 hover:border-ink-900"
-      {...attributes}
-      {...listeners}
+      {...(editable ? attributes : {})}
+      {...(editable ? listeners : {})}
     >
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-steel-500">{arrival} {"\u2192"} {departure}</div>
+        <div className="flex items-center gap-2">
+          {editable && pickupDeliveryIds.length > 0 && onAddPickupCustomStop && (
+            <div className="flex items-center gap-1">
+              {pickupDeliveryIds.map((pickupId) => (
+                <button
+                  key={`${id}:pickup:${pickupId}`}
+                  type="button"
+                  title={`Add pickup custom stop for #${pickupId}`}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-[11px] font-semibold leading-none text-emerald-700 transition hover:bg-emerald-100"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onAddPickupCustomStop(pickupId);
+                  }}
+                >
+                  +
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="text-xs text-steel-500">{arrival} {"\u2192"} {departure}</div>
+        </div>
       </div>
       {salesOrders.length > 0 && <div className="text-xs text-steel-500">SO: {salesOrders.join(", ")}</div>}
       <div className="text-xs text-steel-500">Deliveries: {deliveriesCount || deliveryStops.length}</div>

@@ -1,19 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import { usePublishedPlan, usePublishedPlansList } from "@/lib/api/planner";
+import { usePublishedPlan, usePublishedPlansList, usePublishPlan } from "@/lib/api/planner";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import RouteBoard from "@/components/planner/RouteBoard";
 import MapPanel from "@/components/planner/MapPanel";
 import { RouteDTO, RouteStopItem } from "@/lib/types/planner";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils/dates";
 
 export default function PublishedPlansPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const listQuery = usePublishedPlansList();
   const planQuery = usePublishedPlan(selectedDate || "");
   const items = (listQuery.data?.items || []) as any[];
+  const today = useMemo(() => formatDate(new Date()), []);
+  const isTodaySelected = Boolean(selectedDate) && selectedDate === today;
+  const canEdit = isTodaySelected && Boolean(planQuery.data?.published);
+
+  useEffect(() => {
+    if (!selectedDate && items.length > 0) {
+      const todayItem = items.find((item) => item.plan_date === today);
+      setSelectedDate(todayItem?.plan_date || items[0].plan_date);
+    }
+  }, [items, selectedDate, today]);
+
+  useEffect(() => {
+    if (!canEdit && editMode) {
+      setEditMode(false);
+    }
+  }, [canEdit, editMode]);
 
   return (
     <AppShell>
@@ -31,7 +50,10 @@ export default function PublishedPlansPage() {
                 <button
                   key={item.record_id || item.plan_date}
                   className="w-full text-left rounded-lg border border-steel-100 bg-white/75 px-3 py-2 transition hover:border-ink-900 hover:bg-white"
-                  onClick={() => setSelectedDate(item.plan_date)}
+                  onClick={() => {
+                    setSelectedDate(item.plan_date);
+                    setEditMode(false);
+                  }}
                 >
                   <div className="text-sm font-semibold">{item.plan_date}</div>
                   <div className="text-xs text-steel-500">{item.published_by || "--"}</div>
@@ -40,7 +62,18 @@ export default function PublishedPlansPage() {
             </div>
           </div>
           <div className="xl:col-span-9">
-            <PublishedPlanPreview plan={planQuery.data} />
+            <PublishedPlanToolbar
+              selectedDate={selectedDate}
+              today={today}
+              canEdit={canEdit}
+              editMode={editMode}
+              onToggleEdit={() => setEditMode((value) => !value)}
+              onSaved={() => {
+                planQuery.refetch();
+                listQuery.refetch();
+              }}
+            />
+            <PublishedPlanPreview plan={planQuery.data} editable={editMode && canEdit} />
           </div>
         </div>
       </PlannerStateProvider>
@@ -200,7 +233,83 @@ function normalizePublishedPlan(plan: any) {
   return { ...plan, routes, deliveries };
 }
 
-function PublishedPlanPreview({ plan }: { plan: any }) {
+function PublishedPlanToolbar({
+  selectedDate,
+  today,
+  canEdit,
+  editMode,
+  onToggleEdit,
+  onSaved
+}: {
+  selectedDate: string | null;
+  today: string;
+  canEdit: boolean;
+  editMode: boolean;
+  onToggleEdit: () => void;
+  onSaved: () => void;
+}) {
+  const { plan } = usePlannerState();
+  const publish = usePublishPlan();
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const saveChanges = async () => {
+    if (!selectedDate || !plan || !canEdit) return;
+    setSaveMessage("Saving changes...");
+    try {
+      await publish.mutateAsync({
+        routes: plan.routes || [],
+        deliveries: plan.deliveries || [],
+        meta: plan.meta || {},
+        fleet: (plan.meta as any)?.fleet || {},
+        plan_date: selectedDate,
+        driver_profiles: (plan as any)?.driver_profiles || []
+      } as any);
+      setSaveMessage("Changes saved. Drivers were notified.");
+      onSaved();
+    } catch (error: any) {
+      setSaveMessage(error?.message || "Failed to save changes.");
+    }
+  };
+
+  return (
+    <section className="card mb-6">
+      <div className="card-header">
+        <div>
+          <div className="text-lg font-semibold">Today&apos;s Edit Controls</div>
+          <div className="card-subtitle">
+            Only today&apos;s plan ({today}) can be edited in this page.
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={editMode ? "default" : "outline"}
+            onClick={onToggleEdit}
+            disabled={!canEdit}
+          >
+            {editMode ? "Edit Mode On" : "Enable Edit Mode"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={saveChanges}
+            disabled={!canEdit || !editMode || !plan || publish.isPending}
+          >
+            {publish.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </div>
+      {!canEdit && (
+        <div className="text-xs text-steel-500">
+          {selectedDate
+            ? `Selected date ${selectedDate}. Switch to ${today} to enable editing.`
+            : "Select a published plan date to preview."}
+        </div>
+      )}
+      {saveMessage && <div className="mt-2 text-xs text-steel-500">{saveMessage}</div>}
+    </section>
+  );
+}
+
+function PublishedPlanPreview({ plan, editable = false }: { plan: any; editable?: boolean }) {
   const { setPlan } = usePlannerState();
 
   useEffect(() => {
@@ -228,7 +337,7 @@ function PublishedPlanPreview({ plan }: { plan: any }) {
   return (
     <div className="grid gap-6 xl:grid-cols-12">
       <div className="space-y-6 xl:col-span-8">
-        <RouteBoard />
+        <RouteBoard editable={editable} />
       </div>
       <div className="space-y-6 xl:col-span-4">
         <MapPanel />

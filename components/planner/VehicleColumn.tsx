@@ -3,11 +3,13 @@ import StopCard from "@/components/planner/StopCard";
 import { Badge } from "@/components/ui/badge";
 import { usePlannerState } from "@/hooks/usePlannerState";
 import { useDrivers } from "@/lib/api/planner";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { api } from "@/lib/api/client";
 
-export default function VehicleColumn({ route }: { route: RouteDTO }) {
+export default function VehicleColumn({ route, editable = true }: { route: RouteDTO; editable?: boolean }) {
   const { plan, setPlan } = usePlannerState();
   const driversQuery = useDrivers();
+  const [recalculating, setRecalculating] = useState(false);
   const deliveriesById = useMemo(() => {
     const map = new Map<string, any>();
     (plan?.deliveries || []).forEach((d) => map.set(String(d.id), d));
@@ -39,9 +41,90 @@ export default function VehicleColumn({ route }: { route: RouteDTO }) {
   const driverAssignments = (plan?.meta as any)?.driver_assignments || {};
   const selectedDriver = driverAssignments[String(route.vehicle_id)] || "";
   const setDriver = (value: string) => {
-    if (!plan) return;
+    if (!plan || !editable) return;
     const nextAssignments = { ...driverAssignments, [String(route.vehicle_id)]: value };
     setPlan({ ...plan, meta: { ...(plan.meta || {}), driver_assignments: nextAssignments } });
+  };
+
+  const recalculateRouteMetrics = async (nextPlan: any) => {
+    setRecalculating(true);
+    try {
+      const payload = (nextPlan?.routes || []).map((item: RouteDTO) => ({
+        vehicle_id: item.vehicle_id,
+        vehicle_type: item.vehicle_type,
+        stop_nodes: item.stop_nodes || []
+      }));
+      const recalced = await api.post<{ routes: any[] }>(
+        "/plan/recalculate",
+        JSON.stringify(payload),
+        { "content-type": "application/json" }
+      );
+      const updatedRoutes = (nextPlan?.routes || []).map((item: RouteDTO) => {
+        const update = (recalced?.routes || []).find((u: any) => String(u.vehicle_id) === String(item.vehicle_id));
+        if (!update) return item;
+        return {
+          ...item,
+          total_distance_m: update.total_distance_m,
+          total_time_s: update.total_time_s,
+          stop_times: update.stop_times || item.stop_times || []
+        };
+      });
+      setPlan({ ...nextPlan, routes: updatedRoutes });
+    } catch {
+      setPlan(nextPlan);
+    } finally {
+      setRecalculating(false);
+    }
+  };
+
+  const addPickupCustomStop = async (stopIndex: number, deliveryId: string) => {
+    if (!plan || !editable) return;
+    const nextRoutes = plan.routes.map((item) => ({ ...item }));
+    const routeIndex = nextRoutes.findIndex((item) => String(item.vehicle_id) === String(route.vehicle_id));
+    if (routeIndex < 0) return;
+
+    const targetRoute = nextRoutes[routeIndex];
+    const sourceDelivery = deliveriesById.get(deliveryId);
+    const customStop = [
+      {
+        type: "delivery" as const,
+        id: deliveryId,
+        job_name: `Pickup - ${sourceDelivery?.job_name || `Delivery ${deliveryId}`}`,
+        label: "Pickup Stop",
+        med_skid: 0,
+        small_skid: 0,
+        large_skid: 0,
+        door: 0,
+        frame: 0,
+        exp_frame: 0,
+        box: 0,
+        custom_stop: true,
+        custom_stop_kind: "pickup" as const,
+        custom_parent_delivery_id: deliveryId
+      }
+    ];
+
+    const nextStops = [...targetRoute.stops];
+    nextStops.splice(stopIndex + 1, 0, customStop);
+    targetRoute.stops = nextStops;
+
+    if (Array.isArray(targetRoute.stop_nodes) && targetRoute.stop_nodes.length > 0) {
+      const nextNodes = [...targetRoute.stop_nodes];
+      const sourceNode = nextNodes[Math.min(stopIndex, nextNodes.length - 1)];
+      nextNodes.splice(stopIndex + 1, 0, sourceNode);
+      targetRoute.stop_nodes = nextNodes;
+    }
+
+    if (Array.isArray(targetRoute.stop_times) && targetRoute.stop_times.length > 0) {
+      const nextTimes = [...targetRoute.stop_times];
+      const sourceTime = nextTimes[Math.min(stopIndex, nextTimes.length - 1)] || {};
+      nextTimes.splice(stopIndex + 1, 0, { ...sourceTime });
+      targetRoute.stop_times = nextTimes;
+    }
+
+    const nextPlan = { ...plan, routes: nextRoutes };
+    setPlan(nextPlan);
+    await recalculateRouteMetrics(nextPlan);
   };
 
   return (
@@ -55,13 +138,17 @@ export default function VehicleColumn({ route }: { route: RouteDTO }) {
             {route.stops.length} stops - {formatDistance(route.total_distance_m)}
           </div>
         </div>
-        <Badge>{formatDuration(route.total_time_s)}</Badge>
+        <div className="flex items-center gap-2">
+          {recalculating && <span className="text-[11px] text-steel-500">Recalculating...</span>}
+          <Badge>{formatDuration(route.total_time_s)}</Badge>
+        </div>
       </div>
       <div className="mt-2">
         <label className="text-[11px] font-semibold uppercase text-steel-500">Driver</label>
         <select
           className="mt-1 w-full rounded-md border border-steel-200 bg-white px-2 py-1 text-xs"
           value={selectedDriver}
+          disabled={!editable}
           onChange={(e) => setDriver(e.target.value)}
         >
           <option value="">Unassigned</option>
@@ -83,6 +170,8 @@ export default function VehicleColumn({ route }: { route: RouteDTO }) {
               stop={stop}
               deliveriesById={deliveriesById}
               stopTime={route.stop_times?.[index]}
+              editable={editable}
+              onAddPickupCustomStop={(deliveryId) => addPickupCustomStop(index, deliveryId)}
             />
           );
         })}

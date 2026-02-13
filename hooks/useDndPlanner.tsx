@@ -6,12 +6,13 @@ import { usePlannerState } from "@/hooks/usePlannerState";
 import { RouteDTO } from "@/lib/types/planner";
 import { api } from "@/lib/api/client";
 
-export function useDndPlanner() {
+export function useDndPlanner(editable = true) {
   const { plan, setPlan } = usePlannerState();
 
   const routes = useMemo(() => plan?.routes || [], [plan]);
 
   const onDragEnd = async (event: any) => {
+    if (!editable) return;
     const { active, over } = event;
     if (!active || !over) return;
 

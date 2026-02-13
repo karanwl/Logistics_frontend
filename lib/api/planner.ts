@@ -32,7 +32,14 @@ export const useRecomputeMetrics = () =>
 
 export const usePublishPlan = () =>
   useMutation({
-    mutationFn: (payload: { routes: unknown[]; deliveries: unknown[]; meta?: unknown; fleet?: unknown; plan_date?: string }) =>
+    mutationFn: (payload: {
+      routes: unknown[];
+      deliveries: unknown[];
+      meta?: unknown;
+      fleet?: unknown;
+      plan_date?: string;
+      driver_profiles?: unknown[];
+    }) =>
       api.post(
         "/plan/publish",
         JSON.stringify(payload),

@@ -38,6 +38,9 @@ export interface RouteStopItem {
   exp_frame?: number;
   box?: number;
   label?: string;
+  custom_stop?: boolean;
+  custom_stop_kind?: "pickup";
+  custom_parent_delivery_id?: string;
 }
 
 export interface RouteDTO {
