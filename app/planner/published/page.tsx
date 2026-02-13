@@ -20,6 +20,7 @@ export default function PublishedPlansPage() {
   const today = useMemo(() => formatDate(new Date()), []);
   const isTodaySelected = Boolean(selectedDate) && selectedDate === today;
   const canEdit = isTodaySelected && Boolean(planQuery.data?.published);
+  const source = String(planQuery.data?.source || "published_plans");
 
   useEffect(() => {
     if (!selectedDate && items.length > 0) {
@@ -67,13 +68,14 @@ export default function PublishedPlansPage() {
               today={today}
               canEdit={canEdit}
               editMode={editMode}
+              source={source}
               onToggleEdit={() => setEditMode((value) => !value)}
               onSaved={() => {
                 planQuery.refetch();
                 listQuery.refetch();
               }}
             />
-            <PublishedPlanPreview plan={planQuery.data} editable={editMode && canEdit} />
+            <PublishedPlanPreview plan={planQuery.data} editable={editMode && canEdit} source={source} />
           </div>
         </div>
       </PlannerStateProvider>
@@ -238,6 +240,7 @@ function PublishedPlanToolbar({
   today,
   canEdit,
   editMode,
+  source,
   onToggleEdit,
   onSaved
 }: {
@@ -245,6 +248,7 @@ function PublishedPlanToolbar({
   today: string;
   canEdit: boolean;
   editMode: boolean;
+  source: string;
   onToggleEdit: () => void;
   onSaved: () => void;
 }) {
@@ -279,6 +283,11 @@ function PublishedPlanToolbar({
           <div className="card-subtitle">
             Only today&apos;s plan ({today}) can be edited in this page.
           </div>
+          {source === "deliveries" ? (
+            <div className="mt-1 text-xs text-steel-500">
+              Source: delivery-backed live plan (no published blob required).
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -309,7 +318,15 @@ function PublishedPlanToolbar({
   );
 }
 
-function PublishedPlanPreview({ plan, editable = false }: { plan: any; editable?: boolean }) {
+function PublishedPlanPreview({
+  plan,
+  editable = false,
+  source
+}: {
+  plan: any;
+  editable?: boolean;
+  source: string;
+}) {
   const { setPlan } = usePlannerState();
 
   useEffect(() => {
@@ -337,6 +354,13 @@ function PublishedPlanPreview({ plan, editable = false }: { plan: any; editable?
   return (
     <div className="grid gap-6 xl:grid-cols-12">
       <div className="space-y-6 xl:col-span-8">
+        {source === "deliveries" ? (
+          <div className="card !py-2">
+            <div className="text-xs text-steel-500">
+              Viewing and editing the live delivery-backed route plan for the selected day.
+            </div>
+          </div>
+        ) : null}
         <RouteBoard editable={editable} />
       </div>
       <div className="space-y-6 xl:col-span-4">

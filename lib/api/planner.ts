@@ -69,6 +69,14 @@ export const useDeliveries = () =>
     staleTime: 10000
   });
 
+export const useLiveToday = (date: string) =>
+  useQuery({
+    queryKey: ["live", "today", date],
+    queryFn: () => api.get<any>(`/live/today?date=${encodeURIComponent(date)}`),
+    staleTime: 10000,
+    enabled: Boolean(date)
+  });
+
 export const useRescheduleDelivery = () =>
   useMutation({
     mutationFn: (payload: { delivery_id: string; scheduled_date?: string | null }) =>
