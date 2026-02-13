@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/lib/api/auth";
 
 const links = [
   { href: "/planner", label: "Planner" },
+  { href: "/planner/live", label: "Live Progress" },
   { href: "/schedule", label: "Schedule" },
   { href: "/planner/published", label: "Published" },
   { href: "/admin", label: "Admin" },
@@ -42,7 +43,7 @@ export default function AppHeader() {
       }
       let requiresAdmin = false;
       let requiresManager = false;
-      if (link.href === "/planner") {
+      if (link.href.startsWith("/planner")) {
         requiresManager = true;
       } else if (link.href === "/admin") {
         requiresAdmin = true;
