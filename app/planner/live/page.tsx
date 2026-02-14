@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { useLiveToday } from "@/lib/api/planner";
 
@@ -61,7 +61,6 @@ function contentLine(delivery: LiveDelivery): string {
 
 export default function PlannerLiveProgressPage() {
   const liveQuery = useLiveToday();
-  const [selectedRouteKey, setSelectedRouteKey] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -79,19 +78,6 @@ export default function PlannerLiveProgressPage() {
     completion_pct: 0
   };
   const routes: LiveRoute[] = Array.isArray(liveQuery.data?.routes) ? liveQuery.data.routes : [];
-
-  useEffect(() => {
-    if (!routes.length) {
-      setSelectedRouteKey("");
-      return;
-    }
-    if (!selectedRouteKey || !routes.some((route) => route.route_key === selectedRouteKey)) {
-      setSelectedRouteKey(routes[0].route_key);
-    }
-  }, [routes, selectedRouteKey]);
-
-  const selectedRoute = routes.find((route) => route.route_key === selectedRouteKey) ?? routes[0] ?? null;
-  const selectedCurrentStop = selectedRoute?.deliveries.find((delivery) => delivery.status === "current");
 
   return (
     <AppShell>
@@ -152,122 +138,90 @@ export default function PlannerLiveProgressPage() {
         )}
 
         {!liveQuery.isLoading && routes.length > 0 && (
-          <section className="grid gap-4 xl:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.6fr)]">
-            <aside className="card !p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-ink-900">Routes In Motion</div>
-                <div className="text-xs text-steel-500">{routes.length} routes</div>
-              </div>
+          <section className="card !p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold text-ink-900">Live Vehicle Routes</div>
+              <div className="text-xs text-steel-500">{routes.length} vehicles</div>
+            </div>
 
-              <div className="grid gap-2">
+            <div className="overflow-x-auto">
+              <div className="grid grid-flow-col auto-cols-[minmax(20rem,1fr)] items-stretch gap-3 pb-1">
                 {routes.map((route) => {
-                  const isActive = selectedRoute?.route_key === route.route_key;
+                  const currentStop = route.deliveries.find((delivery) => delivery.status === "current");
 
                   return (
-                    <button
+                    <article
                       key={route.route_key}
-                      className={`w-full rounded-xl border px-3 py-2 text-left transition ${
-                        isActive
-                          ? "border-ink-900 bg-ink-900 text-white shadow-soft"
-                          : "border-steel-200 bg-white/85 text-ink-900 hover:border-steel-300"
-                      }`}
-                      onClick={() => setSelectedRouteKey(route.route_key)}
+                      className="flex h-[72vh] min-h-[34rem] flex-col rounded-xl border border-steel-200 bg-white/90 p-3"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="truncate text-sm font-semibold">{route.driver_name}</div>
-                        <div className={`text-[11px] ${isActive ? "text-white/80" : "text-steel-500"}`}>
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-ink-900">{route.driver_name}</div>
+                          <div className="truncate text-xs text-steel-500">
+                            Stops {route.total_stops} | Done {route.done_stops} | Current {route.current_stops}
+                            {route.last_completed_at ? ` | Last complete ${route.last_completed_at}` : ""}
+                          </div>
+                        </div>
+                        <div className="rounded-md border border-steel-200 bg-steel-50 px-2 py-0.5 text-[11px] font-semibold text-steel-700">
                           {route.completion_pct}%
                         </div>
                       </div>
-                      <div className={`truncate text-xs ${isActive ? "text-white/80" : "text-steel-500"}`}>
-                        {route.total_stops} stops | Done {route.done_stops} | Current {route.current_stops}
-                      </div>
-                      <div className="mt-2 grid grid-cols-4 gap-1 text-[11px]">
-                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-emerald-300/30" : "bg-emerald-50 text-emerald-700"}`}>
+
+                      <div className="mb-2 grid grid-cols-4 gap-1 text-[11px]">
+                        <div className="rounded-md bg-emerald-50 px-1 py-0.5 text-center text-emerald-700">
                           {route.done_stops}
                         </div>
-                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-amber-300/30" : "bg-amber-50 text-amber-700"}`}>
+                        <div className="rounded-md bg-amber-50 px-1 py-0.5 text-center text-amber-700">
                           {route.current_stops}
                         </div>
-                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-steel-300/35" : "bg-steel-100 text-steel-700"}`}>
+                        <div className="rounded-md bg-steel-100 px-1 py-0.5 text-center text-steel-700">
                           {route.upcoming_stops}
                         </div>
-                        <div className={`rounded-md px-1 py-0.5 text-center ${isActive ? "bg-rose-300/30" : "bg-rose-50 text-rose-700"}`}>
+                        <div className="rounded-md bg-rose-50 px-1 py-0.5 text-center text-rose-700">
                           {route.failed_stops}
                         </div>
                       </div>
-                    </button>
+
+                      <div className="mb-2 rounded-lg border border-steel-100 bg-white/80 px-2 py-1 text-xs">
+                        <span className="font-semibold">Current Delivery: </span>
+                        {currentStop ? `#${currentStop.delivery_id} ${currentStop.job_name}` : "No active delivery"}
+                      </div>
+
+                      {route.deliveries.length === 0 ? (
+                        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-steel-200 text-xs text-steel-500">
+                          No deliveries found for this route.
+                        </div>
+                      ) : (
+                        <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+                          {route.deliveries.map((delivery, index) => (
+                            <div
+                              key={`${route.route_key}-${delivery.delivery_id}-${index}`}
+                              className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="truncate text-sm font-semibold">
+                                    #{delivery.delivery_id} {delivery.job_name}
+                                  </div>
+                                  <div className="text-xs opacity-90">
+                                    {asText(delivery.sales_order) ? `SO ${delivery.sales_order}` : "Sales Order --"}
+                                  </div>
+                                </div>
+                                <div className="text-right text-xs">
+                                  <div className="font-semibold">{delivery.status_label || "Upcoming"}</div>
+                                  <div>{asText(delivery.status_time) || "--"}</div>
+                                </div>
+                              </div>
+                              <div className="mt-1 text-[11px] opacity-85">{contentLine(delivery)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </article>
                   );
                 })}
               </div>
-            </aside>
-
-            <section className="card !p-4">
-              {!selectedRoute ? (
-                <div className="empty-state">Select a route to view live stop progression.</div>
-              ) : (
-                <>
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-base font-semibold">{selectedRoute.driver_name}</div>
-                      <div className="card-subtitle">
-                        Stops {selectedRoute.total_stops} | Done {selectedRoute.done_stops} | Current {selectedRoute.current_stops}
-                        {selectedRoute.last_completed_at ? ` | Last complete ${selectedRoute.last_completed_at}` : ""}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs text-emerald-900">
-                      Done: {selectedRoute.done_stops}
-                    </div>
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                      Current: {selectedRoute.current_stops}
-                    </div>
-                    <div className="rounded-lg border border-steel-200 bg-steel-50 px-2 py-1 text-xs text-steel-700">
-                      Upcoming: {selectedRoute.upcoming_stops}
-                    </div>
-                    <div className="rounded-lg border border-rose-300 bg-rose-50 px-2 py-1 text-xs text-rose-900">
-                      Failed: {selectedRoute.failed_stops}
-                    </div>
-                  </div>
-
-                  <div className="mb-3 rounded-lg border border-steel-100 bg-white/80 px-3 py-2 text-sm">
-                    <span className="font-semibold">Current Delivery: </span>
-                    {selectedCurrentStop ? `#${selectedCurrentStop.delivery_id} ${selectedCurrentStop.job_name}` : "No active delivery"}
-                  </div>
-
-                  {selectedRoute.deliveries.length === 0 ? (
-                    <div className="empty-state">No deliveries found for this route.</div>
-                  ) : (
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {selectedRoute.deliveries.map((delivery, index) => (
-                        <div
-                          key={`${selectedRoute.route_key}-${delivery.delivery_id}-${index}`}
-                          className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold">
-                                #{delivery.delivery_id} {delivery.job_name}
-                              </div>
-                              <div className="text-xs opacity-90">
-                                {asText(delivery.sales_order) ? `SO ${delivery.sales_order}` : "Sales Order --"}
-                              </div>
-                            </div>
-                            <div className="text-right text-xs">
-                              <div className="font-semibold">{delivery.status_label || "Upcoming"}</div>
-                              <div>{asText(delivery.status_time) || "--"}</div>
-                            </div>
-                          </div>
-                          <div className="mt-1 text-[11px] opacity-85">{contentLine(delivery)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
+            </div>
           </section>
         )}
       </div>
