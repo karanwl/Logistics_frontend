@@ -1,9 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import { useLiveToday } from "@/lib/api/planner";
-import { formatDate } from "@/lib/utils/dates";
 
 type ProgressState = "done" | "current" | "upcoming" | "failed";
 
@@ -61,8 +60,7 @@ function contentLine(delivery: LiveDelivery): string {
 }
 
 export default function PlannerLiveProgressPage() {
-  const today = useMemo(() => formatDate(new Date()), []);
-  const liveQuery = useLiveToday(today);
+  const liveQuery = useLiveToday();
   const [selectedRouteKey, setSelectedRouteKey] = useState("");
 
   useEffect(() => {
@@ -103,7 +101,7 @@ export default function PlannerLiveProgressPage() {
             <div>
               <div className="text-lg font-semibold">Today&apos;s Live Route Progress</div>
               <div className="card-subtitle">
-                Date {liveQuery.data?.date || today}. SQL-backed live feed. Auto-refreshes every 10 seconds.
+                Date {liveQuery.data?.date || "business date"}. SQL-backed live feed. Auto-refreshes every 10 seconds.
               </div>
             </div>
             <button

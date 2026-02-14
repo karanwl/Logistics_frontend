@@ -69,12 +69,13 @@ export const useDeliveries = () =>
     staleTime: 10000
   });
 
-export const useLiveToday = (date: string) =>
+export const useLiveToday = (date?: string) =>
   useQuery({
-    queryKey: ["live", "today", date],
-    queryFn: () => api.get<any>(`/live/today?date=${encodeURIComponent(date)}`),
+    queryKey: ["live", "today", date || "business-date"],
+    queryFn: () =>
+      api.get<any>(date ? `/live/today?date=${encodeURIComponent(date)}` : "/live/today"),
     staleTime: 10000,
-    enabled: Boolean(date)
+    enabled: true
   });
 
 export const useRescheduleDelivery = () =>
