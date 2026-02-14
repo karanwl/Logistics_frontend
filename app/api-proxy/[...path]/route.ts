@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BASE_URL = process.env.FASTAPI_BASE_URL || "https://logistics-backend-6f0pea.fly.dev";
+const DEFAULT_BASE_URL = "https://logistics-backend-6f0pea.fly.dev";
+
+function resolveBaseUrl(rawBaseUrl: string | undefined): string {
+  const trimmed = (rawBaseUrl || "").trim();
+  const unquoted = trimmed.replace(/^['"]|['"]$/g, "").trim();
+  return unquoted || DEFAULT_BASE_URL;
+}
+
+const BASE_URL = resolveBaseUrl(process.env.FASTAPI_BASE_URL);
 
 async function proxyRequest(req: NextRequest, params: { path: string[] }) {
   const targetUrl = new URL(req.url);
@@ -23,7 +31,18 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }) {
     init.body = await req.arrayBuffer();
   }
 
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    return NextResponse.json(
+      {
+        detail:
+          "Proxy upstream request failed. Check FASTAPI_BASE_URL (no quotes/trailing spaces) and backend availability."
+      },
+      { status: 502 }
+    );
+  }
   const responseHeaders = new Headers();
   const setCookie = (res.headers as any).getSetCookie?.() ?? [];
   if (Array.isArray(setCookie)) {
