@@ -18,6 +18,21 @@ import {
 } from "@/lib/api/planner";
 import { startOfWeek, addDays, formatDate } from "@/lib/utils/dates";
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
+
 function toMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -31,7 +46,12 @@ function addMonths(date: Date, count: number) {
 }
 
 function monthLabel(date: Date) {
-  return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function parseDateKey(key: string) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
 }
 
 function compareDate(a: string, b: string) {
@@ -39,9 +59,8 @@ function compareDate(a: string, b: string) {
   return a < b ? -1 : 1;
 }
 
-function statusColor(dateKey: string, psDelivered: boolean) {
-  const today = formatDate(new Date());
-  const cmp = compareDate(dateKey, today);
+function statusColor(dateKey: string, psDelivered: boolean, todayKey: string) {
+  const cmp = compareDate(dateKey, todayKey);
   if (cmp >= 0) return "bg-orange-200";
   return psDelivered ? "bg-green-200" : "bg-red-200";
 }
@@ -139,11 +158,12 @@ function DroppableColumn({ columnKey, title, items }: { columnKey: string; title
 }
 
 export default function SchedulePage() {
-  const [weekDate, setWeekDate] = useState(() => formatDate(new Date()));
+  const [todayKey] = useState(() => formatDate(new Date()));
+  const [weekDate, setWeekDate] = useState(todayKey);
   const [view, setView] = useState<"board" | "calendar" | "list">("calendar");
   const [search, setSearch] = useState("");
   const [listDate, setListDate] = useState("");
-  const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
+  const [monthDate, setMonthDate] = useState(() => startOfMonth(parseDateKey(todayKey)));
   const [editMode, setEditMode] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [edits, setEdits] = useState<Record<string, any>>({});
@@ -493,6 +513,7 @@ export default function SchedulePage() {
                     key={key}
                     date={d}
                     dateKey={key}
+                    todayKey={todayKey}
                     inMonth={inMonth}
                     items={items}
                     expanded={Boolean(expandedDays[key])}
@@ -843,6 +864,7 @@ export default function SchedulePage() {
 function CalendarDay({
   date,
   dateKey,
+  todayKey,
   inMonth,
   items,
   expanded,
@@ -851,6 +873,7 @@ function CalendarDay({
 }: {
   date: Date;
   dateKey: string;
+  todayKey: string;
   inMonth: boolean;
   items: any[];
   expanded: boolean;
@@ -869,7 +892,13 @@ function CalendarDay({
       <div className="mt-1 space-y-1">
         <SortableContext items={items.map((i: any) => i.delivery_id)} strategy={verticalListSortingStrategy}>
           {visible.map((item) => (
-            <CalendarJob key={item.delivery_id} item={item} dateKey={dateKey} onClick={() => onOpen(item)} />
+            <CalendarJob
+              key={item.delivery_id}
+              item={item}
+              dateKey={dateKey}
+              todayKey={todayKey}
+              onClick={() => onOpen(item)}
+            />
           ))}
         </SortableContext>
         {items.length > 3 && (
@@ -882,7 +911,17 @@ function CalendarDay({
   );
 }
 
-function CalendarJob({ item, dateKey, onClick }: { item: any; dateKey: string; onClick: () => void }) {
+function CalendarJob({
+  item,
+  dateKey,
+  todayKey,
+  onClick
+}: {
+  item: any;
+  dateKey: string;
+  todayKey: string;
+  onClick: () => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: item.delivery_id,
     data: { deliveryId: item.delivery_id, from: dateKey, columnKey: dateKey }
@@ -892,7 +931,7 @@ function CalendarJob({ item, dateKey, onClick }: { item: any; dateKey: string; o
     <button
       ref={setNodeRef}
       type="button"
-      className={`text-xs text-ink-900 text-left rounded-md px-2 py-1 w-full ${statusColor(dateKey, Boolean(item.ps_delivered))}`}
+      className={`text-xs text-ink-900 text-left rounded-md px-2 py-1 w-full ${statusColor(dateKey, Boolean(item.ps_delivered), todayKey)}`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
