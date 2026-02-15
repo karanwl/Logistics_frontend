@@ -31,6 +31,13 @@ function progressLabel(value: LiveProgress): string {
   return "Upcoming";
 }
 
+function deliveryChipClass(value: LiveProgress): string {
+  if (value === "done") return "border-emerald-300 bg-emerald-50 text-emerald-800";
+  if (value === "current") return "border-amber-300 bg-amber-50 text-amber-900";
+  if (value === "failed") return "border-rose-300 bg-rose-50 text-rose-900";
+  return "border-steel-200 bg-steel-50 text-steel-700";
+}
+
 function compactStatusTime(value: unknown): string {
   const raw = asText(value);
   if (!raw) return "";
@@ -231,10 +238,8 @@ export default function StopCard({
         ? "border-rose-300 bg-rose-50/60"
         : "";
 
-  const liveSummary = liveEntries.slice(0, 3)
-    .map((row) => `#${row.id} ${row.label}${row.time ? ` ${row.time}` : ""}`)
-    .join(" | ");
-  const overflow = liveEntries.length > 3 ? ` +${liveEntries.length - 3} more` : "";
+  const visibleLiveEntries = liveEntries.slice(0, 4);
+  const overflowCount = Math.max(0, liveEntries.length - visibleLiveEntries.length);
 
   return (
     <div
@@ -287,8 +292,21 @@ export default function StopCard({
             {liveCounts.upcoming > 0 ? <span className="text-steel-600">Upcoming {liveCounts.upcoming}</span> : null}
             {liveCounts.failed > 0 ? <span className="text-rose-800">Failed {liveCounts.failed}</span> : null}
           </div>
-          <div className="text-[11px] text-steel-500">
-            {liveSummary}{overflow}
+          <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
+            {visibleLiveEntries.map((row) => (
+              <span
+                key={`live-chip:${id}:${row.id}`}
+                className={`rounded-full border px-2 py-0.5 font-semibold ${deliveryChipClass(row.progress)}`}
+                title={`Delivery ${row.id} - ${row.label}${row.time ? ` at ${row.time}` : ""}`}
+              >
+                #{row.id} {row.label}{row.time ? ` ${row.time}` : ""}
+              </span>
+            ))}
+            {overflowCount > 0 ? (
+              <span className="rounded-full border border-steel-200 bg-white/80 px-2 py-0.5 font-semibold text-steel-600">
+                +{overflowCount} more
+              </span>
+            ) : null}
           </div>
         </>
       ) : null}

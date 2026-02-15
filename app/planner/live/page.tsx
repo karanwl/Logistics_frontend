@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
 import RouteBoard from "@/components/planner/RouteBoard";
-import MapPanel from "@/components/planner/MapPanel";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { Button } from "@/components/ui/button";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
@@ -228,13 +227,6 @@ function LivePlannerWorkspace({
           </div>
         </div>
 
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-steel-100">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-ink-900 to-accent"
-            style={{ width: `${Math.max(0, Math.min(100, Number(summary.completion_pct) || 0))}%` }}
-          />
-        </div>
-
         {!canEdit ? (
           <div className="mt-3 text-xs text-steel-500">
             Editing is only enabled for today ({today}). Loaded plan date: {selectedDate}.
@@ -259,7 +251,6 @@ function LivePlannerWorkspace({
         </div>
 
         <div className="space-y-6 xl:col-span-4">
-          <MapPanel />
           <UnassignedPanel />
         </div>
       </div>
