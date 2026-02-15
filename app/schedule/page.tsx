@@ -330,9 +330,22 @@ export default function SchedulePage() {
       return;
     }
     setSaveStatus("Saving...");
-    await bulkUpdate.mutateAsync({ deliveries: payload });
+    const result: any = await bulkUpdate.mutateAsync({ deliveries: payload });
+    const updated = Number(result?.updated || 0);
+    const errors = Array.isArray(result?.errors) ? result.errors : [];
+    if (errors.length > 0) {
+      const first = errors[0] || {};
+      setSaveStatus(
+        `Updated ${updated}. ${errors.length} failed${first.error ? `: ${first.error}` : "."}`
+      );
+      if (updated > 0) {
+        refetch();
+      }
+      return;
+    }
+
     setEdits({});
-    setSaveStatus("Saved.");
+    setSaveStatus(updated > 0 ? `Saved ${updated} change${updated === 1 ? "" : "s"}.` : "No rows were updated.");
     refetch();
     if (view === "list") {
       setView("calendar");
