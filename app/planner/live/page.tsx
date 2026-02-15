@@ -251,7 +251,7 @@ function LivePlannerWorkspace({
         </div>
 
         <div className="space-y-6 xl:col-span-4">
-          <UnassignedPanel />
+          <UnassignedPanel editable={editMode && canEdit} planDate={selectedDate} />
         </div>
       </div>
     </div>

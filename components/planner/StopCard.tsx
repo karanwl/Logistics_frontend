@@ -231,12 +231,14 @@ export default function StopCard({
           : "upcoming";
 
   const stopLiveShell = stopLiveProgress === "done"
-    ? "border-emerald-200 bg-emerald-50/60"
+    ? "border-emerald-300 bg-emerald-100/90 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.14)]"
     : stopLiveProgress === "current"
-      ? "border-amber-300 bg-amber-50/60"
+      ? "border-amber-300 bg-amber-100/90 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.16)]"
       : stopLiveProgress === "failed"
-        ? "border-rose-300 bg-rose-50/60"
-        : "";
+        ? "border-rose-300 bg-rose-100/90 shadow-[inset_0_0_0_1px_rgba(244,63,94,0.14)]"
+        : stopLiveProgress === "upcoming"
+          ? "border-sky-200 bg-sky-50/90 shadow-[inset_0_0_0_1px_rgba(14,165,233,0.12)]"
+          : "border-steel-100 bg-white";
 
   const visibleLiveEntries = liveEntries.slice(0, 4);
   const overflowCount = Math.max(0, liveEntries.length - visibleLiveEntries.length);
@@ -245,7 +247,7 @@ export default function StopCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`w-full text-left rounded-lg border border-steel-100 bg-white px-3 py-2 hover:border-ink-900 ${stopLiveShell}`}
+      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-ink-900 ${stopLiveShell}`}
       {...(editable ? attributes : {})}
       {...(editable ? listeners : {})}
     >

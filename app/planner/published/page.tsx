@@ -141,7 +141,7 @@ function PublishedPlanPreview({
       </div>
       <div className="space-y-6 xl:col-span-4">
         <MapPanel />
-        <UnassignedPanel />
+        <UnassignedPanel editable={false} />
       </div>
     </div>
   );
