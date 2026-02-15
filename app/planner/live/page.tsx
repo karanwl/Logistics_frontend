@@ -12,6 +12,7 @@ import { normalizePublishedPlan } from "@/lib/planner/normalizePlan";
 import { formatDate } from "@/lib/utils/dates";
 
 type ProgressState = "done" | "current" | "upcoming" | "failed";
+type StatusFilter = "all" | ProgressState;
 
 type LiveDelivery = {
   delivery_id: string;
@@ -44,16 +45,34 @@ type LiveRoute = {
   deliveries: LiveDelivery[];
 };
 
+type LiveDeliveryRow = LiveDelivery & {
+  route_key: string;
+  vehicle_label: string;
+  driver_name: string;
+};
+
 function asText(value: unknown): string {
   if (value == null) return "";
   return String(value).trim();
 }
 
-function stateClasses(state: ProgressState): string {
-  if (state === "done") return "bg-emerald-50 border-emerald-200 text-emerald-900";
-  if (state === "current") return "bg-amber-50 border-amber-300 text-amber-900";
-  if (state === "failed") return "bg-rose-50 border-rose-300 text-rose-900";
-  return "bg-steel-50 border-steel-200 text-steel-700";
+function vehicleLabel(route: LiveRoute): string {
+  const type = (route.vehicle_type || "vehicle").toString().toUpperCase();
+  return route.vehicle_id ? `${type} ${route.vehicle_id}` : type;
+}
+
+function statusShellClass(state: ProgressState): string {
+  if (state === "done") return "border-emerald-200 bg-emerald-50/85";
+  if (state === "current") return "border-amber-300 bg-amber-50/85";
+  if (state === "failed") return "border-rose-300 bg-rose-50/85";
+  return "border-steel-200 bg-steel-50/85";
+}
+
+function statusLabelClass(state: ProgressState): string {
+  if (state === "done") return "text-emerald-800";
+  if (state === "current") return "text-amber-900";
+  if (state === "failed") return "text-rose-900";
+  return "text-steel-700";
 }
 
 function contentLine(delivery: LiveDelivery): string {
@@ -66,6 +85,22 @@ function contentLine(delivery: LiveDelivery): string {
   if (Number(delivery.large_skid || 0) > 0) chunks.push(`Large ${delivery.large_skid}`);
   if (Number(delivery.box || 0) > 0) chunks.push(`Box ${delivery.box}`);
   return chunks.join(" | ") || "No items";
+}
+
+function flattenLiveRows(routes: LiveRoute[]): LiveDeliveryRow[] {
+  const rows: LiveDeliveryRow[] = [];
+  for (const route of routes) {
+    const label = vehicleLabel(route);
+    for (const delivery of route.deliveries || []) {
+      rows.push({
+        ...delivery,
+        route_key: route.route_key,
+        vehicle_label: label,
+        driver_name: route.driver_name || "Unassigned"
+      });
+    }
+  }
+  return rows;
 }
 
 export default function PlannerLiveProgressPage() {
@@ -93,185 +128,42 @@ export default function PlannerLiveProgressPage() {
   return (
     <AppShell>
       <PlannerStateProvider>
-        <div className="grid gap-4">
-          <section className="card !p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-lg font-semibold">Today&apos;s Live Route Progress</div>
-                <div className="card-subtitle">
-                  Date {liveQuery.data?.date || "business date"}. SQL-backed live feed. Auto-refreshes every 10 seconds.
-                </div>
-              </div>
-              <button
-                className="btn btn-secondary h-9 min-h-0 px-3 py-1.5 text-xs"
-                onClick={() => {
-                  liveQuery.refetch();
-                }}
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-                <div className="text-xs font-semibold text-emerald-900">Done</div>
-                <div className="text-sm text-emerald-800">{summary.done}</div>
-              </div>
-              <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
-                <div className="text-xs font-semibold text-amber-900">Current</div>
-                <div className="text-sm text-amber-800">{summary.current}</div>
-              </div>
-              <div className="rounded-lg border border-steel-200 bg-steel-50 px-3 py-2">
-                <div className="text-xs font-semibold text-steel-700">Upcoming</div>
-                <div className="text-sm text-steel-600">{summary.upcoming}</div>
-              </div>
-              <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2">
-                <div className="text-xs font-semibold text-rose-900">Failed</div>
-                <div className="text-sm text-rose-800">{summary.failed}</div>
-              </div>
-            </div>
-
-            <div className="mt-2 text-xs text-steel-500">
-              Completion: {summary.completion_pct}% ({summary.done}/{summary.total || 0})
-              {liveQuery.data?.last_status_update_at ? ` | Last update ${liveQuery.data.last_status_update_at}` : ""}
-            </div>
-          </section>
-
-          {liveQuery.isLoading && (
-            <section className="card !p-4">
-              <div className="empty-state">Loading live route progress...</div>
-            </section>
-          )}
-
-          {!liveQuery.isLoading && routes.length === 0 && (
-            <section className="card !p-4">
-              <div className="empty-state">No deliveries found for today.</div>
-            </section>
-          )}
-
-          {!liveQuery.isLoading && routes.length > 0 && (
-            <section className="card !p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-ink-900">Live Vehicle Routes</div>
-                <div className="text-xs text-steel-500">{routes.length} vehicles</div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <div className="grid grid-flow-col auto-cols-[minmax(20rem,1fr)] items-stretch gap-3 pb-1">
-                  {routes.map((route) => {
-                    const currentStop = route.deliveries.find((delivery) => delivery.status === "current");
-                    const vehicleLabel = route.vehicle_id
-                      ? `${(route.vehicle_type || "vehicle").toString().toUpperCase()} ${route.vehicle_id}`
-                      : (route.vehicle_type || "vehicle").toString().toUpperCase();
-
-                    return (
-                      <article
-                        key={route.route_key}
-                        className="flex h-[72vh] min-h-[34rem] flex-col rounded-xl border border-steel-200 bg-white/90 p-3"
-                      >
-                        <div className="mb-2 flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="truncate text-[11px] font-semibold uppercase tracking-wide text-steel-500">
-                              {vehicleLabel}
-                            </div>
-                            <div className="truncate text-sm font-semibold text-ink-900">{route.driver_name || "Unassigned"}</div>
-                            <div className="truncate text-xs text-steel-500">
-                              Stops {route.total_stops} | Done {route.done_stops} | Current {route.current_stops}
-                              {route.last_completed_at ? ` | Last complete ${route.last_completed_at}` : ""}
-                            </div>
-                          </div>
-                          <div className="rounded-md border border-steel-200 bg-steel-50 px-2 py-0.5 text-[11px] font-semibold text-steel-700">
-                            {route.completion_pct}%
-                          </div>
-                        </div>
-
-                        <div className="mb-2 grid grid-cols-4 gap-1 text-[11px]">
-                          <div className="rounded-md bg-emerald-50 px-1 py-0.5 text-center text-emerald-700">
-                            {route.done_stops}
-                          </div>
-                          <div className="rounded-md bg-amber-50 px-1 py-0.5 text-center text-amber-700">
-                            {route.current_stops}
-                          </div>
-                          <div className="rounded-md bg-steel-100 px-1 py-0.5 text-center text-steel-700">
-                            {route.upcoming_stops}
-                          </div>
-                          <div className="rounded-md bg-rose-50 px-1 py-0.5 text-center text-rose-700">
-                            {route.failed_stops}
-                          </div>
-                        </div>
-
-                        <div className="mb-2 rounded-lg border border-steel-100 bg-white/80 px-2 py-1 text-xs">
-                          <span className="font-semibold">Current Delivery: </span>
-                          {currentStop ? `#${currentStop.delivery_id} ${currentStop.job_name}` : "No active delivery"}
-                        </div>
-
-                        {route.deliveries.length === 0 ? (
-                          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-steel-200 text-xs text-steel-500">
-                            No deliveries found for this route.
-                          </div>
-                        ) : (
-                          <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-                            {route.deliveries.map((delivery, index) => (
-                              <div
-                                key={`${route.route_key}-${delivery.delivery_id}-${index}`}
-                                className={`rounded-lg border px-3 py-2 ${stateClasses(delivery.status)}`}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="min-w-0">
-                                    <div className="truncate text-sm font-semibold">
-                                      #{delivery.delivery_id} {delivery.job_name}
-                                    </div>
-                                    <div className="text-xs opacity-90">
-                                      {asText(delivery.sales_order) ? `SO ${delivery.sales_order}` : "Sales Order --"}
-                                    </div>
-                                  </div>
-                                  <div className="text-right text-xs">
-                                    <div className="font-semibold">{delivery.status_label || "Upcoming"}</div>
-                                    <div>{asText(delivery.status_time) || "--"}</div>
-                                  </div>
-                                </div>
-                                <div className="mt-1 text-[11px] opacity-85">{contentLine(delivery)}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </article>
-                    );
-                  })}
-                </div>
-              </div>
-            </section>
-          )}
-
-          <LivePlanEditor
-            today={today}
-            planQuery={planQuery}
-            onSaved={() => {
-              planQuery.refetch();
-              liveQuery.refetch();
-            }}
-          />
-        </div>
+        <LiveOperationsWorkspace
+          today={today}
+          summary={summary}
+          routes={routes}
+          liveQuery={liveQuery}
+          planQuery={planQuery}
+        />
       </PlannerStateProvider>
     </AppShell>
   );
 }
 
-function LivePlanEditor({
+function LiveOperationsWorkspace({
   today,
-  planQuery,
-  onSaved
+  summary,
+  routes,
+  liveQuery,
+  planQuery
 }: {
   today: string;
+  summary: any;
+  routes: LiveRoute[];
+  liveQuery: any;
   planQuery: any;
-  onSaved: () => void;
 }) {
   const { plan, setPlan } = usePlannerState();
   const publish = usePublishPlan();
+
   const [editMode, setEditMode] = useState(true);
   const [saveMessage, setSaveMessage] = useState("");
-  const source = String(planQuery.data?.source || "published_plans");
+  const [selectedRouteKey, setSelectedRouteKey] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
+
   const selectedDate = String(planQuery.data?.plan_date || today);
+  const source = String(planQuery.data?.source || "published_plans");
   const canEdit = Boolean(planQuery.data?.published) && selectedDate === today;
 
   useEffect(() => {
@@ -281,6 +173,32 @@ function LivePlanEditor({
     }
     setPlan(normalizePublishedPlan(planQuery.data));
   }, [planQuery.data, setPlan]);
+
+  useEffect(() => {
+    if (selectedRouteKey === "all") return;
+    const stillExists = routes.some((route) => route.route_key === selectedRouteKey);
+    if (!stillExists) {
+      setSelectedRouteKey("all");
+    }
+  }, [routes, selectedRouteKey]);
+
+  const allRows = useMemo(() => flattenLiveRows(routes), [routes]);
+
+  const filteredRows = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return allRows.filter((row) => {
+      if (selectedRouteKey !== "all" && row.route_key !== selectedRouteKey) return false;
+      if (statusFilter !== "all" && row.status !== statusFilter) return false;
+      if (!needle) return true;
+      const hay = `${row.delivery_id} ${row.job_name} ${row.sales_order || ""} ${row.driver_name} ${row.vehicle_label}`.toLowerCase();
+      return hay.includes(needle);
+    });
+  }, [allRows, search, selectedRouteKey, statusFilter]);
+
+  const selectedRoute = useMemo(() => {
+    if (selectedRouteKey === "all") return null;
+    return routes.find((route) => route.route_key === selectedRouteKey) || null;
+  }, [routes, selectedRouteKey]);
 
   const saveChanges = async () => {
     if (!selectedDate || !plan || !canEdit) return;
@@ -295,59 +213,81 @@ function LivePlanEditor({
         driver_profiles: (plan as any)?.driver_profiles || []
       } as any);
       setSaveMessage("Changes saved. Drivers were notified.");
-      onSaved();
+      liveQuery.refetch();
+      planQuery.refetch();
     } catch (error: any) {
       setSaveMessage(error?.message || "Failed to save changes.");
     }
   };
 
-  if (planQuery.isLoading) {
-    return (
-      <section className="card !p-4">
-        <div className="empty-state">Loading today&apos;s editable plan...</div>
-      </section>
-    );
-  }
-
-  if (!planQuery.data?.published) {
-    return (
-      <section className="card !p-4">
-        <div className="text-sm font-semibold">Live Plan Editor</div>
-        <div className="card-subtitle mt-1">No published/live plan is available for today yet.</div>
-      </section>
-    );
-  }
-
   return (
-    <>
-      <section className="card !p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="grid gap-6">
+      <section className="card !p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold">Edit Today&apos;s Plan In Live</div>
+            <div className="text-lg font-semibold">Live Operations Workspace</div>
             <div className="card-subtitle">
-              Full route editing for {today} is now handled here. Planner published view is read-only.
+              Track live delivery execution and edit today&apos;s route plan in one screen.
             </div>
-            {source === "deliveries" ? (
-              <div className="mt-1 text-xs text-steel-500">
-                Source: delivery-backed live plan (no published blob required).
-              </div>
-            ) : null}
+            <div className="mt-1 text-xs text-steel-500">
+              Date {liveQuery.data?.date || today}
+              {liveQuery.data?.last_status_update_at ? ` | Last status update ${liveQuery.data.last_status_update_at}` : ""}
+              {source === "deliveries" ? " | Source: delivery-backed live plan" : ""}
+            </div>
           </div>
+
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant={editMode ? "default" : "outline"} onClick={() => setEditMode((value) => !value)} disabled={!canEdit}>
-              {editMode ? "Edit Mode On" : "Enable Edit Mode"}
-            </Button>
-            <Button variant="secondary" onClick={saveChanges} disabled={!canEdit || !editMode || !plan || publish.isPending}>
-              {publish.isPending ? "Saving..." : "Save Changes"}
+            <div className="rounded-full border border-steel-200 bg-steel-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-steel-600">
+              Auto Refresh 10s
+            </div>
+            <Button variant="outline" onClick={() => liveQuery.refetch()}>
+              Refresh Live
             </Button>
             <Button variant="outline" onClick={() => planQuery.refetch()}>
               Reload Plan
             </Button>
+            <Button variant={editMode ? "default" : "outline"} onClick={() => setEditMode((value) => !value)} disabled={!canEdit}>
+              {editMode ? "Editing Enabled" : "Enable Editing"}
+            </Button>
+            <Button variant="secondary" onClick={saveChanges} disabled={!canEdit || !editMode || !plan || publish.isPending}>
+              {publish.isPending ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </div>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-900">Done</div>
+            <div className="text-base font-semibold text-emerald-800">{summary.done}</div>
+          </div>
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-900">Current</div>
+            <div className="text-base font-semibold text-amber-800">{summary.current}</div>
+          </div>
+          <div className="rounded-lg border border-steel-200 bg-steel-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-700">Upcoming</div>
+            <div className="text-base font-semibold text-steel-700">{summary.upcoming}</div>
+          </div>
+          <div className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-rose-900">Failed</div>
+            <div className="text-base font-semibold text-rose-800">{summary.failed}</div>
+          </div>
+          <div className="rounded-lg border border-ink-900/20 bg-white px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-600">Completion</div>
+            <div className="text-base font-semibold text-ink-900">{summary.completion_pct}%</div>
+          </div>
+        </div>
+
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-steel-100">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-ink-900 to-accent"
+            style={{ width: `${Math.max(0, Math.min(100, Number(summary.completion_pct) || 0))}%` }}
+          />
+        </div>
+
         {!canEdit ? (
-          <div className="mt-2 text-xs text-steel-500">
-            Editing is only enabled for today ({today}). Loaded date: {selectedDate}.
+          <div className="mt-3 text-xs text-steel-500">
+            Editing is only enabled for today ({today}). Loaded plan date: {selectedDate}.
           </div>
         ) : null}
         {saveMessage ? <div className="mt-2 text-xs text-steel-500">{saveMessage}</div> : null}
@@ -355,13 +295,166 @@ function LivePlanEditor({
 
       <div className="grid gap-6 xl:grid-cols-12">
         <div className="space-y-6 xl:col-span-8">
-          <RouteBoard editable={editMode && canEdit} />
+          {planQuery.isLoading ? (
+            <section className="card">
+              <div className="empty-state">Loading today&apos;s editable plan...</div>
+            </section>
+          ) : !planQuery.data?.published ? (
+            <section className="card">
+              <div className="empty-state">No published/live plan is available for today yet.</div>
+            </section>
+          ) : (
+            <RouteBoard editable={editMode && canEdit} />
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <MapPanel />
+            <UnassignedPanel />
+          </div>
         </div>
+
         <div className="space-y-6 xl:col-span-4">
-          <MapPanel />
-          <UnassignedPanel />
+          <section className="card !p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="panel-title">Vehicle Feed</div>
+              <div className="text-xs text-steel-500">{routes.length} vehicles</div>
+            </div>
+
+            {liveQuery.isLoading ? (
+              <div className="empty-state">Loading live routes...</div>
+            ) : routes.length === 0 ? (
+              <div className="empty-state">No live routes found for today.</div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                    selectedRouteKey === "all"
+                      ? "border-ink-900/40 bg-ink-900 text-white"
+                      : "border-steel-200 bg-white/70 text-ink-900 hover:border-steel-300"
+                  }`}
+                  onClick={() => setSelectedRouteKey("all")}
+                >
+                  <div className="text-xs font-semibold uppercase tracking-wide">All Vehicles</div>
+                  <div className={`text-[11px] ${selectedRouteKey === "all" ? "text-white/80" : "text-steel-500"}`}>
+                    {allRows.length} deliveries visible
+                  </div>
+                </button>
+
+                <div className="max-h-[19rem] space-y-2 overflow-y-auto pr-1 scroll-area">
+                  {routes.map((route) => {
+                    const active = selectedRouteKey === route.route_key;
+                    const current = (route.deliveries || []).find((delivery) => delivery.status === "current");
+                    return (
+                      <button
+                        key={route.route_key}
+                        type="button"
+                        className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-accent/60 bg-accent/10"
+                            : "border-steel-200 bg-white/70 hover:border-steel-300"
+                        }`}
+                        onClick={() => setSelectedRouteKey(route.route_key)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-xs font-semibold uppercase tracking-wide text-steel-500">
+                              {vehicleLabel(route)}
+                            </div>
+                            <div className="truncate text-sm font-semibold text-ink-900">{route.driver_name || "Unassigned"}</div>
+                          </div>
+                          <div className="rounded-md border border-steel-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-steel-700">
+                            {route.completion_pct}%
+                          </div>
+                        </div>
+                        <div className="mt-1 text-[11px] text-steel-500">
+                          Done {route.done_stops} | Current {route.current_stops} | Upcoming {route.upcoming_stops} | Failed {route.failed_stops}
+                        </div>
+                        {current ? (
+                          <div className="mt-1 truncate text-[11px] text-amber-800">
+                            Current: #{current.delivery_id} {current.job_name}
+                          </div>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="card !p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="panel-title">Delivery Feed</div>
+              <div className="text-xs text-steel-500">
+                {selectedRoute ? `${vehicleLabel(selectedRoute)}` : "All vehicles"}
+              </div>
+            </div>
+
+            <div className="mb-2 grid gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by delivery, job, SO, driver..."
+                className="h-9 rounded-lg border border-steel-200 bg-white/80 px-3 text-sm text-ink-900"
+              />
+              <div className="flex flex-wrap gap-1">
+                {(["all", "current", "upcoming", "done", "failed"] as const).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setStatusFilter(item)}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
+                      statusFilter === item
+                        ? "border-ink-900/50 bg-ink-900 text-white"
+                        : "border-steel-200 bg-white/80 text-steel-600 hover:border-steel-300"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {liveQuery.isLoading ? (
+              <div className="empty-state">Loading deliveries...</div>
+            ) : filteredRows.length === 0 ? (
+              <div className="empty-state">No deliveries match the current filter.</div>
+            ) : (
+              <div className="max-h-[38rem] space-y-2 overflow-y-auto pr-1 scroll-area">
+                {filteredRows.map((row) => (
+                  <article
+                    key={`${row.route_key}:${row.delivery_id}`}
+                    className={`rounded-lg border px-3 py-2 ${statusShellClass(row.status)}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-ink-900">
+                          #{row.delivery_id} {row.job_name}
+                        </div>
+                        <div className="truncate text-[11px] text-steel-500">
+                          {row.vehicle_label} | {row.driver_name}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-xs font-semibold uppercase tracking-wide ${statusLabelClass(row.status)}`}>
+                          {row.status_label || row.status}
+                        </div>
+                        <div className="text-[11px] text-steel-500">{asText(row.status_time) || "--"}</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 text-[11px] text-steel-600">
+                      {asText(row.sales_order) ? `SO ${row.sales_order} | ` : ""}
+                      {contentLine(row)}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </div>
-    </>
+    </div>
   );
 }
