@@ -1,10 +1,12 @@
 export interface DeliveryDTO {
   id: string;
+  delivery_id?: string;
   job_name: string;
   job_address: string;
   sales_order?: string;
   packing_slip?: string;
   driver?: string;
+  driver_name?: string;
   lat?: number;
   lon?: number;
   door?: number;
@@ -21,6 +23,16 @@ export interface DeliveryDTO {
   window_start?: string;
   window_end?: string;
   capacity_units?: number;
+  status?: string;
+  progress_state?: string;
+  status_label?: string;
+  status_time?: string;
+  status_updated_at?: string;
+  arrived_at?: string;
+  delivered_at?: string;
+  live_route_key?: string;
+  live_vehicle_id?: string | number;
+  live_vehicle_type?: string;
 }
 
 export interface RouteStopItem {

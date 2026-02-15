@@ -2,6 +2,43 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DeliveryDTO, RouteStopItem } from "@/lib/types/planner";
 
+type LiveProgress = "done" | "current" | "upcoming" | "failed";
+
+function asText(value: unknown): string {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function normalizeDeliveryProgress(delivery?: DeliveryDTO): LiveProgress | null {
+  if (!delivery) return null;
+  const raw = asText(delivery.progress_state || delivery.status || delivery.status_label)
+    .toLowerCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+  if (raw.includes("fail")) return "failed";
+  if (raw.includes("deliver") || raw === "done") return "done";
+  if (raw.includes("current") || raw.includes("en_route") || raw.includes("arrived")) return "current";
+  if (raw.includes("upcoming")) return "upcoming";
+  if (asText(delivery.delivered_at)) return "done";
+  return "upcoming";
+}
+
+function progressLabel(value: LiveProgress): string {
+  if (value === "done") return "Delivered";
+  if (value === "current") return "Current";
+  if (value === "failed") return "Failed";
+  return "Upcoming";
+}
+
+function compactStatusTime(value: unknown): string {
+  const raw = asText(value);
+  if (!raw) return "";
+  const parsed = Date.parse(raw);
+  if (Number.isNaN(parsed)) return raw;
+  return new Date(parsed).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 export default function StopCard({
   id,
   vehicleId,
@@ -156,12 +193,54 @@ export default function StopCard({
   ].filter(Boolean).join(" - ");
 
   const deliveriesCount = uniqueIds.length;
+  const liveEntries = uniqueIds.map((id) => {
+    const delivery = deliveriesById?.get(id);
+    const progress = normalizeDeliveryProgress(delivery);
+    if (!delivery || !progress) return null;
+    return {
+      id,
+      progress,
+      label: asText(delivery.status_label) || progressLabel(progress),
+      time: compactStatusTime(delivery.status_time || delivery.status_updated_at || delivery.arrived_at || delivery.delivered_at)
+    };
+  }).filter(Boolean) as Array<{ id: string; progress: LiveProgress; label: string; time: string }>;
+
+  const liveCounts = liveEntries.reduce(
+    (acc, row) => {
+      acc[row.progress] += 1;
+      return acc;
+    },
+    { done: 0, current: 0, upcoming: 0, failed: 0 }
+  );
+
+  const stopLiveProgress: LiveProgress | null = liveEntries.length === 0
+    ? null
+    : liveEntries.every((row) => row.progress === "done")
+      ? "done"
+      : liveEntries.some((row) => row.progress === "current")
+        ? "current"
+        : liveEntries.some((row) => row.progress === "failed")
+          ? "failed"
+          : "upcoming";
+
+  const stopLiveShell = stopLiveProgress === "done"
+    ? "border-emerald-200 bg-emerald-50/60"
+    : stopLiveProgress === "current"
+      ? "border-amber-300 bg-amber-50/60"
+      : stopLiveProgress === "failed"
+        ? "border-rose-300 bg-rose-50/60"
+        : "";
+
+  const liveSummary = liveEntries.slice(0, 3)
+    .map((row) => `#${row.id} ${row.label}${row.time ? ` ${row.time}` : ""}`)
+    .join(" | ");
+  const overflow = liveEntries.length > 3 ? ` +${liveEntries.length - 3} more` : "";
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="w-full text-left rounded-lg border border-steel-100 bg-white px-3 py-2 hover:border-ink-900"
+      className={`w-full text-left rounded-lg border border-steel-100 bg-white px-3 py-2 hover:border-ink-900 ${stopLiveShell}`}
       {...(editable ? attributes : {})}
       {...(editable ? listeners : {})}
     >
@@ -197,6 +276,22 @@ export default function StopCard({
           ? `Units ${stopTime.stop_units}`
           : (totalsLine || "No items")}
       </div>
+      {liveEntries.length > 0 ? (
+        <>
+          <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+            <span className="rounded-full border border-steel-200 bg-white/80 px-2 py-0.5 font-semibold text-steel-700">
+              {progressLabel(stopLiveProgress || "upcoming")}
+            </span>
+            {liveCounts.current > 0 ? <span className="text-amber-800">Current {liveCounts.current}</span> : null}
+            {liveCounts.done > 0 ? <span className="text-emerald-800">Done {liveCounts.done}</span> : null}
+            {liveCounts.upcoming > 0 ? <span className="text-steel-600">Upcoming {liveCounts.upcoming}</span> : null}
+            {liveCounts.failed > 0 ? <span className="text-rose-800">Failed {liveCounts.failed}</span> : null}
+          </div>
+          <div className="text-[11px] text-steel-500">
+            {liveSummary}{overflow}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
