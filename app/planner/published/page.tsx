@@ -2,24 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import { usePublishedPlan, usePublishedPlansList, usePublishPlan } from "@/lib/api/planner";
+import { usePublishedPlan, usePublishedPlansList } from "@/lib/api/planner";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import RouteBoard from "@/components/planner/RouteBoard";
 import MapPanel from "@/components/planner/MapPanel";
-import { RouteDTO, RouteStopItem } from "@/lib/types/planner";
-import { Button } from "@/components/ui/button";
+import { normalizePublishedPlan } from "@/lib/planner/normalizePlan";
 import { formatDate } from "@/lib/utils/dates";
 
 export default function PublishedPlansPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState(false);
   const listQuery = usePublishedPlansList();
   const planQuery = usePublishedPlan(selectedDate || "");
   const items = (listQuery.data?.items || []) as any[];
   const today = useMemo(() => formatDate(new Date()), []);
-  const isTodaySelected = Boolean(selectedDate) && selectedDate === today;
-  const canEdit = isTodaySelected && Boolean(planQuery.data?.published);
   const source = String(planQuery.data?.source || "published_plans");
 
   useEffect(() => {
@@ -28,12 +24,6 @@ export default function PublishedPlansPage() {
       setSelectedDate(todayItem?.plan_date || items[0].plan_date);
     }
   }, [items, selectedDate, today]);
-
-  useEffect(() => {
-    if (!canEdit && editMode) {
-      setEditMode(false);
-    }
-  }, [canEdit, editMode]);
 
   return (
     <AppShell>
@@ -53,7 +43,6 @@ export default function PublishedPlansPage() {
                   className="w-full text-left rounded-lg border border-steel-100 bg-white/75 px-3 py-2 transition hover:border-ink-900 hover:bg-white"
                   onClick={() => {
                     setSelectedDate(item.plan_date);
-                    setEditMode(false);
                   }}
                 >
                   <div className="text-sm font-semibold">{item.plan_date}</div>
@@ -66,16 +55,9 @@ export default function PublishedPlansPage() {
             <PublishedPlanToolbar
               selectedDate={selectedDate}
               today={today}
-              canEdit={canEdit}
-              editMode={editMode}
               source={source}
-              onToggleEdit={() => setEditMode((value) => !value)}
-              onSaved={() => {
-                planQuery.refetch();
-                listQuery.refetch();
-              }}
             />
-            <PublishedPlanPreview plan={planQuery.data} editable={editMode && canEdit} source={source} />
+            <PublishedPlanPreview plan={planQuery.data} source={source} />
           </div>
         </div>
       </PlannerStateProvider>
@@ -83,205 +65,22 @@ export default function PublishedPlansPage() {
   );
 }
 
-function normalizePublishedPlan(plan: any) {
-  if (!plan || !Array.isArray(plan.routes)) return plan;
-  const deliveries = Array.isArray(plan.deliveries) ? plan.deliveries : [];
-  const deliveriesById = new Map<string, any>(deliveries.map((d: any) => [String(d.id), d]));
-
-  const tokenToItem = (token: any): RouteStopItem => {
-    const t = String(token || "").trim();
-    if (!t) return { type: "delivery", label: "Stop" };
-    if (t.toLowerCase() === "depot") return { type: "depot", label: "Depot" };
-    if (t.toLowerCase() === "depot - reload") return { type: "depot", label: "Depot - Reload" };
-    const baseId = t.split("_Part")[0].trim();
-    const d = deliveriesById.get(baseId);
-    const item: RouteStopItem = {
-      type: "delivery",
-      id: baseId,
-      job_name: d?.job_name || `Unknown (${baseId})`
-    };
-    if (t.includes("_Part")) {
-      try {
-        const partStr = t.split("_Part", 2)[1] || "";
-        const partNo = Number((partStr.split("_", 2)[0] || "").trim());
-        if (!Number.isNaN(partNo)) item.part_no = partNo;
-      } catch {}
-    }
-    if (t.includes("_Qty")) {
-      try {
-        const qtyStr = t.split("_Qty").pop() || "";
-        const qty = Number((qtyStr.split("_", 2)[0] || "").trim());
-        if (!Number.isNaN(qty)) item.qty = qty;
-      } catch {}
-    }
-    if (t.includes("_Units")) {
-      try {
-        const unitsStr = t.split("_Units").pop() || "";
-        const units = Number((unitsStr.split("_", 2)[0] || "").trim());
-        if (!Number.isNaN(units)) item.units = units;
-      } catch {}
-    }
-    if (t.includes("_Med")) {
-      try {
-        const v = Number((t.split("_Med").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.med_skid = v;
-      } catch {}
-    }
-    if (t.includes("_Large")) {
-      try {
-        const v = Number((t.split("_Large").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.large_skid = v;
-      } catch {}
-    }
-    if (t.includes("_Small")) {
-      try {
-        const v = Number((t.split("_Small").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.small_skid = v;
-      } catch {}
-    }
-    if (t.includes("_Frame")) {
-      try {
-        const v = Number((t.split("_Frame").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.frame = v;
-      } catch {}
-    }
-    if (t.includes("_Exp")) {
-      try {
-        const v = Number((t.split("_Exp").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.exp_frame = v;
-      } catch {}
-    }
-    if (t.includes("_Door")) {
-      try {
-        const v = Number((t.split("_Door").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.door = v;
-      } catch {}
-    }
-    if (t.includes("_Box")) {
-      try {
-        const v = Number((t.split("_Box").pop() || "").split("_", 2)[0]);
-        if (!Number.isNaN(v)) item.box = v;
-      } catch {}
-    }
-    return item;
-  };
-
-  const normalizeStops = (route: any) => {
-    if (Array.isArray(route.stops) && route.stops.length > 0) {
-      const first = route.stops[0];
-      if (Array.isArray(first)) return route.stops;
-      return route.stops.map((stop: any) => {
-        if (Array.isArray(stop)) return stop;
-        if (typeof stop === "string" || typeof stop === "number") {
-          return [tokenToItem(stop)];
-        }
-        if (stop?.type) return [stop as RouteStopItem];
-        const candidateId = stop?.id || stop?.delivery_id || stop?.job_id;
-        if (candidateId != null) {
-          const d = deliveriesById.get(String(candidateId));
-          return [
-            {
-              type: "delivery",
-              id: String(candidateId),
-              job_name: d?.job_name || stop?.job_name || `Unknown (${candidateId})`
-            }
-          ];
-        }
-        return [{ type: "delivery", label: "Stop" }];
-      });
-    }
-    if (Array.isArray(route.jobs)) {
-      return route.jobs.map((job: any[]) => (job || []).map(tokenToItem));
-    }
-    return [];
-  };
-
-  const enrichStops = (stops: RouteStopItem[][]) =>
-    stops.map((group) =>
-      group.map((item) => {
-        if (item.type !== "delivery") return item;
-        const id = item.id ? String(item.id) : "";
-        if (!id) return item;
-        const d = deliveriesById.get(id);
-        if (!d) return item;
-        return { ...item, job_name: item.job_name || d.job_name };
-      })
-    );
-
-  const normalizeStopTimes = (route: any) => {
-    if (Array.isArray(route.stop_times)) return route.stop_times;
-    if (Array.isArray(route.stops) && route.stops.length && route.stops[0]?.arrival_s != null) {
-      return route.stops.map((s: any) => ({
-        arrival_s: s.arrival_s,
-        departure_s: s.departure_s,
-        arrival_hhmm: s.arrival_hhmm,
-        departure_hhmm: s.departure_hhmm
-      }));
-    }
-    return [];
-  };
-
-  const routes: RouteDTO[] = plan.routes.map((route: any) => ({
-    vehicle_id: route.vehicle_id ?? route.v_id ?? route.vehicleId ?? route.id,
-    vehicle_type: route.vehicle_type ?? route.v_type ?? route.vehicleType ?? "vehicle",
-    skids: route.skids,
-    total_distance_m: route.total_distance_m ?? route.distance_m ?? route.distance,
-    total_time_s: route.total_time_s ?? route.time_s ?? route.duration_s,
-    stops: enrichStops(normalizeStops(route)),
-    stop_times: normalizeStopTimes(route),
-    stop_nodes: route.stop_nodes ?? route.nodes
-  }));
-
-  return { ...plan, routes, deliveries };
-}
-
 function PublishedPlanToolbar({
   selectedDate,
   today,
-  canEdit,
-  editMode,
-  source,
-  onToggleEdit,
-  onSaved
+  source
 }: {
   selectedDate: string | null;
   today: string;
-  canEdit: boolean;
-  editMode: boolean;
   source: string;
-  onToggleEdit: () => void;
-  onSaved: () => void;
 }) {
-  const { plan } = usePlannerState();
-  const publish = usePublishPlan();
-  const [saveMessage, setSaveMessage] = useState("");
-
-  const saveChanges = async () => {
-    if (!selectedDate || !plan || !canEdit) return;
-    setSaveMessage("Saving changes...");
-    try {
-      await publish.mutateAsync({
-        routes: plan.routes || [],
-        deliveries: plan.deliveries || [],
-        meta: plan.meta || {},
-        fleet: (plan.meta as any)?.fleet || {},
-        plan_date: selectedDate,
-        driver_profiles: (plan as any)?.driver_profiles || []
-      } as any);
-      setSaveMessage("Changes saved. Drivers were notified.");
-      onSaved();
-    } catch (error: any) {
-      setSaveMessage(error?.message || "Failed to save changes.");
-    }
-  };
-
   return (
     <section className="card mb-6">
       <div className="card-header">
         <div>
-          <div className="text-lg font-semibold">Today&apos;s Edit Controls</div>
+          <div className="text-lg font-semibold">Published Plan Preview</div>
           <div className="card-subtitle">
-            Only today&apos;s plan ({today}) can be edited in this page.
+            Published plans are view-only here. Use Live Progress to edit today&apos;s plan ({today}).
           </div>
           {source === "deliveries" ? (
             <div className="mt-1 text-xs text-steel-500">
@@ -289,42 +88,19 @@ function PublishedPlanToolbar({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={editMode ? "default" : "outline"}
-            onClick={onToggleEdit}
-            disabled={!canEdit}
-          >
-            {editMode ? "Edit Mode On" : "Enable Edit Mode"}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={saveChanges}
-            disabled={!canEdit || !editMode || !plan || publish.isPending}
-          >
-            {publish.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
       </div>
-      {!canEdit && (
-        <div className="text-xs text-steel-500">
-          {selectedDate
-            ? `Selected date ${selectedDate}. Switch to ${today} to enable editing.`
-            : "Select a published plan date to preview."}
-        </div>
-      )}
-      {saveMessage && <div className="mt-2 text-xs text-steel-500">{saveMessage}</div>}
+      <div className="text-xs text-steel-500">
+        {selectedDate ? `Selected date ${selectedDate}.` : "Select a published plan date to preview."}
+      </div>
     </section>
   );
 }
 
 function PublishedPlanPreview({
   plan,
-  editable = false,
   source
 }: {
   plan: any;
-  editable?: boolean;
   source: string;
 }) {
   const { setPlan } = usePlannerState();
@@ -357,11 +133,11 @@ function PublishedPlanPreview({
         {source === "deliveries" ? (
           <div className="card !py-2">
             <div className="text-xs text-steel-500">
-              Viewing and editing the live delivery-backed route plan for the selected day.
+              Viewing the live delivery-backed route plan for the selected day.
             </div>
           </div>
         ) : null}
-        <RouteBoard editable={editable} />
+        <RouteBoard editable={false} />
       </div>
       <div className="space-y-6 xl:col-span-4">
         <MapPanel />
