@@ -24,6 +24,8 @@ type LiveDelivery = {
 
 type LiveRoute = {
   route_key: string;
+  vehicle_id?: string;
+  vehicle_type?: string;
   driver_name: string;
   total_stops: number;
   done_stops: number;
@@ -148,6 +150,9 @@ export default function PlannerLiveProgressPage() {
               <div className="grid grid-flow-col auto-cols-[minmax(20rem,1fr)] items-stretch gap-3 pb-1">
                 {routes.map((route) => {
                   const currentStop = route.deliveries.find((delivery) => delivery.status === "current");
+                  const vehicleLabel = route.vehicle_id
+                    ? `${(route.vehicle_type || "vehicle").toString().toUpperCase()} ${route.vehicle_id}`
+                    : (route.vehicle_type || "vehicle").toString().toUpperCase();
 
                   return (
                     <article
@@ -156,7 +161,10 @@ export default function PlannerLiveProgressPage() {
                     >
                       <div className="mb-2 flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-ink-900">{route.driver_name}</div>
+                          <div className="truncate text-[11px] font-semibold uppercase tracking-wide text-steel-500">
+                            {vehicleLabel}
+                          </div>
+                          <div className="truncate text-sm font-semibold text-ink-900">{route.driver_name || "Unassigned"}</div>
                           <div className="truncate text-xs text-steel-500">
                             Stops {route.total_stops} | Done {route.done_stops} | Current {route.current_stops}
                             {route.last_completed_at ? ` | Last complete ${route.last_completed_at}` : ""}
