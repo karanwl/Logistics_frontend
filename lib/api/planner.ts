@@ -90,7 +90,11 @@ export const usePlanMatrixDebug = (params: {
       if (params.compare_nodes && params.compare_nodes.trim()) search.set("compare_nodes", params.compare_nodes.trim());
       return api.get<any>(`/plan/debug/matrix?${search.toString()}`);
     },
-    staleTime: 0,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: false,
     enabled: (params.enabled ?? true) && Boolean(params.date)
   });
 
