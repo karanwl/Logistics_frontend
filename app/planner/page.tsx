@@ -2,28 +2,32 @@
 
 import { useEffect, useMemo } from "react";
 import AppShell from "@/components/layout/AppShell";
+import PlannerHeader from "@/components/planner/PlannerHeader";
 import RouteBoard from "@/components/planner/RouteBoard";
+import FleetPanel from "@/components/planner/FleetPanel";
 import MapPanel from "@/components/planner/MapPanel";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import { usePublishedPlan } from "@/lib/api/planner";
 import { normalizePublishedPlan } from "@/lib/planner/normalizePlan";
-import { formatDate } from "@/lib/utils/dates";
 
 export default function PlannerPage() {
   return (
     <AppShell>
       <PlannerStateProvider>
-        <PlannerReadOnlyContent />
+        <PlannerWorkspace />
       </PlannerStateProvider>
     </AppShell>
   );
 }
 
-function PlannerReadOnlyContent() {
-  const { setPlan } = usePlannerState();
-  const today = useMemo(() => formatDate(new Date()), []);
-  const planQuery = usePublishedPlan(today);
+function PlannerWorkspace() {
+  const { selectedDate, setPlan, plan } = usePlannerState();
+  const planQuery = usePublishedPlan(selectedDate);
+  const source = useMemo(
+    () => String(planQuery.data?.source || "published_plans"),
+    [planQuery.data?.source]
+  );
 
   useEffect(() => {
     if (!planQuery.data || !planQuery.data.published) {
@@ -35,40 +39,47 @@ function PlannerReadOnlyContent() {
 
   return (
     <div className="grid gap-6">
-      <section className="card">
-        <div className="card-header">
-          <div>
-            <div className="text-xl font-semibold">Planner (View Only)</div>
-            <div className="card-subtitle">
-              Planning edits are moved to Live Progress. This page is read-only for today&apos;s plan ({today}).
+      <PlannerHeader />
+
+      {planQuery.isLoading && !plan ? (
+        <section className="card">
+          <div className="empty-state">Loading selected date plan...</div>
+        </section>
+      ) : null}
+
+      {!planQuery.isLoading && !plan ? (
+        <section className="card">
+          <div className="card-header">
+            <div>
+              <div className="text-xl font-semibold">No Plan Loaded</div>
+              <div className="card-subtitle">
+                Click Run Plan to generate routes for {selectedDate}.
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {planQuery.isLoading ? (
-        <section className="card">
-          <div className="empty-state">Loading today&apos;s plan...</div>
+          <div className="text-xs text-steel-500">
+            No published plan was found for this date.
+          </div>
         </section>
       ) : null}
 
-      {!planQuery.isLoading && !planQuery.data?.published ? (
-        <section className="card">
-          <div className="empty-state">No published/live plan found for today.</div>
-        </section>
-      ) : null}
-
-      {!planQuery.isLoading && planQuery.data?.published ? (
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="space-y-6 xl:col-span-8">
-            <RouteBoard editable={false} />
-          </div>
-          <div className="space-y-6 xl:col-span-4">
-            <MapPanel />
-            <UnassignedPanel editable={false} />
-          </div>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="space-y-6 xl:col-span-8">
+          {source === "deliveries" ? (
+            <section className="card !py-2">
+              <div className="text-xs text-steel-500">
+                Starting from delivery-backed plan data for {selectedDate}.
+              </div>
+            </section>
+          ) : null}
+          <RouteBoard editable />
         </div>
-      ) : null}
+        <div className="space-y-6 xl:col-span-4">
+          <FleetPanel />
+          <MapPanel />
+          <UnassignedPanel editable planDate={selectedDate} />
+        </div>
+      </div>
     </div>
   );
 }
