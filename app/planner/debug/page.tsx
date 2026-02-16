@@ -113,17 +113,21 @@ export default function PlannerMatrixDebugPage() {
   const [vans, setVans] = useState(1);
   const [routeNodes, setRouteNodes] = useState("");
   const [compareNodes, setCompareNodes] = useState("");
-  const [submitted, setSubmitted] = useState({
-    date: today,
-    trucks: 2,
-    vans: 1,
-    route_nodes: "",
-    compare_nodes: ""
-  });
+  const [submitted, setSubmitted] = useState<{
+    date: string;
+    trucks: number;
+    vans: number;
+    route_nodes: string;
+    compare_nodes: string;
+  } | null>(null);
 
   const debugQuery = usePlanMatrixDebug({
-    ...submitted,
-    enabled: Boolean(submitted.date)
+    date: submitted?.date || "",
+    trucks: submitted?.trucks ?? trucks,
+    vans: submitted?.vans ?? vans,
+    route_nodes: submitted?.route_nodes || "",
+    compare_nodes: submitted?.compare_nodes || "",
+    enabled: Boolean(submitted?.date)
   });
 
   const data = debugQuery.data;
@@ -339,4 +343,3 @@ export default function PlannerMatrixDebugPage() {
     </AppShell>
   );
 }
-
