@@ -14,15 +14,25 @@ export default function PublishedPlansPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const listQuery = usePublishedPlansList();
   const planQuery = usePublishedPlan(selectedDate || "");
-  const items = (listQuery.data?.items || []) as any[];
+  const items = useMemo(
+    () =>
+      ((listQuery.data?.items || []) as any[]).filter(
+        (item) => String(item?.source || "published_plans") === "published_plans"
+      ),
+    [listQuery.data?.items]
+  );
   const today = useMemo(() => formatDate(new Date()), []);
   const source = String(planQuery.data?.source || "published_plans");
 
   useEffect(() => {
-    if (!selectedDate && items.length > 0) {
-      const todayItem = items.find((item) => item.plan_date === today);
-      setSelectedDate(todayItem?.plan_date || items[0].plan_date);
+    if (items.length === 0) {
+      if (selectedDate !== null) setSelectedDate(null);
+      return;
     }
+    const stillValid = selectedDate ? items.some((item) => item.plan_date === selectedDate) : false;
+    if (stillValid) return;
+    const todayItem = items.find((item) => item.plan_date === today);
+    setSelectedDate(todayItem?.plan_date || items[0].plan_date);
   }, [items, selectedDate, today]);
 
   return (
@@ -49,6 +59,11 @@ export default function PublishedPlansPage() {
                   <div className="text-xs text-steel-500">{item.published_by || "--"}</div>
                 </button>
               ))}
+              {!listQuery.isLoading && items.length === 0 ? (
+                <div className="rounded-lg border border-steel-100 bg-white/70 px-3 py-2 text-xs text-steel-500">
+                  No published plans found.
+                </div>
+              ) : null}
             </div>
           </div>
           <div className="xl:col-span-9">
