@@ -62,6 +62,38 @@ export const usePublishedPlansList = () =>
     staleTime: 15000
   });
 
+export const usePlanMatrixDebug = (params: {
+  date: string;
+  trucks: number;
+  vans: number;
+  route_nodes?: string;
+  compare_nodes?: string;
+  enabled?: boolean;
+}) =>
+  useQuery({
+    queryKey: [
+      "plan",
+      "debug",
+      "matrix",
+      params.date,
+      params.trucks,
+      params.vans,
+      params.route_nodes || "",
+      params.compare_nodes || ""
+    ],
+    queryFn: () => {
+      const search = new URLSearchParams();
+      if (params.date) search.set("date", params.date);
+      search.set("trucks", String(Math.max(0, Number(params.trucks || 0))));
+      search.set("vans", String(Math.max(0, Number(params.vans || 0))));
+      if (params.route_nodes && params.route_nodes.trim()) search.set("route_nodes", params.route_nodes.trim());
+      if (params.compare_nodes && params.compare_nodes.trim()) search.set("compare_nodes", params.compare_nodes.trim());
+      return api.get<any>(`/plan/debug/matrix?${search.toString()}`);
+    },
+    staleTime: 0,
+    enabled: (params.enabled ?? true) && Boolean(params.date)
+  });
+
 export const useDeliveries = () =>
   useQuery({
     queryKey: ["deliveries"],
