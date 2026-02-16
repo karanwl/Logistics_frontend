@@ -23,6 +23,8 @@ export default function PlannerHeader() {
   const solveRun = useSolveRun();
   const publish = usePublishPlan();
   const [publishMessage, setPublishMessage] = useState("");
+  const isSolveActive =
+    solveRun.isPending || solveJob?.status === "queued" || solveJob?.status === "running";
 
   useSolvePolling(solveJob?.job_id, solveJob?.status, (job) => {
     if (job.result) {
@@ -76,8 +78,14 @@ export default function PlannerHeader() {
             />
           </div>
           <Badge>{statusLabel}</Badge>
-          <Button onClick={runSolve} disabled={solveRun.isPending}>
-            Run Plan
+          <Button onClick={runSolve} disabled={isSolveActive}>
+            {isSolveActive ? (
+              <span
+                className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/70 border-t-transparent"
+                aria-hidden="true"
+              />
+            ) : null}
+            {isSolveActive ? "Running..." : "Run Plan"}
           </Button>
           <Button variant="outline" onClick={runPublish} disabled={!plan || publish.isPending}>
             Publish Plan

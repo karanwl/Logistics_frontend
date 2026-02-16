@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { usePlannerState } from "@/hooks/usePlannerState";
 import { api } from "@/lib/api/client";
-import { useBulkCreateDeliveries, useJobsites } from "@/lib/api/planner";
+import { useDeliveries, useRescheduleDelivery } from "@/lib/api/planner";
 
 function asNonNegativeInt(value: string): number {
   const parsed = Number.parseInt(String(value || "").trim(), 10);
@@ -18,6 +17,10 @@ function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function deliveryIdFrom(value: any): string {
+  return String(value?.delivery_id || value?.id || "").trim();
+}
+
 export default function UnassignedPanel({
   editable = false,
   planDate
@@ -26,37 +29,16 @@ export default function UnassignedPanel({
   planDate?: string;
 }) {
   const { plan, setPlan } = usePlannerState();
-  const jobsitesQuery = useJobsites();
-  const bulkCreate = useBulkCreateDeliveries();
+  const deliveriesQuery = useDeliveries();
+  const reschedule = useRescheduleDelivery();
 
-  const [jobsiteId, setJobsiteId] = useState("");
   const [targetVehicleId, setTargetVehicleId] = useState("");
-  const [salesOrder, setSalesOrder] = useState("");
-  const [medSkid, setMedSkid] = useState("0");
-  const [smallSkid, setSmallSkid] = useState("0");
-  const [largeSkid, setLargeSkid] = useState("0");
-  const [door, setDoor] = useState("0");
-  const [frame, setFrame] = useState("0");
-  const [expFrame, setExpFrame] = useState("0");
-  const [box, setBox] = useState("0");
-  const [windowStart, setWindowStart] = useState("");
-  const [windowEnd, setWindowEnd] = useState("");
-  const [pickup, setPickup] = useState(false);
-  const [pickupVehicle, setPickupVehicle] = useState("both");
-  const [requiresEmptyTruck, setRequiresEmptyTruck] = useState(false);
+  const [selectedUnscheduledId, setSelectedUnscheduledId] = useState("");
   const [formMessage, setFormMessage] = useState("");
 
   const effectivePlanDate = String(
     planDate || (plan as any)?.plan_date || (plan as any)?.target_date || todayIsoDate()
   );
-
-  const jobsites = useMemo(() => {
-    const rows = Array.isArray((jobsitesQuery.data as any)?.jobsites)
-      ? ([...(jobsitesQuery.data as any).jobsites] as any[])
-      : [];
-    rows.sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), undefined, { sensitivity: "base" }));
-    return rows;
-  }, [jobsitesQuery.data]);
 
   const vehicleIds = useMemo(
     () => (plan?.routes || []).map((route) => String(route.vehicle_id)),
@@ -82,41 +64,50 @@ export default function UnassignedPanel({
     });
   });
   const unassigned = (plan?.deliveries || []).filter((d) => {
-    const id = String((d as any)?.id || (d as any)?.delivery_id || "");
+    const id = deliveryIdFrom(d);
     return id && !assigned.has(id);
   });
 
-  const selectedJobsite = jobsites.find((j: any) => String(j?.id) === jobsiteId);
+  const unscheduledCandidates = useMemo(() => {
+    const rows = Array.isArray((deliveriesQuery.data as any)?.deliveries)
+      ? ([...(deliveriesQuery.data as any).deliveries] as any[])
+      : [];
+    return rows
+      .filter((delivery: any) => {
+        const deliveryId = deliveryIdFrom(delivery);
+        if (!deliveryId) return false;
+        const scheduled = String(delivery?.scheduled_date || "").trim();
+        return !scheduled;
+      })
+      .sort((a, b) =>
+        String(a?.job_name || "").localeCompare(String(b?.job_name || ""), undefined, { sensitivity: "base" })
+      );
+  }, [deliveriesQuery.data]);
+
+  useEffect(() => {
+    if (unscheduledCandidates.length === 0) {
+      setSelectedUnscheduledId("");
+      return;
+    }
+    const stillValid = unscheduledCandidates.some((delivery) => deliveryIdFrom(delivery) === selectedUnscheduledId);
+    if (!stillValid) {
+      setSelectedUnscheduledId(deliveryIdFrom(unscheduledCandidates[0]));
+    }
+  }, [selectedUnscheduledId, unscheduledCandidates]);
 
   const resetForm = () => {
-    setJobsiteId("");
-    setSalesOrder("");
-    setMedSkid("0");
-    setSmallSkid("0");
-    setLargeSkid("0");
-    setDoor("0");
-    setFrame("0");
-    setExpFrame("0");
-    setBox("0");
-    setWindowStart("");
-    setWindowEnd("");
-    setPickup(false);
-    setPickupVehicle("both");
-    setRequiresEmptyTruck(false);
+    setSelectedUnscheduledId("");
+    setFormMessage("");
   };
 
-  const addUnplannedToRun = async () => {
+  const scheduleUnscheduledToRun = async () => {
     if (!editable) return;
     if (!plan) {
       setFormMessage("No plan is loaded.");
       return;
     }
-    if (!jobsiteId) {
-      setFormMessage("Select an existing jobsite.");
-      return;
-    }
-    if (!selectedJobsite) {
-      setFormMessage("Selected jobsite was not found.");
+    if (!selectedUnscheduledId) {
+      setFormMessage("Select an unscheduled delivery.");
       return;
     }
     if (!targetVehicleId) {
@@ -128,70 +119,46 @@ export default function UnassignedPanel({
       setFormMessage("Target vehicle route was not found.");
       return;
     }
-    const so = salesOrder.trim();
-    if (!so) {
-      setFormMessage("Sales order is required.");
+    const alreadyOnRoute = (plan.routes || []).some((route) =>
+      (route.stops || []).some((group) =>
+        group.some((item) => item.type === "delivery" && deliveryIdFrom(item) === selectedUnscheduledId)
+      )
+    );
+    if (alreadyOnRoute) {
+      setFormMessage("This delivery is already on a route.");
       return;
     }
 
-    const payloadItem = {
-      jobsite_id: jobsiteId,
-      scheduled_date: effectivePlanDate,
-      sales_order: so,
-      med_skid: asNonNegativeInt(medSkid),
-      small_skid: asNonNegativeInt(smallSkid),
-      large_skid: asNonNegativeInt(largeSkid),
-      door: asNonNegativeInt(door),
-      frame: asNonNegativeInt(frame),
-      exp_frame: asNonNegativeInt(expFrame),
-      box: asNonNegativeInt(box),
-      pickup: Boolean(pickup),
-      pickup_vehicle: pickup ? pickupVehicle || "both" : "",
-      requires_empty_truck: Boolean(pickup && requiresEmptyTruck),
-      window_start: windowStart.trim() || null,
-      window_end: windowEnd.trim() || null,
-    };
+    const selectedCandidate = unscheduledCandidates.find(
+      (delivery) => deliveryIdFrom(delivery) === selectedUnscheduledId
+    );
+    if (!selectedCandidate) {
+      setFormMessage("Selected unscheduled delivery was not found.");
+      return;
+    }
 
-    setFormMessage("Adding delivery to DB and route...");
+    setFormMessage("Scheduling delivery and adding it to the route...");
     try {
-      const created = await bulkCreate.mutateAsync({ deliveries: [payloadItem] });
-      const row = Array.isArray((created as any)?.results) ? (created as any).results[0] : null;
-      if (!row || !row.ok) {
-        throw new Error(row?.error || "Failed to create delivery.");
-      }
-
-      const createdDeliveryId = String(row.record_id || "").trim();
-      if (!createdDeliveryId) {
-        throw new Error("Delivery was created but no delivery id was returned.");
-      }
+      await reschedule.mutateAsync({
+        delivery_id: selectedUnscheduledId,
+        scheduled_date: effectivePlanDate
+      });
 
       const latest = await api.get<{ deliveries: any[] }>("/deliveries/all?refresh=1");
       const fetched = (latest?.deliveries || []).find(
-        (delivery: any) => String(delivery?.delivery_id || delivery?.id || "") === createdDeliveryId
+        (delivery: any) => deliveryIdFrom(delivery) === selectedUnscheduledId
       );
+      const row = fetched || selectedCandidate;
+      const normalizedDeliveryId = selectedUnscheduledId;
 
       const normalizedDelivery = {
-        ...(fetched || {}),
-        id: createdDeliveryId,
-        delivery_id: createdDeliveryId,
-        jobsite_id: jobsiteId,
-        job_name: String((fetched as any)?.job_name || selectedJobsite?.name || `Delivery ${createdDeliveryId}`),
-        job_address: String((fetched as any)?.job_address || selectedJobsite?.address || ""),
-        sales_order: String((fetched as any)?.sales_order || so),
-        scheduled_date: String((fetched as any)?.scheduled_date || effectivePlanDate),
-        med_skid: (fetched as any)?.med_skid ?? payloadItem.med_skid,
-        small_skid: (fetched as any)?.small_skid ?? payloadItem.small_skid,
-        large_skid: (fetched as any)?.large_skid ?? payloadItem.large_skid,
-        door: (fetched as any)?.door ?? payloadItem.door,
-        frame: (fetched as any)?.frame ?? payloadItem.frame,
-        exp_frame: (fetched as any)?.exp_frame ?? payloadItem.exp_frame,
-        box: (fetched as any)?.box ?? payloadItem.box,
-        pickup: (fetched as any)?.pickup ?? payloadItem.pickup,
-        pickup_vehicle: (fetched as any)?.pickup_vehicle ?? payloadItem.pickup_vehicle,
-        requires_empty_truck: (fetched as any)?.requires_empty_truck ?? payloadItem.requires_empty_truck,
-        window_start: (fetched as any)?.window_start ?? windowStart.trim(),
-        window_end: (fetched as any)?.window_end ?? windowEnd.trim(),
-        status: String((fetched as any)?.status || "pending"),
+        ...(row || {}),
+        id: normalizedDeliveryId,
+        delivery_id: normalizedDeliveryId,
+        scheduled_date: effectivePlanDate,
+        job_name: String((row as any)?.job_name || `Delivery ${normalizedDeliveryId}`),
+        job_address: String((row as any)?.job_address || ""),
+        status: String((row as any)?.status || "pending")
       };
 
       const nextRoutes = (plan.routes || []).map((route) => {
@@ -199,15 +166,15 @@ export default function UnassignedPanel({
 
         const stopItem = {
           type: "delivery" as const,
-          id: createdDeliveryId,
+          id: normalizedDeliveryId,
           job_name: normalizedDelivery.job_name,
-          med_skid: asNonNegativeInt(String(normalizedDelivery.med_skid ?? 0)),
-          small_skid: asNonNegativeInt(String(normalizedDelivery.small_skid ?? 0)),
-          large_skid: asNonNegativeInt(String(normalizedDelivery.large_skid ?? 0)),
-          door: asNonNegativeInt(String(normalizedDelivery.door ?? 0)),
-          frame: asNonNegativeInt(String(normalizedDelivery.frame ?? 0)),
-          exp_frame: asNonNegativeInt(String(normalizedDelivery.exp_frame ?? 0)),
-          box: asNonNegativeInt(String(normalizedDelivery.box ?? 0)),
+          med_skid: asNonNegativeInt(String((row as any)?.med_skid ?? 0)),
+          small_skid: asNonNegativeInt(String((row as any)?.small_skid ?? 0)),
+          large_skid: asNonNegativeInt(String((row as any)?.large_skid ?? 0)),
+          door: asNonNegativeInt(String((row as any)?.door ?? 0)),
+          frame: asNonNegativeInt(String((row as any)?.frame ?? 0)),
+          exp_frame: asNonNegativeInt(String((row as any)?.exp_frame ?? 0)),
+          box: asNonNegativeInt(String((row as any)?.box ?? 0)),
         };
 
         const nextStops = [...(route.stops || [])];
@@ -215,8 +182,8 @@ export default function UnassignedPanel({
 
         const nextStopTimes = [...(route.stop_times || [])];
         nextStopTimes.push({
-          arrival_hhmm: normalizedDelivery.window_start || undefined,
-          departure_hhmm: normalizedDelivery.window_end || undefined,
+          arrival_hhmm: String((row as any)?.window_start || "").trim() || undefined,
+          departure_hhmm: String((row as any)?.window_end || "").trim() || undefined,
         });
 
         const nextStopNodes = [...(route.stop_nodes || [])];
@@ -233,8 +200,8 @@ export default function UnassignedPanel({
       });
 
       const filteredDeliveries = (plan.deliveries || []).filter((delivery: any) => {
-        const id = String(delivery?.id || delivery?.delivery_id || "");
-        return id !== createdDeliveryId;
+        const id = deliveryIdFrom(delivery);
+        return id !== normalizedDeliveryId;
       });
 
       const nextPlan = {
@@ -273,12 +240,13 @@ export default function UnassignedPanel({
         // keep optimistic route change if recalc fails
       }
 
+      await deliveriesQuery.refetch();
       setFormMessage(
-        `Added delivery ${createdDeliveryId} to vehicle ${targetVehicleId}. Click "Save Changes" to publish route updates.`
+        `Scheduled delivery ${normalizedDeliveryId} to ${effectivePlanDate} and added it to vehicle ${targetVehicleId}. Click "Save Changes" to publish route updates.`
       );
       resetForm();
     } catch (error: any) {
-      setFormMessage(error?.message || "Failed to add unplanned delivery.");
+      setFormMessage(error?.message || "Failed to schedule unscheduled delivery.");
     }
   };
 
@@ -286,7 +254,7 @@ export default function UnassignedPanel({
     <section className="card">
       <div className="card-header">
         <div>
-          <div className="text-xl font-semibold">Unscheduled Deliveries</div>
+          <div className="text-xl font-semibold">Unassigned Deliveries</div>
           <div className="card-subtitle">Stops dropped from the solve.</div>
         </div>
         <Badge>{unassigned.length}</Badge>
@@ -294,27 +262,32 @@ export default function UnassignedPanel({
 
       {editable ? (
         <div className="mb-3 rounded-lg border border-steel-200 bg-steel-50/70 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Add Unplanned Delivery To Run</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Schedule Existing Unscheduled Delivery</div>
           <div className="mt-1 text-[11px] text-steel-500">
-            Jobsite must already exist in Jobsites. New delivery will be saved to DB immediately for {effectivePlanDate}.
+            Pick an unscheduled delivery and assign it to {effectivePlanDate}, then attach it to a vehicle.
           </div>
 
           <div className="mt-3 grid gap-2">
             <div className="grid gap-2 sm:grid-cols-2">
               <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Jobsite</label>
+                <label className="text-[11px] font-semibold uppercase text-steel-500">Unscheduled Delivery</label>
                 <select
                   className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
-                  value={jobsiteId}
-                  onChange={(e) => setJobsiteId(e.target.value)}
-                  disabled={bulkCreate.isPending || jobsitesQuery.isLoading}
+                  value={selectedUnscheduledId}
+                  onChange={(e) => setSelectedUnscheduledId(e.target.value)}
+                  disabled={reschedule.isPending || deliveriesQuery.isLoading || unscheduledCandidates.length === 0}
                 >
-                  <option value="">Select existing jobsite</option>
-                  {jobsites.map((jobsite: any) => (
-                    <option key={String(jobsite.id)} value={String(jobsite.id)}>
-                      {String(jobsite.name || "Jobsite")} {jobsite.address ? `- ${String(jobsite.address)}` : ""}
-                    </option>
-                  ))}
+                  {unscheduledCandidates.length === 0 ? <option value="">No unscheduled deliveries</option> : null}
+                  {unscheduledCandidates.map((delivery: any) => {
+                    const deliveryId = deliveryIdFrom(delivery);
+                    const jobName = String(delivery?.job_name || "Delivery");
+                    const salesOrder = String(delivery?.sales_order || "").trim();
+                    return (
+                      <option key={deliveryId} value={deliveryId}>
+                        {jobName} ({deliveryId}){salesOrder ? ` - SO ${salesOrder}` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>
@@ -323,7 +296,7 @@ export default function UnassignedPanel({
                   className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
                   value={targetVehicleId}
                   onChange={(e) => setTargetVehicleId(e.target.value)}
-                  disabled={bulkCreate.isPending || vehicleIds.length === 0}
+                  disabled={reschedule.isPending || vehicleIds.length === 0}
                 >
                   {vehicleIds.length === 0 ? <option value="">No routes</option> : null}
                   {vehicleIds.map((vehicleId) => (
@@ -334,98 +307,24 @@ export default function UnassignedPanel({
                 </select>
               </div>
             </div>
-
-            <div className="grid gap-2 sm:grid-cols-3">
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Sales Order</label>
-                <Input
-                  className="mt-1 h-9 text-xs"
-                  value={salesOrder}
-                  onChange={(e) => setSalesOrder(e.target.value)}
-                  placeholder="Required"
-                  disabled={bulkCreate.isPending}
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Window Start</label>
-                <Input
-                  className="mt-1 h-9 text-xs"
-                  value={windowStart}
-                  onChange={(e) => setWindowStart(e.target.value)}
-                  placeholder="HH:MM"
-                  disabled={bulkCreate.isPending}
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Window End</label>
-                <Input
-                  className="mt-1 h-9 text-xs"
-                  value={windowEnd}
-                  onChange={(e) => setWindowEnd(e.target.value)}
-                  placeholder="HH:MM"
-                  disabled={bulkCreate.isPending}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-4">
-              <Input className="h-9 text-xs" value={medSkid} onChange={(e) => setMedSkid(e.target.value)} placeholder="Med skid" disabled={bulkCreate.isPending} />
-              <Input className="h-9 text-xs" value={smallSkid} onChange={(e) => setSmallSkid(e.target.value)} placeholder="Small skid" disabled={bulkCreate.isPending} />
-              <Input className="h-9 text-xs" value={largeSkid} onChange={(e) => setLargeSkid(e.target.value)} placeholder="Large skid" disabled={bulkCreate.isPending} />
-              <Input className="h-9 text-xs" value={box} onChange={(e) => setBox(e.target.value)} placeholder="Box" disabled={bulkCreate.isPending} />
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-3">
-              <Input className="h-9 text-xs" value={door} onChange={(e) => setDoor(e.target.value)} placeholder="Door" disabled={bulkCreate.isPending} />
-              <Input className="h-9 text-xs" value={frame} onChange={(e) => setFrame(e.target.value)} placeholder="Frame" disabled={bulkCreate.isPending} />
-              <Input className="h-9 text-xs" value={expFrame} onChange={(e) => setExpFrame(e.target.value)} placeholder="Exp frame" disabled={bulkCreate.isPending} />
-            </div>
-
-            <div className="grid gap-2 sm:grid-cols-3">
-              <label className="inline-flex items-center gap-2 rounded-md border border-steel-200 bg-white px-2 py-1 text-xs text-steel-700">
-                <input
-                  type="checkbox"
-                  checked={pickup}
-                  onChange={(e) => setPickup(e.target.checked)}
-                  disabled={bulkCreate.isPending}
-                />
-                Pickup
-              </label>
-              <select
-                className="h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
-                value={pickupVehicle}
-                onChange={(e) => setPickupVehicle(e.target.value)}
-                disabled={!pickup || bulkCreate.isPending}
-              >
-                <option value="both">Pickup both</option>
-                <option value="truck">Pickup truck</option>
-                <option value="van">Pickup van</option>
-              </select>
-              <label className="inline-flex items-center gap-2 rounded-md border border-steel-200 bg-white px-2 py-1 text-xs text-steel-700">
-                <input
-                  type="checkbox"
-                  checked={requiresEmptyTruck}
-                  onChange={(e) => setRequiresEmptyTruck(e.target.checked)}
-                  disabled={!pickup || bulkCreate.isPending}
-                />
-                Requires Empty Truck
-              </label>
-            </div>
+            {!deliveriesQuery.isLoading && unscheduledCandidates.length === 0 ? (
+              <div className="text-xs text-steel-500">No unscheduled deliveries are available.</div>
+            ) : null}
 
             <div className="flex items-center justify-between gap-2">
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={addUnplannedToRun}
-                disabled={bulkCreate.isPending || !plan}
+                onClick={scheduleUnscheduledToRun}
+                disabled={reschedule.isPending || !plan || !selectedUnscheduledId || !targetVehicleId}
               >
-                {bulkCreate.isPending ? "Adding..." : "Add To Run"}
+                {reschedule.isPending ? "Scheduling..." : "Schedule To Run"}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={resetForm}
-                disabled={bulkCreate.isPending}
+                disabled={reschedule.isPending}
               >
                 Reset
               </Button>
@@ -442,7 +341,7 @@ export default function UnassignedPanel({
           <div className="empty-state">All deliveries were assigned.</div>
         ) : (
           unassigned.map((stop: any) => (
-            <div key={String(stop?.id || stop?.delivery_id)} className="rounded-lg border border-steel-100 p-3">
+            <div key={deliveryIdFrom(stop)} className="rounded-lg border border-steel-100 p-3">
               <div className="text-sm font-medium">{String(stop?.job_name || "Delivery")}</div>
               <div className="text-xs text-steel-500">{String(stop?.job_address || "")}</div>
             </div>

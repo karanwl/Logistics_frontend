@@ -35,24 +35,8 @@ function PlannerWorkspace() {
       <PlannerHeader />
 
       {!plan ? (
-        <section className="card">
-          <div className="card-header">
-            <div>
-              <div className="text-xl font-semibold">No Plan Loaded</div>
-              <div className="card-subtitle">
-                Click Run Plan to generate routes for {selectedDate}.
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-steel-500">
-            Routes appear only after the planner returns a plan.
-          </div>
-        </section>
-      ) : null}
-
-      {!plan ? (
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="space-y-6 xl:col-span-4">
+        <div className="flex justify-center">
+          <div className="w-full max-w-xl">
             <FleetPanel />
           </div>
         </div>
@@ -62,7 +46,6 @@ function PlannerWorkspace() {
             <RouteBoard editable />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <FleetPanel />
             <MapPanel />
             <UnassignedPanel editable planDate={selectedDate} />
           </div>
