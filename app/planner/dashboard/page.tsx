@@ -37,14 +37,6 @@ type DashboardRow = {
   improvements: ImprovementMetrics;
 };
 
-type DateRange = {
-  start: string;
-  end: string;
-  days: number;
-};
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 const EMPTY_PLAN_METRICS: PlanMetrics = {
   route_count: 0,
   vehicle_count: 0,
@@ -84,26 +76,6 @@ function parseIsoDate(value: string): Date | null {
   if (!safeDate(value)) return null;
   const parsed = new Date(`${value}T00:00:00Z`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function daysInRange(startIso: string, endIso: string): number {
-  const start = parseIsoDate(startIso);
-  const end = parseIsoDate(endIso);
-  if (!start || !end || start.getTime() > end.getTime()) return 0;
-  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
-}
-
-function buildPreviousRange(startIso: string, endIso: string): DateRange | null {
-  const start = parseIsoDate(startIso);
-  const days = daysInRange(startIso, endIso);
-  if (!start || days <= 0) return null;
-  const previousEnd = addDays(start, -1);
-  const previousStart = addDays(previousEnd, -(days - 1));
-  return {
-    start: formatDate(previousStart),
-    end: formatDate(previousEnd),
-    days
-  };
 }
 
 function metricsFrom(value: any): PlanMetrics {
@@ -247,11 +219,6 @@ export default function PlannerDashboardPage() {
   const endIso = safeDate(endDate);
   const rangeValid = Boolean(startIso && endIso && startIso <= endIso);
 
-  const previousRange = useMemo(() => {
-    if (!rangeValid) return null;
-    return buildPreviousRange(startIso, endIso);
-  }, [rangeValid, startIso, endIso]);
-
   const dashboardQuery = usePlanDashboard({
     start_date: startIso || "",
     end_date: endIso || "",
@@ -259,29 +226,17 @@ export default function PlannerDashboardPage() {
     enabled: rangeValid
   });
 
-  const previousQuery = usePlanDashboard({
-    start_date: previousRange?.start || "",
-    end_date: previousRange?.end || "",
-    vehicle_type: vehicleFilter,
-    enabled: rangeValid && Boolean(previousRange)
-  });
-
   const totalsManual = metricsFrom(dashboardQuery.data?.totals?.manual || EMPTY_PLAN_METRICS);
   const totalsPublished = metricsFrom(dashboardQuery.data?.totals?.published || EMPTY_PLAN_METRICS);
   const totalsImprovements = improvementsFrom(dashboardQuery.data?.totals?.improvements || EMPTY_IMPROVEMENTS);
 
-  const previousTotalsManual = metricsFrom(previousQuery.data?.totals?.manual || EMPTY_PLAN_METRICS);
-  const previousTotalsPublished = metricsFrom(previousQuery.data?.totals?.published || EMPTY_PLAN_METRICS);
-  const previousImprovements = improvementsFrom(previousQuery.data?.totals?.improvements || EMPTY_IMPROVEMENTS);
-
   const comparedDays = asNumber(dashboardQuery.data?.coverage?.compared_dates);
   const rangeDays = asNumber(dashboardQuery.data?.coverage?.range_days);
-  const previousComparedDays = asNumber(previousQuery.data?.coverage?.compared_dates);
   const highlights = Array.isArray(dashboardQuery.data?.highlights)
     ? (dashboardQuery.data?.highlights as unknown[])
         .map((item) =>
           asText(item)
-            .replace("compared day(s)", "days compared")
+            .replace("compared day(s)", "matched days")
             .replace("Route time", "Drive time")
             .replace("manual", "before software")
         )
@@ -316,7 +271,6 @@ export default function PlannerDashboardPage() {
 
   const stopsServedChange = totalsPublished.delivery_stops - totalsManual.delivery_stops;
   const stopsServedPct = safeDivide(stopsServedChange, totalsManual.delivery_stops) * 100;
-  const previousStopsServedChange = previousTotalsPublished.delivery_stops - previousTotalsManual.delivery_stops;
 
   const manualMinutesPerStop = safeDivide(totalsManual.total_time_s / 60, totalsManual.delivery_stops);
   const publishedMinutesPerStop = safeDivide(totalsPublished.total_time_s / 60, totalsPublished.delivery_stops);
@@ -339,21 +293,6 @@ export default function PlannerDashboardPage() {
   const estimatedRouteValue = totalsImprovements.routes_saved * routeCost;
   const estimatedTotalValue = estimatedDistanceValue + estimatedTimeValue + estimatedRouteValue;
   const estimatedDailyValue = safeDivide(estimatedTotalValue, comparedDays);
-
-  const previousEstimatedTotalValue =
-    (previousImprovements.distance_saved_m / 1000) * costPerKm +
-    (previousImprovements.time_saved_s / 3600) * laborPerHour +
-    previousImprovements.routes_saved * routeCost;
-
-  const valueChangeVsPrevious = estimatedTotalValue - previousEstimatedTotalValue;
-  const distanceChangeVsPrevious = totalsImprovements.distance_saved_m - previousImprovements.distance_saved_m;
-  const timeChangeVsPrevious = totalsImprovements.time_saved_s - previousImprovements.time_saved_s;
-  const stopsChangeVsPrevious = stopsServedChange - previousStopsServedChange;
-
-  const compareCardDetail =
-    previousComparedDays > 0
-      ? `Previous period had ${Math.round(previousComparedDays)} compared days`
-      : "Previous period has limited matched days";
 
   const focusLabel =
     focusFilter === "all"
@@ -381,8 +320,8 @@ export default function PlannerDashboardPage() {
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-xl font-semibold">Performance Dashboard</div>
-              <div className="card-subtitle">See what improved after using route optimization.</div>
+              <div className="text-xl font-semibold">Results Dashboard</div>
+              <div className="card-subtitle">See what changed after using the planning tool.</div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <label className="text-xs text-steel-500">From</label>
@@ -422,11 +361,6 @@ export default function PlannerDashboardPage() {
               Showing {startIso} to {endIso} ({Math.round(rangeDays)} days). Days with both plans: {Math.round(comparedDays)}.
             </div>
           ) : null}
-          {rangeValid && previousRange ? (
-            <div className="mt-1 text-xs text-steel-500">
-              Previous window for comparison: {previousRange.start} to {previousRange.end} ({previousRange.days} days).
-            </div>
-          ) : null}
           {rangeValid ? (
             <div className="mt-1 flex items-center gap-3 text-[11px] text-steel-500">
               <span className="inline-flex items-center gap-1">
@@ -447,77 +381,36 @@ export default function PlannerDashboardPage() {
           {dashboardQuery.error ? (
             <div className="mt-2 text-xs text-rose-700">{(dashboardQuery.error as Error).message}</div>
           ) : null}
-          {previousQuery.isLoading && rangeValid ? (
-            <div className="mt-1 text-xs text-steel-500">Loading previous-period comparison...</div>
-          ) : null}
-          {previousQuery.error && rangeValid ? (
-            <div className="mt-1 text-xs text-rose-700">{(previousQuery.error as Error).message}</div>
-          ) : null}
         </section>
 
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-lg font-semibold">Executive Snapshot</div>
-              <div className="card-subtitle">The headline numbers leadership typically asks for first.</div>
+              <div className="text-lg font-semibold">Quick Summary</div>
+              <div className="card-subtitle">Top numbers at a glance.</div>
             </div>
           </div>
 
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             <ImpactCell
-              label="Estimated Value Created"
+              label="Estimated Savings"
               value={formatSignedMoney(estimatedTotalValue)}
               toneValue={estimatedTotalValue}
-              detail={`Per compared day: ${formatSignedMoney(estimatedDailyValue)}`}
+              detail={`Average per matched day: ${formatSignedMoney(estimatedDailyValue)}`}
             />
             <ImpactCell
-              label="Distance + Time Improvement"
+              label="Distance and Time Change"
               value={`${formatSignedDistance(totalsImprovements.distance_saved_m)} | ${formatSignedDuration(
                 totalsImprovements.time_saved_s
               )}`}
               toneValue={totalsImprovements.distance_saved_m + totalsImprovements.time_saved_s}
-              detail="Total change across the selected range"
+              detail="Total change in this date range"
             />
             <ImpactCell
               label="Service Capacity"
               value={formatSignedCount(stopsServedChange)}
               toneValue={stopsServedChange}
-              detail="Additional stops completed with software"
-            />
-          </div>
-
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <PeriodCompareCell
-              label="Value Created"
-              currentValue={formatSignedMoney(estimatedTotalValue)}
-              previousValue={formatSignedMoney(previousEstimatedTotalValue)}
-              changeValue={formatSignedMoney(valueChangeVsPrevious)}
-              toneValue={valueChangeVsPrevious}
-              detail={compareCardDetail}
-            />
-            <PeriodCompareCell
-              label="Distance Saved"
-              currentValue={formatSignedDistance(totalsImprovements.distance_saved_m)}
-              previousValue={formatSignedDistance(previousImprovements.distance_saved_m)}
-              changeValue={formatSignedDistance(distanceChangeVsPrevious)}
-              toneValue={distanceChangeVsPrevious}
-              detail={compareCardDetail}
-            />
-            <PeriodCompareCell
-              label="Time Saved"
-              currentValue={formatSignedDuration(totalsImprovements.time_saved_s)}
-              previousValue={formatSignedDuration(previousImprovements.time_saved_s)}
-              changeValue={formatSignedDuration(timeChangeVsPrevious)}
-              toneValue={timeChangeVsPrevious}
-              detail={compareCardDetail}
-            />
-            <PeriodCompareCell
-              label="Stops Served"
-              currentValue={formatSignedCount(stopsServedChange)}
-              previousValue={formatSignedCount(previousStopsServedChange)}
-              changeValue={formatSignedCount(stopsChangeVsPrevious)}
-              toneValue={stopsChangeVsPrevious}
-              detail={compareCardDetail}
+              detail="Extra stops completed"
             />
           </div>
         </section>
@@ -525,13 +418,13 @@ export default function PlannerDashboardPage() {
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-lg font-semibold">Business Impact</div>
-              <div className="card-subtitle">Clear numbers to show how optimization improves performance.</div>
+              <div className="text-lg font-semibold">Savings and Output</div>
+              <div className="card-subtitle">Simple numbers showing what improved.</div>
             </div>
           </div>
 
           <div className="rounded-lg border border-steel-100 bg-steel-50 p-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Value assumptions</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Cost settings</div>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               <label className="text-xs text-steel-600">
                 Cost per km (CAD)
@@ -562,7 +455,7 @@ export default function PlannerDashboardPage() {
               </label>
             </div>
             <div className="mt-2 text-[11px] text-steel-500">
-              Value estimate = distance savings + labor savings + daily operating savings from route reduction.
+              Savings = distance savings + labor savings + daily operating savings from fewer routes.
             </div>
           </div>
 
@@ -587,7 +480,7 @@ export default function PlannerDashboardPage() {
               label="Stops Served"
               value={formatSignedCount(stopsServedChange)}
               toneValue={stopsServedChange}
-              detail={`${formatPct(stopsServedPct)} | With software: ${Math.round(totalsPublished.delivery_stops)} stops`}
+              detail={`${formatPct(stopsServedPct)} | After: ${Math.round(totalsPublished.delivery_stops)} stops`}
               onClick={() => setFocusFilter("stops")}
               active={focusFilter === "stops"}
             />
@@ -595,12 +488,12 @@ export default function PlannerDashboardPage() {
               label="Routes Reduced"
               value={formatSignedCount(totalsImprovements.routes_saved)}
               toneValue={totalsImprovements.routes_saved}
-              detail={`Vehicle change: ${formatSignedCount(totalsImprovements.vehicles_saved)}`}
+              detail={`Vehicle count change: ${formatSignedCount(totalsImprovements.vehicles_saved)}`}
               onClick={() => setFocusFilter("routes")}
               active={focusFilter === "routes"}
             />
             <ImpactCell
-              label="Value Created"
+              label="Estimated Savings"
               value={formatSignedMoney(estimatedTotalValue)}
               toneValue={estimatedTotalValue}
               detail={`Distance ${formatSignedMoney(estimatedDistanceValue)} | Time ${formatSignedMoney(estimatedTimeValue)} | Daily ${formatSignedMoney(estimatedRouteValue)}`}
@@ -609,19 +502,19 @@ export default function PlannerDashboardPage() {
               label="Faster Per Stop"
               value={formatSignedMinutes(minutesPerStopSaved)}
               toneValue={minutesPerStopSaved}
-              detail={`Before software ${manualMinutesPerStop.toFixed(1)}m | With software ${publishedMinutesPerStop.toFixed(1)}m`}
+              detail={`Before ${manualMinutesPerStop.toFixed(1)}m | After ${publishedMinutesPerStop.toFixed(1)}m`}
             />
             <ImpactCell
               label="Less Travel Per Stop"
               value={formatSignedKm(kmPerStopSaved)}
               toneValue={kmPerStopSaved}
-              detail={`Before software ${manualKmPerStop.toFixed(2)} km | With software ${publishedKmPerStop.toFixed(2)} km`}
+              detail={`Before ${manualKmPerStop.toFixed(2)} km | After ${publishedKmPerStop.toFixed(2)} km`}
             />
             <ImpactCell
               label="Better Days"
               value={`${improvedDays}/${Math.round(comparedDays)}`}
               toneValue={winRateTone}
-              detail={`${winRatePct.toFixed(1)}% of compared days`}
+              detail={`${winRatePct.toFixed(1)}% of matched days`}
               onClick={() => setFocusFilter("winning_days")}
               active={focusFilter === "winning_days"}
             />
@@ -629,7 +522,7 @@ export default function PlannerDashboardPage() {
               label="Days Needing Attention"
               value={String(needsAttentionDays)}
               toneValue={-needsAttentionDays}
-              detail="Days where software underperformed before software"
+              detail="Days where results were worse than before"
               onClick={() => setFocusFilter("needs_attention")}
               active={focusFilter === "needs_attention"}
             />
@@ -648,7 +541,7 @@ export default function PlannerDashboardPage() {
             <div className="card-header">
               <div>
                 <div className="text-lg font-semibold">Before Software Totals</div>
-                <div className="card-subtitle">What the team handled without route optimization.</div>
+                <div className="card-subtitle">What the team handled before the tool.</div>
               </div>
             </div>
             <MetricsGrid metrics={totalsManual} />
@@ -658,7 +551,7 @@ export default function PlannerDashboardPage() {
             <div className="card-header">
               <div>
                 <div className="text-lg font-semibold">With Software Totals</div>
-                <div className="card-subtitle">What the team handled with optimized routes.</div>
+                <div className="card-subtitle">What the team handled with the tool.</div>
               </div>
             </div>
             <MetricsGrid metrics={totalsPublished} />
@@ -669,7 +562,7 @@ export default function PlannerDashboardPage() {
           <div className="card-header">
             <div>
               <div className="text-lg font-semibold">Daily Results</div>
-              <div className="card-subtitle">Color-coded daily impact compared to before software.</div>
+              <div className="card-subtitle">Color-coded day-by-day changes.</div>
             </div>
           </div>
 
@@ -692,17 +585,17 @@ export default function PlannerDashboardPage() {
             />
             <FilterChip label="Time changes" active={focusFilter === "time"} onClick={() => setFocusFilter("time")} />
             <FilterChip label="Stop changes" active={focusFilter === "stops"} onClick={() => setFocusFilter("stops")} />
-            <FilterChip label="Route changes" active={focusFilter === "routes"} onClick={() => setFocusFilter("routes")} />
+            <FilterChip label="Route count changes" active={focusFilter === "routes"} onClick={() => setFocusFilter("routes")} />
           </div>
 
           <div className="mb-2 text-xs text-steel-500">
-            Showing {filteredTimeline.length} day(s) for filter: {focusLabel}.
+            Showing {filteredTimeline.length} day(s) for view: {focusLabel}.
           </div>
 
           {timeline.length === 0 ? (
-            <div className="text-sm text-steel-500">No days in this range have both a before and with-software plan yet.</div>
+            <div className="text-sm text-steel-500">No days in this range have both before and after data yet.</div>
           ) : filteredTimeline.length === 0 ? (
-            <div className="text-sm text-steel-500">No days match this filter. Choose another filter to see results.</div>
+            <div className="text-sm text-steel-500">No days match this view. Choose another view to see results.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-xs">
@@ -710,11 +603,11 @@ export default function PlannerDashboardPage() {
                   <tr className="border-b border-steel-100 text-steel-500">
                     <th className="px-2 py-2 text-left font-semibold">Date</th>
                     <th className="px-2 py-2 text-right font-semibold">Before Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">With Software Stops</th>
+                    <th className="px-2 py-2 text-right font-semibold">After Stops</th>
                     <th className="px-2 py-2 text-right font-semibold">Stops Served</th>
                     <th className="px-2 py-2 text-right font-semibold">Distance Saved</th>
                     <th className="px-2 py-2 text-right font-semibold">Time Saved</th>
-                    <th className="px-2 py-2 text-right font-semibold">Routes Saved</th>
+                    <th className="px-2 py-2 text-right font-semibold">Fewer Routes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -782,32 +675,6 @@ function ImpactCell({
       <div className={`text-base font-semibold ${metricTone(toneValue)}`}>{value}</div>
       <div className="text-[11px] text-steel-500">{detail}</div>
     </button>
-  );
-}
-
-function PeriodCompareCell({
-  label,
-  currentValue,
-  previousValue,
-  changeValue,
-  toneValue,
-  detail
-}: {
-  label: string;
-  currentValue: string;
-  previousValue: string;
-  changeValue: string;
-  toneValue: number;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-lg border border-steel-100 bg-white px-3 py-2">
-      <div className="text-[11px] uppercase tracking-wide text-steel-500">{label}</div>
-      <div className="mt-1 text-sm text-steel-600">Current: {currentValue}</div>
-      <div className="text-sm text-steel-600">Previous: {previousValue}</div>
-      <div className={`text-sm font-semibold ${metricTone(toneValue)}`}>Change: {changeValue}</div>
-      <div className="mt-1 text-[11px] text-steel-500">{detail}</div>
-    </div>
   );
 }
 
