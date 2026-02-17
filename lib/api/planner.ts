@@ -62,6 +62,52 @@ export const usePublishedPlansList = () =>
     staleTime: 15000
   });
 
+export const useManualPlan = (date: string) =>
+  useQuery({
+    queryKey: ["plan", "manual", date],
+    queryFn: () => api.get<any>(`/plan/manual?date=${encodeURIComponent(date)}`),
+    staleTime: 15000,
+    enabled: Boolean(date)
+  });
+
+export const useManualPlansList = () =>
+  useQuery({
+    queryKey: ["plan", "manual", "list"],
+    queryFn: () => api.get<{ items: unknown[] }>("/plan/manual/list"),
+    staleTime: 15000
+  });
+
+export const useManualRecalculate = () =>
+  useMutation({
+    mutationFn: (payload: {
+      routes: unknown[];
+      deliveries: unknown[];
+      meta?: unknown;
+    }) =>
+      api.post<any>(
+        "/plan/manual/recalculate",
+        JSON.stringify(payload),
+        { "content-type": "application/json" }
+      )
+  });
+
+export const useManualSavePlan = () =>
+  useMutation({
+    mutationFn: (payload: {
+      routes: unknown[];
+      deliveries: unknown[];
+      meta?: unknown;
+      fleet?: unknown;
+      plan_date?: string;
+      driver_profiles?: unknown[];
+    }) =>
+      api.post<any>(
+        "/plan/manual/save",
+        JSON.stringify(payload),
+        { "content-type": "application/json" }
+      )
+  });
+
 export const usePlanMatrixDebug = (params: {
   date: string;
   trucks: number;

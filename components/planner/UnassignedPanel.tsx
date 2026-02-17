@@ -21,18 +21,36 @@ function deliveryIdFrom(value: any): string {
   return String(value?.delivery_id || value?.id || "").trim();
 }
 
+function buildStopItem(delivery: any, fallbackId: string) {
+  return {
+    type: "delivery" as const,
+    id: fallbackId,
+    job_name: String(delivery?.job_name || `Delivery ${fallbackId}`),
+    med_skid: asNonNegativeInt(String(delivery?.med_skid ?? 0)),
+    small_skid: asNonNegativeInt(String(delivery?.small_skid ?? 0)),
+    large_skid: asNonNegativeInt(String(delivery?.large_skid ?? 0)),
+    door: asNonNegativeInt(String(delivery?.door ?? 0)),
+    frame: asNonNegativeInt(String(delivery?.frame ?? 0)),
+    exp_frame: asNonNegativeInt(String(delivery?.exp_frame ?? 0)),
+    box: asNonNegativeInt(String(delivery?.box ?? 0)),
+  };
+}
+
 export default function UnassignedPanel({
   editable = false,
-  planDate
+  planDate,
+  allowAssignToRoute = false
 }: {
   editable?: boolean;
   planDate?: string;
+  allowAssignToRoute?: boolean;
 }) {
   const { plan, setPlan } = usePlannerState();
   const deliveriesQuery = useDeliveries();
   const reschedule = useRescheduleDelivery();
 
   const [targetVehicleId, setTargetVehicleId] = useState("");
+  const [targetUnassignedVehicleId, setTargetUnassignedVehicleId] = useState("");
   const [selectedUnscheduledId, setSelectedUnscheduledId] = useState("");
   const [formMessage, setFormMessage] = useState("");
 
@@ -53,7 +71,10 @@ export default function UnassignedPanel({
     if (!targetVehicleId || !vehicleIds.includes(targetVehicleId)) {
       setTargetVehicleId(vehicleIds[0]);
     }
-  }, [targetVehicleId, vehicleIds]);
+    if (!targetUnassignedVehicleId || !vehicleIds.includes(targetUnassignedVehicleId)) {
+      setTargetUnassignedVehicleId(vehicleIds[0]);
+    }
+  }, [targetVehicleId, targetUnassignedVehicleId, vehicleIds]);
 
   const assigned = new Set<string>();
   (plan?.routes || []).forEach((route) => {
@@ -164,18 +185,7 @@ export default function UnassignedPanel({
       const nextRoutes = (plan.routes || []).map((route) => {
         if (String(route.vehicle_id) !== targetVehicleId) return route;
 
-        const stopItem = {
-          type: "delivery" as const,
-          id: normalizedDeliveryId,
-          job_name: normalizedDelivery.job_name,
-          med_skid: asNonNegativeInt(String((row as any)?.med_skid ?? 0)),
-          small_skid: asNonNegativeInt(String((row as any)?.small_skid ?? 0)),
-          large_skid: asNonNegativeInt(String((row as any)?.large_skid ?? 0)),
-          door: asNonNegativeInt(String((row as any)?.door ?? 0)),
-          frame: asNonNegativeInt(String((row as any)?.frame ?? 0)),
-          exp_frame: asNonNegativeInt(String((row as any)?.exp_frame ?? 0)),
-          box: asNonNegativeInt(String((row as any)?.box ?? 0)),
-        };
+        const stopItem = buildStopItem(row, normalizedDeliveryId);
 
         const nextStops = [...(route.stops || [])];
         nextStops.push([stopItem]);
@@ -248,6 +258,50 @@ export default function UnassignedPanel({
     } catch (error: any) {
       setFormMessage(error?.message || "Failed to schedule unscheduled delivery.");
     }
+  };
+
+  const assignUnassignedToVehicle = (deliveryId: string) => {
+    if (!editable || !allowAssignToRoute || !plan) return;
+    if (!deliveryId) return;
+    if (!targetUnassignedVehicleId) {
+      setFormMessage("Select a target vehicle for assignment.");
+      return;
+    }
+
+    const selectedDelivery = (plan.deliveries || []).find(
+      (delivery: any) => deliveryIdFrom(delivery) === deliveryId
+    );
+    if (!selectedDelivery) {
+      setFormMessage("Delivery not found in current plan.");
+      return;
+    }
+
+    const nextRoutes = (plan.routes || []).map((route) => {
+      if (String(route.vehicle_id) !== targetUnassignedVehicleId) return route;
+      const nextStops = [...(route.stops || [])];
+      nextStops.push([buildStopItem(selectedDelivery, deliveryId)]);
+
+      const nextStopTimes = [...(route.stop_times || [])];
+      nextStopTimes.push({
+        arrival_hhmm: String((selectedDelivery as any)?.window_start || "").trim() || undefined,
+        departure_hhmm: String((selectedDelivery as any)?.window_end || "").trim() || undefined,
+      });
+
+      const nextStopNodes = [...(route.stop_nodes || [])];
+      if (nextStopNodes.length > 0) {
+        nextStopNodes.push(nextStopNodes[nextStopNodes.length - 1]);
+      }
+
+      return {
+        ...route,
+        stops: nextStops,
+        stop_times: nextStopTimes,
+        stop_nodes: nextStopNodes,
+      };
+    });
+
+    setPlan({ ...plan, routes: nextRoutes });
+    setFormMessage(`Added delivery ${deliveryId} to vehicle ${targetUnassignedVehicleId}. Recalculate to refresh totals.`);
   };
 
   return (
@@ -334,6 +388,31 @@ export default function UnassignedPanel({
         </div>
       ) : null}
 
+      {editable && allowAssignToRoute ? (
+        <div className="mb-3 rounded-lg border border-steel-200 bg-white/80 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Assign Unassigned Stops</div>
+          <div className="mt-1 text-[11px] text-steel-500">
+            Pick a vehicle, then add unassigned deliveries directly into that run.
+          </div>
+          <div className="mt-2">
+            <label className="text-[11px] font-semibold uppercase text-steel-500">Vehicle</label>
+            <select
+              className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
+              value={targetUnassignedVehicleId}
+              onChange={(e) => setTargetUnassignedVehicleId(e.target.value)}
+              disabled={vehicleIds.length === 0}
+            >
+              {vehicleIds.length === 0 ? <option value="">No routes</option> : null}
+              {vehicleIds.map((vehicleId) => (
+                <option key={`assign:${vehicleId}`} value={vehicleId}>
+                  Vehicle {vehicleId}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid gap-2 sm:grid-cols-2">
         {!plan ? (
           <div className="empty-state">No plan loaded.</div>
@@ -344,6 +423,18 @@ export default function UnassignedPanel({
             <div key={deliveryIdFrom(stop)} className="rounded-lg border border-steel-100 p-3">
               <div className="text-sm font-medium">{String(stop?.job_name || "Delivery")}</div>
               <div className="text-xs text-steel-500">{String(stop?.job_address || "")}</div>
+              {editable && allowAssignToRoute ? (
+                <div className="mt-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => assignUnassignedToVehicle(deliveryIdFrom(stop))}
+                    disabled={!targetUnassignedVehicleId}
+                  >
+                    Add To Vehicle {targetUnassignedVehicleId || "--"}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ))
         )}

@@ -9,6 +9,7 @@ const links = [
   { href: "/planner", label: "Planner" },
   { href: "/planner/debug", label: "Matrix Debug" },
   { href: "/planner/live", label: "Live Progress" },
+  { href: "/planner/manual", label: "Manual Runs" },
   { href: "/schedule", label: "Schedule" },
   { href: "/planner/published", label: "Published" },
   { href: "/admin", label: "Admin" },
