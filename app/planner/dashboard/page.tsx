@@ -232,43 +232,6 @@ function buildRangeStartDate(endDateIso: string, days: number): string {
   return formatDate(addDays(end, -(Math.max(1, days) - 1)));
 }
 
-function coverageSummary(comparedDays: number, rangeDays: number): { label: string; tone: number; detail: string } {
-  if (rangeDays <= 0) {
-    return {
-      label: "No date range selected",
-      tone: -1,
-      detail: "Pick a valid date range to compare plans."
-    };
-  }
-  if (comparedDays <= 0) {
-    return {
-      label: "No matched days yet",
-      tone: -1,
-      detail: "No days in this range have both a before and with-software plan."
-    };
-  }
-  const pct = safeDivide(comparedDays, rangeDays) * 100;
-  if (pct >= 80) {
-    return {
-      label: "High confidence",
-      tone: 1,
-      detail: `${Math.round(pct)}% of days in this range were compared.`
-    };
-  }
-  if (pct >= 50) {
-    return {
-      label: "Medium confidence",
-      tone: 0,
-      detail: `${Math.round(pct)}% of days in this range were compared.`
-    };
-  }
-  return {
-    label: "Limited confidence",
-    tone: -1,
-    detail: `${Math.round(pct)}% of days in this range were compared.`
-  };
-}
-
 export default function PlannerDashboardPage() {
   const today = useMemo(() => formatDate(new Date()), []);
   const [startDate, setStartDate] = useState(() => buildRangeStartDate(today, 30));
@@ -367,8 +330,6 @@ export default function PlannerDashboardPage() {
   const needsAttentionDays = timeline.filter((row) => dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) < 0).length;
   const winRatePct = safeDivide(improvedDays, comparedDays) * 100;
   const winRateTone = comparedDays <= 0 ? 0 : winRatePct >= 50 ? 1 : -1;
-  const coverage = coverageSummary(comparedDays, rangeDays);
-
   const costPerKm = parseCostInput(costPerKmInput, 1.25);
   const laborPerHour = parseCostInput(laborPerHourInput, 45);
   const routeCost = parseCostInput(routeCostInput, 180);
@@ -502,7 +463,7 @@ export default function PlannerDashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             <ImpactCell
               label="Estimated Value Created"
               value={formatSignedMoney(estimatedTotalValue)}
@@ -522,12 +483,6 @@ export default function PlannerDashboardPage() {
               value={formatSignedCount(stopsServedChange)}
               toneValue={stopsServedChange}
               detail="Additional stops completed with software"
-            />
-            <ImpactCell
-              label="Data Confidence"
-              value={coverage.label}
-              toneValue={coverage.tone}
-              detail={coverage.detail}
             />
           </div>
 
