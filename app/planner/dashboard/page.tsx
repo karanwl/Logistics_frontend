@@ -183,9 +183,9 @@ function formatSignedKm(value: number): string {
 
 function formatMoney(value: number, includeCents = false): string {
   const safe = Number.isFinite(value) ? value : 0;
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-CA", {
     style: "currency",
-    currency: "USD",
+    currency: "CAD",
     minimumFractionDigits: includeCents ? 2 : 0,
     maximumFractionDigits: includeCents ? 2 : 0
   }).format(safe);
@@ -239,9 +239,9 @@ export default function PlannerDashboardPage() {
   const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>("all");
   const [focusFilter, setFocusFilter] = useState<FocusFilter>("all");
 
-  const [costPerKmInput, setCostPerKmInput] = useState("1.25");
-  const [laborPerHourInput, setLaborPerHourInput] = useState("45");
-  const [routeCostInput, setRouteCostInput] = useState("180");
+  const [costPerKmInput, setCostPerKmInput] = useState("1");
+  const [laborPerHourInput, setLaborPerHourInput] = useState("25");
+  const [routeCostInput, setRouteCostInput] = useState("200");
 
   const startIso = safeDate(startDate);
   const endIso = safeDate(endDate);
@@ -330,9 +330,9 @@ export default function PlannerDashboardPage() {
   const needsAttentionDays = timeline.filter((row) => dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) < 0).length;
   const winRatePct = safeDivide(improvedDays, comparedDays) * 100;
   const winRateTone = comparedDays <= 0 ? 0 : winRatePct >= 50 ? 1 : -1;
-  const costPerKm = parseCostInput(costPerKmInput, 1.25);
-  const laborPerHour = parseCostInput(laborPerHourInput, 45);
-  const routeCost = parseCostInput(routeCostInput, 180);
+  const costPerKm = parseCostInput(costPerKmInput, 1);
+  const laborPerHour = parseCostInput(laborPerHourInput, 25);
+  const routeCost = parseCostInput(routeCostInput, 200);
 
   const estimatedDistanceValue = (totalsImprovements.distance_saved_m / 1000) * costPerKm;
   const estimatedTimeValue = (totalsImprovements.time_saved_s / 3600) * laborPerHour;
@@ -534,7 +534,7 @@ export default function PlannerDashboardPage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Value assumptions</div>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               <label className="text-xs text-steel-600">
-                Cost per km (USD)
+                Cost per km (CAD)
                 <input
                   className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={costPerKmInput}
@@ -543,7 +543,7 @@ export default function PlannerDashboardPage() {
                 />
               </label>
               <label className="text-xs text-steel-600">
-                Labor per hour (USD)
+                Labor per hour (CAD)
                 <input
                   className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={laborPerHourInput}
@@ -552,7 +552,7 @@ export default function PlannerDashboardPage() {
                 />
               </label>
               <label className="text-xs text-steel-600">
-                Cost per route (USD)
+                Cost per day (CAD)
                 <input
                   className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={routeCostInput}
@@ -562,7 +562,7 @@ export default function PlannerDashboardPage() {
               </label>
             </div>
             <div className="mt-2 text-[11px] text-steel-500">
-              Value estimate = distance savings + labor savings + route reduction savings.
+              Value estimate = distance savings + labor savings + daily operating savings from route reduction.
             </div>
           </div>
 
@@ -603,7 +603,7 @@ export default function PlannerDashboardPage() {
               label="Value Created"
               value={formatSignedMoney(estimatedTotalValue)}
               toneValue={estimatedTotalValue}
-              detail={`Distance ${formatSignedMoney(estimatedDistanceValue)} | Time ${formatSignedMoney(estimatedTimeValue)} | Routes ${formatSignedMoney(estimatedRouteValue)}`}
+              detail={`Distance ${formatSignedMoney(estimatedDistanceValue)} | Time ${formatSignedMoney(estimatedTimeValue)} | Daily ${formatSignedMoney(estimatedRouteValue)}`}
             />
             <ImpactCell
               label="Faster Per Stop"
