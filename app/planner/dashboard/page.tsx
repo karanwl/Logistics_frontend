@@ -7,6 +7,7 @@ import { usePlanDashboard } from "@/lib/api/planner";
 import { addDays, formatDate } from "@/lib/utils/dates";
 
 type VehicleFilter = "all" | "truck" | "van";
+type FocusFilter = "all" | "winning_days" | "needs_attention" | "distance" | "time" | "stops" | "routes";
 
 type PlanMetrics = {
   route_count: number;
@@ -35,6 +36,14 @@ type DashboardRow = {
   published: PlanMetrics;
   improvements: ImprovementMetrics;
 };
+
+type DateRange = {
+  start: string;
+  end: string;
+  days: number;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const EMPTY_PLAN_METRICS: PlanMetrics = {
   route_count: 0,
@@ -71,6 +80,32 @@ function safeDate(value: string): string {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
 }
 
+function parseIsoDate(value: string): Date | null {
+  if (!safeDate(value)) return null;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function daysInRange(startIso: string, endIso: string): number {
+  const start = parseIsoDate(startIso);
+  const end = parseIsoDate(endIso);
+  if (!start || !end || start.getTime() > end.getTime()) return 0;
+  return Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+}
+
+function buildPreviousRange(startIso: string, endIso: string): DateRange | null {
+  const start = parseIsoDate(startIso);
+  const days = daysInRange(startIso, endIso);
+  if (!start || days <= 0) return null;
+  const previousEnd = addDays(start, -1);
+  const previousStart = addDays(previousEnd, -(days - 1));
+  return {
+    start: formatDate(previousStart),
+    end: formatDate(previousEnd),
+    days
+  };
+}
+
 function metricsFrom(value: any): PlanMetrics {
   return {
     route_count: asNumber(value?.route_count),
@@ -94,6 +129,12 @@ function improvementsFrom(value: any): ImprovementMetrics {
     daily_distance_saved_m: asNumber(value?.daily_distance_saved_m),
     daily_time_saved_s: asNumber(value?.daily_time_saved_s)
   };
+}
+
+function parseCostInput(value: string, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
 }
 
 function formatDistance(meters: number): string {
@@ -140,6 +181,21 @@ function formatSignedKm(value: number): string {
   return `${sign}${Math.abs(value).toFixed(2)} km`;
 }
 
+function formatMoney(value: number, includeCents = false): string {
+  const safe = Number.isFinite(value) ? value : 0;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: includeCents ? 2 : 0,
+    maximumFractionDigits: includeCents ? 2 : 0
+  }).format(safe);
+}
+
+function formatSignedMoney(value: number): string {
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  return `${sign}${formatMoney(Math.abs(value))}`;
+}
+
 function metricTone(value: number): string {
   if (value > 0) return "text-emerald-700";
   if (value < 0) return "text-rose-700";
@@ -172,8 +228,45 @@ function dayResultBgClass(distanceSavedM: number, timeSavedS: number): string {
 }
 
 function buildRangeStartDate(endDateIso: string, days: number): string {
-  const end = new Date(`${endDateIso}T00:00:00Z`);
+  const end = parseIsoDate(endDateIso) || new Date(`${endDateIso}T00:00:00Z`);
   return formatDate(addDays(end, -(Math.max(1, days) - 1)));
+}
+
+function coverageSummary(comparedDays: number, rangeDays: number): { label: string; tone: number; detail: string } {
+  if (rangeDays <= 0) {
+    return {
+      label: "No date range selected",
+      tone: -1,
+      detail: "Pick a valid date range to compare plans."
+    };
+  }
+  if (comparedDays <= 0) {
+    return {
+      label: "No matched days yet",
+      tone: -1,
+      detail: "No days in this range have both a before and with-software plan."
+    };
+  }
+  const pct = safeDivide(comparedDays, rangeDays) * 100;
+  if (pct >= 80) {
+    return {
+      label: "High confidence",
+      tone: 1,
+      detail: `${Math.round(pct)}% of days in this range were compared.`
+    };
+  }
+  if (pct >= 50) {
+    return {
+      label: "Medium confidence",
+      tone: 0,
+      detail: `${Math.round(pct)}% of days in this range were compared.`
+    };
+  }
+  return {
+    label: "Limited confidence",
+    tone: -1,
+    detail: `${Math.round(pct)}% of days in this range were compared.`
+  };
 }
 
 export default function PlannerDashboardPage() {
@@ -181,10 +274,20 @@ export default function PlannerDashboardPage() {
   const [startDate, setStartDate] = useState(() => buildRangeStartDate(today, 30));
   const [endDate, setEndDate] = useState(today);
   const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>("all");
+  const [focusFilter, setFocusFilter] = useState<FocusFilter>("all");
+
+  const [costPerKmInput, setCostPerKmInput] = useState("1.25");
+  const [laborPerHourInput, setLaborPerHourInput] = useState("45");
+  const [routeCostInput, setRouteCostInput] = useState("180");
 
   const startIso = safeDate(startDate);
   const endIso = safeDate(endDate);
   const rangeValid = Boolean(startIso && endIso && startIso <= endIso);
+
+  const previousRange = useMemo(() => {
+    if (!rangeValid) return null;
+    return buildPreviousRange(startIso, endIso);
+  }, [rangeValid, startIso, endIso]);
 
   const dashboardQuery = usePlanDashboard({
     start_date: startIso || "",
@@ -193,24 +296,37 @@ export default function PlannerDashboardPage() {
     enabled: rangeValid
   });
 
+  const previousQuery = usePlanDashboard({
+    start_date: previousRange?.start || "",
+    end_date: previousRange?.end || "",
+    vehicle_type: vehicleFilter,
+    enabled: rangeValid && Boolean(previousRange)
+  });
+
   const totalsManual = metricsFrom(dashboardQuery.data?.totals?.manual || EMPTY_PLAN_METRICS);
   const totalsPublished = metricsFrom(dashboardQuery.data?.totals?.published || EMPTY_PLAN_METRICS);
   const totalsImprovements = improvementsFrom(dashboardQuery.data?.totals?.improvements || EMPTY_IMPROVEMENTS);
 
+  const previousTotalsManual = metricsFrom(previousQuery.data?.totals?.manual || EMPTY_PLAN_METRICS);
+  const previousTotalsPublished = metricsFrom(previousQuery.data?.totals?.published || EMPTY_PLAN_METRICS);
+  const previousImprovements = improvementsFrom(previousQuery.data?.totals?.improvements || EMPTY_IMPROVEMENTS);
+
   const comparedDays = asNumber(dashboardQuery.data?.coverage?.compared_dates);
   const rangeDays = asNumber(dashboardQuery.data?.coverage?.range_days);
+  const previousComparedDays = asNumber(previousQuery.data?.coverage?.compared_dates);
   const highlights = Array.isArray(dashboardQuery.data?.highlights)
     ? (dashboardQuery.data?.highlights as unknown[])
         .map((item) =>
           asText(item)
             .replace("compared day(s)", "days compared")
             .replace("Route time", "Drive time")
+            .replace("manual", "before software")
         )
         .filter(Boolean)
     : [];
 
   const timeline = useMemo<DashboardRow[]>(() => {
-    const rows = Array.isArray(dashboardQuery.data?.timeline) ? dashboardQuery.data.timeline : [];
+    const rows = Array.isArray(dashboardQuery.data?.timeline) ? (dashboardQuery.data.timeline as unknown[]) : [];
     return rows
       .map((row: any) => ({
         date: asText(row?.date),
@@ -222,8 +338,22 @@ export default function PlannerDashboardPage() {
       .sort((a: DashboardRow, b: DashboardRow) => b.date.localeCompare(a.date));
   }, [dashboardQuery.data?.timeline]);
 
+  const filteredTimeline = useMemo(() => {
+    return timeline.filter((row) => {
+      const stopDelta = row.published.delivery_stops - row.manual.delivery_stops;
+      if (focusFilter === "winning_days") return dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) > 0;
+      if (focusFilter === "needs_attention") return dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) < 0;
+      if (focusFilter === "distance") return row.improvements.distance_saved_m !== 0;
+      if (focusFilter === "time") return row.improvements.time_saved_s !== 0;
+      if (focusFilter === "stops") return stopDelta !== 0;
+      if (focusFilter === "routes") return row.improvements.routes_saved !== 0;
+      return true;
+    });
+  }, [focusFilter, timeline]);
+
   const stopsServedChange = totalsPublished.delivery_stops - totalsManual.delivery_stops;
   const stopsServedPct = safeDivide(stopsServedChange, totalsManual.delivery_stops) * 100;
+  const previousStopsServedChange = previousTotalsPublished.delivery_stops - previousTotalsManual.delivery_stops;
 
   const manualMinutesPerStop = safeDivide(totalsManual.total_time_s / 60, totalsManual.delivery_stops);
   const publishedMinutesPerStop = safeDivide(totalsPublished.total_time_s / 60, totalsPublished.delivery_stops);
@@ -234,8 +364,50 @@ export default function PlannerDashboardPage() {
   const kmPerStopSaved = manualKmPerStop - publishedKmPerStop;
 
   const improvedDays = timeline.filter((row) => dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) > 0).length;
+  const needsAttentionDays = timeline.filter((row) => dayResultTone(row.improvements.distance_saved_m, row.improvements.time_saved_s) < 0).length;
   const winRatePct = safeDivide(improvedDays, comparedDays) * 100;
   const winRateTone = comparedDays <= 0 ? 0 : winRatePct >= 50 ? 1 : -1;
+  const coverage = coverageSummary(comparedDays, rangeDays);
+
+  const costPerKm = parseCostInput(costPerKmInput, 1.25);
+  const laborPerHour = parseCostInput(laborPerHourInput, 45);
+  const routeCost = parseCostInput(routeCostInput, 180);
+
+  const estimatedDistanceValue = (totalsImprovements.distance_saved_m / 1000) * costPerKm;
+  const estimatedTimeValue = (totalsImprovements.time_saved_s / 3600) * laborPerHour;
+  const estimatedRouteValue = totalsImprovements.routes_saved * routeCost;
+  const estimatedTotalValue = estimatedDistanceValue + estimatedTimeValue + estimatedRouteValue;
+  const estimatedDailyValue = safeDivide(estimatedTotalValue, comparedDays);
+
+  const previousEstimatedTotalValue =
+    (previousImprovements.distance_saved_m / 1000) * costPerKm +
+    (previousImprovements.time_saved_s / 3600) * laborPerHour +
+    previousImprovements.routes_saved * routeCost;
+
+  const valueChangeVsPrevious = estimatedTotalValue - previousEstimatedTotalValue;
+  const distanceChangeVsPrevious = totalsImprovements.distance_saved_m - previousImprovements.distance_saved_m;
+  const timeChangeVsPrevious = totalsImprovements.time_saved_s - previousImprovements.time_saved_s;
+  const stopsChangeVsPrevious = stopsServedChange - previousStopsServedChange;
+
+  const compareCardDetail =
+    previousComparedDays > 0
+      ? `Previous period had ${Math.round(previousComparedDays)} compared days`
+      : "Previous period has limited matched days";
+
+  const focusLabel =
+    focusFilter === "all"
+      ? "All days"
+      : focusFilter === "winning_days"
+        ? "Winning days"
+        : focusFilter === "needs_attention"
+          ? "Needs attention"
+          : focusFilter === "distance"
+            ? "Distance changes"
+            : focusFilter === "time"
+              ? "Time changes"
+              : focusFilter === "stops"
+                ? "Stop changes"
+                : "Route changes";
 
   const applyPreset = (days: number) => {
     setEndDate(today);
@@ -249,9 +421,7 @@ export default function PlannerDashboardPage() {
           <div className="card-header">
             <div>
               <div className="text-xl font-semibold">Performance Dashboard</div>
-              <div className="card-subtitle">
-                See how your routes improved in the selected date range.
-              </div>
+              <div className="card-subtitle">See what improved after using route optimization.</div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <label className="text-xs text-steel-500">From</label>
@@ -288,22 +458,27 @@ export default function PlannerDashboardPage() {
           ) : null}
           {rangeValid ? (
             <div className="mt-2 text-xs text-steel-500">
-              Showing {startIso} to {endIso} ({rangeDays} days). Days with both plans: {comparedDays}.
+              Showing {startIso} to {endIso} ({Math.round(rangeDays)} days). Days with both plans: {Math.round(comparedDays)}.
+            </div>
+          ) : null}
+          {rangeValid && previousRange ? (
+            <div className="mt-1 text-xs text-steel-500">
+              Previous window for comparison: {previousRange.start} to {previousRange.end} ({previousRange.days} days).
             </div>
           ) : null}
           {rangeValid ? (
             <div className="mt-1 flex items-center gap-3 text-[11px] text-steel-500">
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Better than manual
+                Better than before software
               </span>
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-rose-500" />
-                Worse than manual
+                Worse than before software
               </span>
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-steel-400" />
-                Same
+                Same result
               </span>
             </div>
           ) : null}
@@ -311,59 +486,197 @@ export default function PlannerDashboardPage() {
           {dashboardQuery.error ? (
             <div className="mt-2 text-xs text-rose-700">{(dashboardQuery.error as Error).message}</div>
           ) : null}
+          {previousQuery.isLoading && rangeValid ? (
+            <div className="mt-1 text-xs text-steel-500">Loading previous-period comparison...</div>
+          ) : null}
+          {previousQuery.error && rangeValid ? (
+            <div className="mt-1 text-xs text-rose-700">{(previousQuery.error as Error).message}</div>
+          ) : null}
+        </section>
+
+        <section className="card">
+          <div className="card-header">
+            <div>
+              <div className="text-lg font-semibold">Executive Snapshot</div>
+              <div className="card-subtitle">The headline numbers leadership typically asks for first.</div>
+            </div>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <ImpactCell
+              label="Estimated Value Created"
+              value={formatSignedMoney(estimatedTotalValue)}
+              toneValue={estimatedTotalValue}
+              detail={`Per compared day: ${formatSignedMoney(estimatedDailyValue)}`}
+            />
+            <ImpactCell
+              label="Distance + Time Improvement"
+              value={`${formatSignedDistance(totalsImprovements.distance_saved_m)} | ${formatSignedDuration(
+                totalsImprovements.time_saved_s
+              )}`}
+              toneValue={totalsImprovements.distance_saved_m + totalsImprovements.time_saved_s}
+              detail="Total change across the selected range"
+            />
+            <ImpactCell
+              label="Service Capacity"
+              value={formatSignedCount(stopsServedChange)}
+              toneValue={stopsServedChange}
+              detail="Additional stops completed with software"
+            />
+            <ImpactCell
+              label="Data Confidence"
+              value={coverage.label}
+              toneValue={coverage.tone}
+              detail={coverage.detail}
+            />
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+            <PeriodCompareCell
+              label="Value Created"
+              currentValue={formatSignedMoney(estimatedTotalValue)}
+              previousValue={formatSignedMoney(previousEstimatedTotalValue)}
+              changeValue={formatSignedMoney(valueChangeVsPrevious)}
+              toneValue={valueChangeVsPrevious}
+              detail={compareCardDetail}
+            />
+            <PeriodCompareCell
+              label="Distance Saved"
+              currentValue={formatSignedDistance(totalsImprovements.distance_saved_m)}
+              previousValue={formatSignedDistance(previousImprovements.distance_saved_m)}
+              changeValue={formatSignedDistance(distanceChangeVsPrevious)}
+              toneValue={distanceChangeVsPrevious}
+              detail={compareCardDetail}
+            />
+            <PeriodCompareCell
+              label="Time Saved"
+              currentValue={formatSignedDuration(totalsImprovements.time_saved_s)}
+              previousValue={formatSignedDuration(previousImprovements.time_saved_s)}
+              changeValue={formatSignedDuration(timeChangeVsPrevious)}
+              toneValue={timeChangeVsPrevious}
+              detail={compareCardDetail}
+            />
+            <PeriodCompareCell
+              label="Stops Served"
+              currentValue={formatSignedCount(stopsServedChange)}
+              previousValue={formatSignedCount(previousStopsServedChange)}
+              changeValue={formatSignedCount(stopsChangeVsPrevious)}
+              toneValue={stopsChangeVsPrevious}
+              detail={compareCardDetail}
+            />
+          </div>
         </section>
 
         <section className="card">
           <div className="card-header">
             <div>
               <div className="text-lg font-semibold">Business Impact</div>
-              <div className="card-subtitle">
-                Clear, sales-ready numbers that show the value of the software.
-              </div>
+              <div className="card-subtitle">Clear numbers to show how optimization improves performance.</div>
             </div>
           </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+
+          <div className="rounded-lg border border-steel-100 bg-steel-50 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Value assumptions</div>
+            <div className="mt-2 grid gap-2 md:grid-cols-3">
+              <label className="text-xs text-steel-600">
+                Cost per km (USD)
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  value={costPerKmInput}
+                  onChange={(event) => setCostPerKmInput(event.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
+              <label className="text-xs text-steel-600">
+                Labor per hour (USD)
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  value={laborPerHourInput}
+                  onChange={(event) => setLaborPerHourInput(event.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
+              <label className="text-xs text-steel-600">
+                Cost per route (USD)
+                <input
+                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  value={routeCostInput}
+                  onChange={(event) => setRouteCostInput(event.target.value)}
+                  inputMode="decimal"
+                />
+              </label>
+            </div>
+            <div className="mt-2 text-[11px] text-steel-500">
+              Value estimate = distance savings + labor savings + route reduction savings.
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             <ImpactCell
               label="Distance Saved"
               value={formatSignedDistance(totalsImprovements.distance_saved_m)}
               toneValue={totalsImprovements.distance_saved_m}
               detail={formatPct(totalsImprovements.distance_saved_pct)}
+              onClick={() => setFocusFilter("distance")}
+              active={focusFilter === "distance"}
             />
             <ImpactCell
               label="Time Saved"
               value={formatSignedDuration(totalsImprovements.time_saved_s)}
               toneValue={totalsImprovements.time_saved_s}
               detail={formatPct(totalsImprovements.time_saved_pct)}
+              onClick={() => setFocusFilter("time")}
+              active={focusFilter === "time"}
             />
             <ImpactCell
               label="Stops Served"
               value={formatSignedCount(stopsServedChange)}
               toneValue={stopsServedChange}
               detail={`${formatPct(stopsServedPct)} | With software: ${Math.round(totalsPublished.delivery_stops)} stops`}
+              onClick={() => setFocusFilter("stops")}
+              active={focusFilter === "stops"}
             />
             <ImpactCell
               label="Routes Reduced"
               value={formatSignedCount(totalsImprovements.routes_saved)}
               toneValue={totalsImprovements.routes_saved}
               detail={`Vehicle change: ${formatSignedCount(totalsImprovements.vehicles_saved)}`}
+              onClick={() => setFocusFilter("routes")}
+              active={focusFilter === "routes"}
+            />
+            <ImpactCell
+              label="Value Created"
+              value={formatSignedMoney(estimatedTotalValue)}
+              toneValue={estimatedTotalValue}
+              detail={`Distance ${formatSignedMoney(estimatedDistanceValue)} | Time ${formatSignedMoney(estimatedTimeValue)} | Routes ${formatSignedMoney(estimatedRouteValue)}`}
             />
             <ImpactCell
               label="Faster Per Stop"
               value={formatSignedMinutes(minutesPerStopSaved)}
               toneValue={minutesPerStopSaved}
-              detail={`Manual ${manualMinutesPerStop.toFixed(1)}m | Software ${publishedMinutesPerStop.toFixed(1)}m`}
+              detail={`Before software ${manualMinutesPerStop.toFixed(1)}m | With software ${publishedMinutesPerStop.toFixed(1)}m`}
             />
             <ImpactCell
               label="Less Travel Per Stop"
               value={formatSignedKm(kmPerStopSaved)}
               toneValue={kmPerStopSaved}
-              detail={`Manual ${manualKmPerStop.toFixed(2)} km | Software ${publishedKmPerStop.toFixed(2)} km`}
+              detail={`Before software ${manualKmPerStop.toFixed(2)} km | With software ${publishedKmPerStop.toFixed(2)} km`}
             />
             <ImpactCell
               label="Better Days"
               value={`${improvedDays}/${Math.round(comparedDays)}`}
               toneValue={winRateTone}
               detail={`${winRatePct.toFixed(1)}% of compared days`}
+              onClick={() => setFocusFilter("winning_days")}
+              active={focusFilter === "winning_days"}
+            />
+            <ImpactCell
+              label="Days Needing Attention"
+              value={String(needsAttentionDays)}
+              toneValue={-needsAttentionDays}
+              detail="Days where software underperformed before software"
+              onClick={() => setFocusFilter("needs_attention")}
+              active={focusFilter === "needs_attention"}
             />
           </div>
 
@@ -379,8 +692,8 @@ export default function PlannerDashboardPage() {
           <section className="card">
             <div className="card-header">
               <div>
-                <div className="text-lg font-semibold">Manual Plan Totals</div>
-                <div className="card-subtitle">What the team handled without software optimization.</div>
+                <div className="text-lg font-semibold">Before Software Totals</div>
+                <div className="card-subtitle">What the team handled without route optimization.</div>
               </div>
             </div>
             <MetricsGrid metrics={totalsManual} />
@@ -389,7 +702,7 @@ export default function PlannerDashboardPage() {
           <section className="card">
             <div className="card-header">
               <div>
-                <div className="text-lg font-semibold">Software Plan Totals</div>
+                <div className="text-lg font-semibold">With Software Totals</div>
                 <div className="card-subtitle">What the team handled with optimized routes.</div>
               </div>
             </div>
@@ -401,20 +714,48 @@ export default function PlannerDashboardPage() {
           <div className="card-header">
             <div>
               <div className="text-lg font-semibold">Daily Results</div>
-              <div className="card-subtitle">Color-coded daily impact versus the manual plan.</div>
+              <div className="card-subtitle">Color-coded daily impact compared to before software.</div>
             </div>
           </div>
 
+          <div className="mb-3 flex flex-wrap gap-2">
+            <FilterChip label="All days" active={focusFilter === "all"} onClick={() => setFocusFilter("all")} />
+            <FilterChip
+              label="Winning days"
+              active={focusFilter === "winning_days"}
+              onClick={() => setFocusFilter("winning_days")}
+            />
+            <FilterChip
+              label="Needs attention"
+              active={focusFilter === "needs_attention"}
+              onClick={() => setFocusFilter("needs_attention")}
+            />
+            <FilterChip
+              label="Distance changes"
+              active={focusFilter === "distance"}
+              onClick={() => setFocusFilter("distance")}
+            />
+            <FilterChip label="Time changes" active={focusFilter === "time"} onClick={() => setFocusFilter("time")} />
+            <FilterChip label="Stop changes" active={focusFilter === "stops"} onClick={() => setFocusFilter("stops")} />
+            <FilterChip label="Route changes" active={focusFilter === "routes"} onClick={() => setFocusFilter("routes")} />
+          </div>
+
+          <div className="mb-2 text-xs text-steel-500">
+            Showing {filteredTimeline.length} day(s) for filter: {focusLabel}.
+          </div>
+
           {timeline.length === 0 ? (
-            <div className="text-sm text-steel-500">No days in this range have both a manual and software plan yet.</div>
+            <div className="text-sm text-steel-500">No days in this range have both a before and with-software plan yet.</div>
+          ) : filteredTimeline.length === 0 ? (
+            <div className="text-sm text-steel-500">No days match this filter. Choose another filter to see results.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="border-b border-steel-100 text-steel-500">
                     <th className="px-2 py-2 text-left font-semibold">Date</th>
-                    <th className="px-2 py-2 text-right font-semibold">Manual Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">Software Stops</th>
+                    <th className="px-2 py-2 text-right font-semibold">Before Stops</th>
+                    <th className="px-2 py-2 text-right font-semibold">With Software Stops</th>
                     <th className="px-2 py-2 text-right font-semibold">Stops Served</th>
                     <th className="px-2 py-2 text-right font-semibold">Distance Saved</th>
                     <th className="px-2 py-2 text-right font-semibold">Time Saved</th>
@@ -422,7 +763,7 @@ export default function PlannerDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {timeline.map((row) => (
+                  {filteredTimeline.map((row) => (
                     <tr
                       key={row.date}
                       className={`border-b border-steel-50 ${dayResultBgClass(row.improvements.distance_saved_m, row.improvements.time_saved_s)}`}
@@ -463,19 +804,77 @@ function ImpactCell({
   label,
   value,
   detail,
-  toneValue
+  toneValue,
+  onClick,
+  active
 }: {
   label: string;
   value: string;
   detail: string;
   toneValue: number;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   return (
-    <div className={`rounded-lg border px-3 py-2 ${metricToneCard(toneValue)}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border px-3 py-2 text-left ${metricToneCard(toneValue)} ${onClick ? "cursor-pointer hover:opacity-90" : "cursor-default"} ${
+        active ? "ring-2 ring-ink-900/20" : ""
+      }`}
+    >
       <div className="text-[11px] uppercase tracking-wide text-steel-500">{label}</div>
       <div className={`text-base font-semibold ${metricTone(toneValue)}`}>{value}</div>
       <div className="text-[11px] text-steel-500">{detail}</div>
+    </button>
+  );
+}
+
+function PeriodCompareCell({
+  label,
+  currentValue,
+  previousValue,
+  changeValue,
+  toneValue,
+  detail
+}: {
+  label: string;
+  currentValue: string;
+  previousValue: string;
+  changeValue: string;
+  toneValue: number;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-lg border border-steel-100 bg-white px-3 py-2">
+      <div className="text-[11px] uppercase tracking-wide text-steel-500">{label}</div>
+      <div className="mt-1 text-sm text-steel-600">Current: {currentValue}</div>
+      <div className="text-sm text-steel-600">Previous: {previousValue}</div>
+      <div className={`text-sm font-semibold ${metricTone(toneValue)}`}>Change: {changeValue}</div>
+      <div className="mt-1 text-[11px] text-steel-500">{detail}</div>
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-8 rounded-full border px-3 text-xs ${
+        active ? "border-ink-900 bg-ink-900 text-white" : "border-steel-200 bg-white text-steel-700"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
