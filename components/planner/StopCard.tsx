@@ -43,7 +43,7 @@ function compactStatusTime(value: unknown): string {
   if (!raw) return "";
   const parsed = Date.parse(raw);
   if (Number.isNaN(parsed)) return raw;
-  return new Date(parsed).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(parsed).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
 }
 
 export default function StopCard({

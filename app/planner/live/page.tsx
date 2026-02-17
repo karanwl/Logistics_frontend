@@ -229,7 +229,7 @@ function LivePlannerWorkspace({
 
         {!canEdit ? (
           <div className="mt-3 text-xs text-steel-500">
-            Editing is only enabled for today ({today}). Loaded plan date: {selectedDate}.
+            Editing is only enabled for today UTC ({today}). Loaded plan date: {selectedDate}.
           </div>
         ) : null}
         {saveMessage ? <div className="mt-2 text-xs text-steel-500">{saveMessage}</div> : null}
@@ -239,11 +239,11 @@ function LivePlannerWorkspace({
         <div className="space-y-6 xl:col-span-8">
           {planQuery.isLoading ? (
             <section className="card">
-              <div className="empty-state">Loading today&apos;s editable plan...</div>
+              <div className="empty-state">Loading today&apos;s (UTC) editable plan...</div>
             </section>
           ) : !planQuery.data?.published ? (
             <section className="card">
-              <div className="empty-state">No published/live plan is available for today yet.</div>
+              <div className="empty-state">No published/live plan is available for today (UTC) yet.</div>
             </section>
           ) : (
             <RouteBoard editable={editMode && canEdit} />

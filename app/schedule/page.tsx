@@ -34,24 +34,24 @@ const MONTH_NAMES = [
 ];
 
 function toMonthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }
 
 function addMonths(date: Date, count: number) {
-  return new Date(date.getFullYear(), date.getMonth() + count, 1);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + count, 1));
 }
 
 function monthLabel(date: Date) {
-  return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
+  return `${MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
 function parseDateKey(key: string) {
   const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, (month || 1) - 1, day || 1);
+  return new Date(Date.UTC(year, (month || 1) - 1, day || 1));
 }
 
 function compareDate(a: string, b: string) {
@@ -193,7 +193,7 @@ export default function SchedulePage() {
   const updateDelivery = useUpdateDelivery();
   const deleteDelivery = useDeleteDelivery();
 
-  const weekStart = useMemo(() => startOfWeek(new Date(weekDate)), [weekDate]);
+  const weekStart = useMemo(() => startOfWeek(parseDateKey(weekDate)), [weekDate]);
   const days = useMemo(() => Array.from({ length: 5 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
   const filtered = useMemo(() => {
@@ -901,7 +901,7 @@ function CalendarDay({
       ref={setNodeRef}
       className={`rounded-lg border border-steel-100 p-2 min-h-[110px] ${inMonth ? "bg-white" : "bg-steel-50"}`}
     >
-      <div className="text-xs text-steel-500">{date.getDate()}</div>
+      <div className="text-xs text-steel-500">{date.getUTCDate()}</div>
       <div className="mt-1 space-y-1">
         <SortableContext items={items.map((i: any) => i.delivery_id)} strategy={verticalListSortingStrategy}>
           {visible.map((item) => (

@@ -95,7 +95,7 @@ function PublishedPlanToolbar({
         <div>
           <div className="text-lg font-semibold">Published Plan Preview</div>
           <div className="card-subtitle">
-            Published plans are view-only here. Use Live Progress to edit today&apos;s plan ({today}).
+            Published plans are view-only here. Use Live Progress to edit today&apos;s UTC plan ({today}).
           </div>
           {source === "deliveries" ? (
             <div className="mt-1 text-xs text-steel-500">

@@ -17,15 +17,20 @@ type DatePickerInputProps = {
 };
 
 function formatDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
 function parseDate(value: string) {
   if (!value) return undefined;
-  const parsed = new Date(`${value}T00:00:00`);
+  const [yearRaw, monthRaw, dayRaw] = value.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return undefined;
+  const parsed = new Date(year, month - 1, day);
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
