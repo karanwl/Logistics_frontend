@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
-import MapPanel from "@/components/planner/MapPanel";
 import RouteBoard from "@/components/planner/RouteBoard";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { Button } from "@/components/ui/button";
@@ -370,7 +369,6 @@ function ManualPlannerWorkspace() {
             )}
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <MapPanel />
             <UnassignedPanel editable planDate={selectedDate} allowAssignToRoute />
           </div>
         </div>

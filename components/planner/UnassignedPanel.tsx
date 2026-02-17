@@ -4,17 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { usePlannerState } from "@/hooks/usePlannerState";
-import { api } from "@/lib/api/client";
-import { useDeliveries, useRescheduleDelivery } from "@/lib/api/planner";
 
-function asNonNegativeInt(value: string): number {
-  const parsed = Number.parseInt(String(value || "").trim(), 10);
+function asNonNegativeInt(value: unknown): number {
+  const parsed = Number.parseInt(String(value ?? "").trim(), 10);
   if (Number.isNaN(parsed) || parsed < 0) return 0;
   return parsed;
-}
-
-function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function deliveryIdFrom(value: any): string {
@@ -26,15 +20,32 @@ function buildStopItem(delivery: any, fallbackId: string) {
     type: "delivery" as const,
     id: fallbackId,
     job_name: String(delivery?.job_name || `Delivery ${fallbackId}`),
-    med_skid: asNonNegativeInt(String(delivery?.med_skid ?? 0)),
-    small_skid: asNonNegativeInt(String(delivery?.small_skid ?? 0)),
-    large_skid: asNonNegativeInt(String(delivery?.large_skid ?? 0)),
-    door: asNonNegativeInt(String(delivery?.door ?? 0)),
-    frame: asNonNegativeInt(String(delivery?.frame ?? 0)),
-    exp_frame: asNonNegativeInt(String(delivery?.exp_frame ?? 0)),
-    box: asNonNegativeInt(String(delivery?.box ?? 0)),
+    med_skid: asNonNegativeInt(delivery?.med_skid),
+    small_skid: asNonNegativeInt(delivery?.small_skid),
+    large_skid: asNonNegativeInt(delivery?.large_skid),
+    door: asNonNegativeInt(delivery?.door),
+    frame: asNonNegativeInt(delivery?.frame),
+    exp_frame: asNonNegativeInt(delivery?.exp_frame),
+    box: asNonNegativeInt(delivery?.box),
   };
 }
+
+function groupKeyForDelivery(delivery: any): string {
+  const jobsiteId = String(delivery?.jobsite_id || "").trim();
+  if (jobsiteId) return `jobsite:${jobsiteId}`;
+  const jobName = String(delivery?.job_name || "").trim().toLowerCase();
+  const jobAddress = String(delivery?.job_address || "").trim().toLowerCase();
+  return `job:${jobName}|${jobAddress}`;
+}
+
+type UnassignedGroup = {
+  key: string;
+  job_name: string;
+  job_address: string;
+  deliveries: any[];
+  deliveryIds: string[];
+  salesOrders: string[];
+};
 
 export default function UnassignedPanel({
   editable = false,
@@ -46,252 +57,106 @@ export default function UnassignedPanel({
   allowAssignToRoute?: boolean;
 }) {
   const { plan, setPlan } = usePlannerState();
-  const deliveriesQuery = useDeliveries();
-  const reschedule = useRescheduleDelivery();
-
   const [targetVehicleId, setTargetVehicleId] = useState("");
-  const [targetUnassignedVehicleId, setTargetUnassignedVehicleId] = useState("");
-  const [selectedUnscheduledId, setSelectedUnscheduledId] = useState("");
-  const [formMessage, setFormMessage] = useState("");
-
-  const effectivePlanDate = String(
-    planDate || (plan as any)?.plan_date || (plan as any)?.target_date || todayIsoDate()
-  );
+  const [message, setMessage] = useState("");
 
   const vehicleIds = useMemo(
-    () => (plan?.routes || []).map((route) => String(route.vehicle_id)),
+    () => (plan?.routes || []).map((route) => String(route.vehicle_id || "")).filter(Boolean),
     [plan?.routes]
   );
 
   useEffect(() => {
-    if (vehicleIds.length === 0) {
+    if (!vehicleIds.length) {
       setTargetVehicleId("");
       return;
     }
     if (!targetVehicleId || !vehicleIds.includes(targetVehicleId)) {
       setTargetVehicleId(vehicleIds[0]);
     }
-    if (!targetUnassignedVehicleId || !vehicleIds.includes(targetUnassignedVehicleId)) {
-      setTargetUnassignedVehicleId(vehicleIds[0]);
-    }
-  }, [targetVehicleId, targetUnassignedVehicleId, vehicleIds]);
+  }, [vehicleIds, targetVehicleId]);
 
-  const assigned = new Set<string>();
-  (plan?.routes || []).forEach((route) => {
-    route.stops.forEach((group) => {
-      group.forEach((item) => {
-        if (item.type === "delivery" && item.id) assigned.add(String(item.id));
+  const assigned = useMemo(() => {
+    const taken = new Set<string>();
+    (plan?.routes || []).forEach((route) => {
+      (route.stops || []).forEach((group) => {
+        (group || []).forEach((item) => {
+          if (item?.type === "delivery" && item?.id) {
+            taken.add(String(item.id));
+          }
+        });
       });
     });
-  });
-  const unassigned = (plan?.deliveries || []).filter((d) => {
-    const id = deliveryIdFrom(d);
-    return id && !assigned.has(id);
-  });
+    return taken;
+  }, [plan?.routes]);
 
-  const unscheduledCandidates = useMemo(() => {
-    const rows = Array.isArray((deliveriesQuery.data as any)?.deliveries)
-      ? ([...(deliveriesQuery.data as any).deliveries] as any[])
-      : [];
-    return rows
-      .filter((delivery: any) => {
-        const deliveryId = deliveryIdFrom(delivery);
-        if (!deliveryId) return false;
-        const scheduled = String(delivery?.scheduled_date || "").trim();
-        return !scheduled;
-      })
-      .sort((a, b) =>
-        String(a?.job_name || "").localeCompare(String(b?.job_name || ""), undefined, { sensitivity: "base" })
-      );
-  }, [deliveriesQuery.data]);
-
-  useEffect(() => {
-    if (unscheduledCandidates.length === 0) {
-      setSelectedUnscheduledId("");
-      return;
-    }
-    const stillValid = unscheduledCandidates.some((delivery) => deliveryIdFrom(delivery) === selectedUnscheduledId);
-    if (!stillValid) {
-      setSelectedUnscheduledId(deliveryIdFrom(unscheduledCandidates[0]));
-    }
-  }, [selectedUnscheduledId, unscheduledCandidates]);
-
-  const resetForm = () => {
-    setSelectedUnscheduledId("");
-    setFormMessage("");
-  };
-
-  const scheduleUnscheduledToRun = async () => {
-    if (!editable) return;
-    if (!plan) {
-      setFormMessage("No plan is loaded.");
-      return;
-    }
-    if (!selectedUnscheduledId) {
-      setFormMessage("Select an unscheduled delivery.");
-      return;
-    }
-    if (!targetVehicleId) {
-      setFormMessage("Select a target vehicle.");
-      return;
-    }
-    const routeExists = (plan.routes || []).some((route) => String(route.vehicle_id) === targetVehicleId);
-    if (!routeExists) {
-      setFormMessage("Target vehicle route was not found.");
-      return;
-    }
-    const alreadyOnRoute = (plan.routes || []).some((route) =>
-      (route.stops || []).some((group) =>
-        group.some((item) => item.type === "delivery" && deliveryIdFrom(item) === selectedUnscheduledId)
-      )
-    );
-    if (alreadyOnRoute) {
-      setFormMessage("This delivery is already on a route.");
-      return;
-    }
-
-    const selectedCandidate = unscheduledCandidates.find(
-      (delivery) => deliveryIdFrom(delivery) === selectedUnscheduledId
-    );
-    if (!selectedCandidate) {
-      setFormMessage("Selected unscheduled delivery was not found.");
-      return;
-    }
-
-    setFormMessage("Scheduling delivery and adding it to the route...");
-    try {
-      await reschedule.mutateAsync({
-        delivery_id: selectedUnscheduledId,
-        scheduled_date: effectivePlanDate
-      });
-
-      const latest = await api.get<{ deliveries: any[] }>("/deliveries/all?refresh=1");
-      const fetched = (latest?.deliveries || []).find(
-        (delivery: any) => deliveryIdFrom(delivery) === selectedUnscheduledId
-      );
-      const row = fetched || selectedCandidate;
-      const normalizedDeliveryId = selectedUnscheduledId;
-
-      const normalizedDelivery = {
-        ...(row || {}),
-        id: normalizedDeliveryId,
-        delivery_id: normalizedDeliveryId,
-        scheduled_date: effectivePlanDate,
-        job_name: String((row as any)?.job_name || `Delivery ${normalizedDeliveryId}`),
-        job_address: String((row as any)?.job_address || ""),
-        status: String((row as any)?.status || "pending")
-      };
-
-      const nextRoutes = (plan.routes || []).map((route) => {
-        if (String(route.vehicle_id) !== targetVehicleId) return route;
-
-        const stopItem = buildStopItem(row, normalizedDeliveryId);
-
-        const nextStops = [...(route.stops || [])];
-        nextStops.push([stopItem]);
-
-        const nextStopTimes = [...(route.stop_times || [])];
-        nextStopTimes.push({
-          arrival_hhmm: String((row as any)?.window_start || "").trim() || undefined,
-          departure_hhmm: String((row as any)?.window_end || "").trim() || undefined,
-        });
-
-        const nextStopNodes = [...(route.stop_nodes || [])];
-        if (nextStopNodes.length > 0) {
-          nextStopNodes.push(nextStopNodes[nextStopNodes.length - 1]);
-        }
-
-        return {
-          ...route,
-          stops: nextStops,
-          stop_times: nextStopTimes,
-          stop_nodes: nextStopNodes,
-        };
-      });
-
-      const filteredDeliveries = (plan.deliveries || []).filter((delivery: any) => {
+  const unassigned = useMemo(
+    () =>
+      (plan?.deliveries || []).filter((delivery) => {
         const id = deliveryIdFrom(delivery);
-        return id !== normalizedDeliveryId;
-      });
+        return Boolean(id) && !assigned.has(id);
+      }),
+    [plan?.deliveries, assigned]
+  );
 
-      const nextPlan = {
-        ...plan,
-        deliveries: [...filteredDeliveries, normalizedDelivery as any],
-        routes: nextRoutes,
-      };
-
-      setPlan(nextPlan);
-
-      try {
-        const recalcPayload = (nextRoutes || []).map((route) => ({
-          vehicle_id: route.vehicle_id,
-          vehicle_type: route.vehicle_type,
-          stop_nodes: route.stop_nodes || [],
-        }));
-        const recalced = await api.post<{ routes: any[] }>(
-          "/plan/recalculate",
-          JSON.stringify(recalcPayload),
-          { "content-type": "application/json" }
-        );
-        const updatedRoutes = (nextRoutes || []).map((route) => {
-          const update = (recalced?.routes || []).find(
-            (item: any) => String(item?.vehicle_id) === String(route.vehicle_id)
-          );
-          if (!update) return route;
-          return {
-            ...route,
-            total_distance_m: update.total_distance_m,
-            total_time_s: update.total_time_s,
-            stop_times: update.stop_times || route.stop_times || [],
-          };
+  const groupedUnassigned = useMemo<UnassignedGroup[]>(() => {
+    const byKey = new Map<string, UnassignedGroup>();
+    for (const delivery of unassigned) {
+      const deliveryId = deliveryIdFrom(delivery);
+      if (!deliveryId) continue;
+      const key = groupKeyForDelivery(delivery);
+      const existing = byKey.get(key);
+      if (!existing) {
+        byKey.set(key, {
+          key,
+          job_name: String(delivery?.job_name || "Delivery"),
+          job_address: String(delivery?.job_address || ""),
+          deliveries: [delivery],
+          deliveryIds: [deliveryId],
+          salesOrders: [String(delivery?.sales_order || "").trim()].filter(Boolean),
         });
-        setPlan({ ...nextPlan, routes: updatedRoutes });
-      } catch {
-        // keep optimistic route change if recalc fails
+        continue;
       }
-
-      await deliveriesQuery.refetch();
-      setFormMessage(
-        `Scheduled delivery ${normalizedDeliveryId} to ${effectivePlanDate} and added it to vehicle ${targetVehicleId}. Click "Save Changes" to publish route updates.`
-      );
-      resetForm();
-    } catch (error: any) {
-      setFormMessage(error?.message || "Failed to schedule unscheduled delivery.");
+      existing.deliveries.push(delivery);
+      if (!existing.deliveryIds.includes(deliveryId)) existing.deliveryIds.push(deliveryId);
+      const salesOrder = String(delivery?.sales_order || "").trim();
+      if (salesOrder && !existing.salesOrders.includes(salesOrder)) {
+        existing.salesOrders.push(salesOrder);
+      }
     }
-  };
-
-  const assignUnassignedToVehicle = (deliveryId: string) => {
-    if (!editable || !allowAssignToRoute || !plan) return;
-    if (!deliveryId) return;
-    if (!targetUnassignedVehicleId) {
-      setFormMessage("Select a target vehicle for assignment.");
-      return;
-    }
-
-    const selectedDelivery = (plan.deliveries || []).find(
-      (delivery: any) => deliveryIdFrom(delivery) === deliveryId
+    return Array.from(byKey.values()).sort((a, b) =>
+      `${a.job_name}|${a.job_address}`.localeCompare(`${b.job_name}|${b.job_address}`, undefined, {
+        sensitivity: "base"
+      })
     );
-    if (!selectedDelivery) {
-      setFormMessage("Delivery not found in current plan.");
+  }, [unassigned]);
+
+  const assignGroupToVehicle = (group: UnassignedGroup) => {
+    if (!editable || !allowAssignToRoute || !plan) return;
+    if (!targetVehicleId) {
+      setMessage("Select a target vehicle.");
       return;
     }
-
     const nextRoutes = (plan.routes || []).map((route) => {
-      if (String(route.vehicle_id) !== targetUnassignedVehicleId) return route;
-      const nextStops = [...(route.stops || [])];
-      nextStops.push([buildStopItem(selectedDelivery, deliveryId)]);
-
+      if (String(route.vehicle_id) !== targetVehicleId) return route;
+      const stopGroup = group.deliveries.map((delivery) =>
+        buildStopItem(delivery, deliveryIdFrom(delivery))
+      );
+      const nextStops = [...(route.stops || []), stopGroup];
+      const firstWindowStart = group.deliveries
+        .map((delivery) => String((delivery as any)?.window_start || "").trim())
+        .find(Boolean);
+      const firstWindowEnd = group.deliveries
+        .map((delivery) => String((delivery as any)?.window_end || "").trim())
+        .find(Boolean);
       const nextStopTimes = [...(route.stop_times || [])];
       nextStopTimes.push({
-        arrival_hhmm: String((selectedDelivery as any)?.window_start || "").trim() || undefined,
-        departure_hhmm: String((selectedDelivery as any)?.window_end || "").trim() || undefined,
+        arrival_hhmm: firstWindowStart || undefined,
+        departure_hhmm: firstWindowEnd || undefined,
       });
-
       const nextStopNodes = [...(route.stop_nodes || [])];
       if (nextStopNodes.length > 0) {
         nextStopNodes.push(nextStopNodes[nextStopNodes.length - 1]);
       }
-
       return {
         ...route,
         stops: nextStops,
@@ -301,7 +166,9 @@ export default function UnassignedPanel({
     });
 
     setPlan({ ...plan, routes: nextRoutes });
-    setFormMessage(`Added delivery ${deliveryId} to vehicle ${targetUnassignedVehicleId}. Recalculate to refresh totals.`);
+    setMessage(
+      `Added ${group.deliveryIds.length} delivery${group.deliveryIds.length === 1 ? "" : "ies"} from ${group.job_name} to vehicle ${targetVehicleId}.`
+    );
   };
 
   return (
@@ -309,97 +176,23 @@ export default function UnassignedPanel({
       <div className="card-header">
         <div>
           <div className="text-xl font-semibold">Unassigned Deliveries</div>
-          <div className="card-subtitle">Stops dropped from the solve.</div>
+          <div className="card-subtitle">Grouped by job. Each card contains all sales orders for that job.</div>
         </div>
         <Badge>{unassigned.length}</Badge>
       </div>
 
-      {editable ? (
-        <div className="mb-3 rounded-lg border border-steel-200 bg-steel-50/70 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Schedule Existing Unscheduled Delivery</div>
-          <div className="mt-1 text-[11px] text-steel-500">
-            Pick an unscheduled delivery and assign it to {effectivePlanDate}, then attach it to a vehicle.
-          </div>
-
-          <div className="mt-3 grid gap-2">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Unscheduled Delivery</label>
-                <select
-                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
-                  value={selectedUnscheduledId}
-                  onChange={(e) => setSelectedUnscheduledId(e.target.value)}
-                  disabled={reschedule.isPending || deliveriesQuery.isLoading || unscheduledCandidates.length === 0}
-                >
-                  {unscheduledCandidates.length === 0 ? <option value="">No unscheduled deliveries</option> : null}
-                  {unscheduledCandidates.map((delivery: any) => {
-                    const deliveryId = deliveryIdFrom(delivery);
-                    const jobName = String(delivery?.job_name || "Delivery");
-                    const salesOrder = String(delivery?.sales_order || "").trim();
-                    return (
-                      <option key={deliveryId} value={deliveryId}>
-                        {jobName} ({deliveryId}){salesOrder ? ` - SO ${salesOrder}` : ""}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] font-semibold uppercase text-steel-500">Vehicle</label>
-                <select
-                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
-                  value={targetVehicleId}
-                  onChange={(e) => setTargetVehicleId(e.target.value)}
-                  disabled={reschedule.isPending || vehicleIds.length === 0}
-                >
-                  {vehicleIds.length === 0 ? <option value="">No routes</option> : null}
-                  {vehicleIds.map((vehicleId) => (
-                    <option key={vehicleId} value={vehicleId}>
-                      Vehicle {vehicleId}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            {!deliveriesQuery.isLoading && unscheduledCandidates.length === 0 ? (
-              <div className="text-xs text-steel-500">No unscheduled deliveries are available.</div>
-            ) : null}
-
-            <div className="flex items-center justify-between gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={scheduleUnscheduledToRun}
-                disabled={reschedule.isPending || !plan || !selectedUnscheduledId || !targetVehicleId}
-              >
-                {reschedule.isPending ? "Scheduling..." : "Schedule To Run"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetForm}
-                disabled={reschedule.isPending}
-              >
-                Reset
-              </Button>
-            </div>
-            {formMessage ? <div className="text-xs text-steel-600">{formMessage}</div> : null}
-          </div>
-        </div>
-      ) : null}
-
       {editable && allowAssignToRoute ? (
         <div className="mb-3 rounded-lg border border-steel-200 bg-white/80 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Assign Unassigned Stops</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Assign Group To Vehicle</div>
           <div className="mt-1 text-[11px] text-steel-500">
-            Pick a vehicle, then add unassigned deliveries directly into that run.
+            Plan date: {planDate || (plan as any)?.plan_date || (plan as any)?.target_date || "--"}
           </div>
           <div className="mt-2">
             <label className="text-[11px] font-semibold uppercase text-steel-500">Vehicle</label>
             <select
               className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
-              value={targetUnassignedVehicleId}
-              onChange={(e) => setTargetUnassignedVehicleId(e.target.value)}
+              value={targetVehicleId}
+              onChange={(e) => setTargetVehicleId(e.target.value)}
               disabled={vehicleIds.length === 0}
             >
               {vehicleIds.length === 0 ? <option value="">No routes</option> : null}
@@ -410,28 +203,35 @@ export default function UnassignedPanel({
               ))}
             </select>
           </div>
+          {message ? <div className="mt-2 text-xs text-steel-600">{message}</div> : null}
         </div>
       ) : null}
 
       <div className="grid gap-2 sm:grid-cols-2">
         {!plan ? (
           <div className="empty-state">No plan loaded.</div>
-        ) : unassigned.length === 0 ? (
+        ) : groupedUnassigned.length === 0 ? (
           <div className="empty-state">All deliveries were assigned.</div>
         ) : (
-          unassigned.map((stop: any) => (
-            <div key={deliveryIdFrom(stop)} className="rounded-lg border border-steel-100 p-3">
-              <div className="text-sm font-medium">{String(stop?.job_name || "Delivery")}</div>
-              <div className="text-xs text-steel-500">{String(stop?.job_address || "")}</div>
+          groupedUnassigned.map((group) => (
+            <div key={group.key} className="rounded-lg border border-steel-100 p-3">
+              <div className="text-sm font-medium">{group.job_name || "Delivery"}</div>
+              <div className="text-xs text-steel-500">{group.job_address}</div>
+              <div className="mt-1 text-xs text-steel-500">
+                Deliveries: {group.deliveryIds.length}
+              </div>
+              {group.salesOrders.length > 0 ? (
+                <div className="text-xs text-steel-500">SO: {group.salesOrders.join(", ")}</div>
+              ) : null}
               {editable && allowAssignToRoute ? (
                 <div className="mt-2">
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => assignUnassignedToVehicle(deliveryIdFrom(stop))}
-                    disabled={!targetUnassignedVehicleId}
+                    onClick={() => assignGroupToVehicle(group)}
+                    disabled={!targetVehicleId}
                   >
-                    Add To Vehicle {targetUnassignedVehicleId || "--"}
+                    Add Job Group To Vehicle {targetVehicleId || "--"}
                   </Button>
                 </div>
               ) : null}
