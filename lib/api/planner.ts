@@ -77,6 +77,31 @@ export const useManualPlansList = () =>
     staleTime: 15000
   });
 
+export const usePlanDashboard = (params: {
+  start_date: string;
+  end_date: string;
+  vehicle_type: "all" | "truck" | "van";
+  enabled?: boolean;
+}) =>
+  useQuery({
+    queryKey: [
+      "plan",
+      "dashboard",
+      params.start_date,
+      params.end_date,
+      params.vehicle_type
+    ],
+    queryFn: () => {
+      const search = new URLSearchParams();
+      search.set("start_date", params.start_date);
+      search.set("end_date", params.end_date);
+      search.set("vehicle_type", params.vehicle_type);
+      return api.get<any>(`/plan/dashboard?${search.toString()}`);
+    },
+    staleTime: 15000,
+    enabled: (params.enabled ?? true) && Boolean(params.start_date) && Boolean(params.end_date)
+  });
+
 export const useManualRecalculate = () =>
   useMutation({
     mutationFn: (payload: {
