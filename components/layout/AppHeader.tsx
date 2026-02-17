@@ -7,6 +7,7 @@ import { useCurrentUser } from "@/lib/api/auth";
 
 const links = [
   { href: "/planner", label: "Planner" },
+  { href: "/planner/dashboard", label: "Dashboard" },
   { href: "/planner/debug", label: "Matrix Debug" },
   { href: "/planner/live", label: "Live Progress" },
   { href: "/planner/manual", label: "Manual Runs" },
