@@ -177,18 +177,18 @@ function ManualPlannerWorkspace() {
     if (!plan) return;
     setMessage("Saving manual run...");
     try {
-      const updatedRoutes = (await applyRecalculatedRoutes()) || plan.routes || [];
+      const currentRoutes = plan.routes || [];
       const fleet = {
-        trucks: updatedRoutes.filter((route: any) =>
+        trucks: currentRoutes.filter((route: any) =>
           String(route?.vehicle_type || "").toLowerCase() === "truck"
         ).length,
-        vans: updatedRoutes.filter((route: any) =>
+        vans: currentRoutes.filter((route: any) =>
           String(route?.vehicle_type || "").toLowerCase() === "van"
         ).length
       };
       await saveMutation.mutateAsync({
         plan_date: selectedDate,
-        routes: updatedRoutes,
+        routes: currentRoutes,
         deliveries: plan.deliveries || [],
         meta: plan.meta || {},
         fleet,
