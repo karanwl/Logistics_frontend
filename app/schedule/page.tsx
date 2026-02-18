@@ -824,60 +824,66 @@ export default function SchedulePage() {
         </section>
       </div>
 
-      <div id="inlineEditDrawer" className={`drawer ${drawerOpen ? "" : "is-hidden"}`} aria-hidden={!drawerOpen}>
-        <div className="drawer-backdrop" data-drawer-close onClick={closeDrawer} />
-        <div className="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="inlineEditTitle">
-          <div className="drawer-header">
+      <div id="inlineEditDrawer" className={`delivery-popup ${drawerOpen ? "" : "is-hidden"}`} aria-hidden={!drawerOpen}>
+        <div className="delivery-popup-backdrop" onClick={closeDrawer} />
+        <div className="delivery-popup-panel" role="dialog" aria-modal="true" aria-labelledby="inlineEditTitle">
+          <div className="delivery-popup-header">
             <div>
-              <p className="panel-title">Details</p>
+              <p className="panel-title">Delivery Snapshot</p>
               <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
-              <p className="card-subtitle" id="inlineEditSubtitle">Quick read-only view with POD.</p>
+              <p className="card-subtitle" id="inlineEditSubtitle">Status, notes, and POD in one place.</p>
             </div>
-            <button className="btn btn-secondary icon-only" type="button" data-drawer-close aria-label="Close" onClick={closeDrawer}>
-              ?
+            <button className="btn btn-secondary icon-only" type="button" aria-label="Close" onClick={closeDrawer}>
+              X
             </button>
           </div>
-          <div id="inlineEditBody" className="drawer-body">
+
+          <div id="inlineEditBody" className="delivery-popup-body">
             {!drawerData ? (
               <div className="empty-state">No delivery selected.</div>
             ) : drawerLoading ? (
               <div className="empty-state">Loading delivery details...</div>
             ) : (
-              <div className="grid gap-3">
-                <div className="text-xs text-steel-500">Location</div>
-                <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
-                <div className="text-xs text-steel-500">Scheduled Date</div>
-                <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
-                <div className="text-xs text-steel-500">Window</div>
-                <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
-                <div className="text-xs text-steel-500">Sales Order</div>
-                <div className="text-sm">{drawerData.sales_order || "--"}</div>
-                <div className="text-xs text-steel-500">Status</div>
-                <div className="text-sm">{drawerData.status || "--"}</div>
-                <div className="text-xs text-steel-500">Driver Notes</div>
-                <div className="text-sm">{drawerData.driver_notes || "No notes"}</div>
-                <div className="text-xs text-steel-500">Items</div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>Large: {drawerData.large_skid || 0}</div>
-                  <div>Med: {drawerData.med_skid || 0}</div>
-                  <div>Small: {drawerData.small_skid || 0}</div>
-                  <div>Door: {drawerData.door || 0}</div>
-                  <div>Frame: {drawerData.frame || 0}</div>
-                  <div>Exp: {drawerData.exp_frame || 0}</div>
-                  <div>Box: {drawerData.box || 0}</div>
-                </div>
-                <div className="text-xs text-steel-500">POD Photos</div>
-                {drawerPhotoUrls.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {drawerPhotoUrls.map((url) => (
-                      <a key={url} href={url} target="_blank" rel="noreferrer" className="rounded-md border border-steel-100 p-1">
-                        <img src={url} alt="POD" className="h-24 w-full rounded object-cover" loading="lazy" />
-                      </a>
-                    ))}
+              <div className="grid gap-4">
+                <div className="delivery-popup-summary">
+                  <div>
+                    <div className="text-xs text-steel-500">Location</div>
+                    <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
                   </div>
-                ) : (
-                  <div className="text-sm text-steel-500">No POD photos uploaded yet.</div>
-                )}
+                  <div>
+                    <div className="text-xs text-steel-500">Status</div>
+                    <div className="text-sm">{drawerData.status || "--"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-steel-500">Date</div>
+                    <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-steel-500">Window</div>
+                    <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-steel-500">Driver Notes</div>
+                  <div className="delivery-popup-notes">{drawerData.driver_notes || "No notes"}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-steel-500">POD Photos</div>
+                  {drawerPhotoUrls.length > 0 ? (
+                    <div className="delivery-popup-photos">
+                      {drawerPhotoUrls.map((url) => (
+                        <a key={url} href={url} target="_blank" rel="noreferrer" className="delivery-popup-photo-link">
+                          <img src={url} alt="POD" className="delivery-popup-photo" loading="lazy" />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-steel-500">No POD photos uploaded yet.</div>
+                  )}
+                </div>
+
                 <div className="page-actions">
                   <Button asChild variant="outline">
                     <Link
