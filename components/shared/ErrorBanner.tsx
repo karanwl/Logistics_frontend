@@ -5,7 +5,8 @@ import { ApiError } from "@/lib/api/client";
 export function ErrorBanner({ error }: { error: unknown }) {
   if (!error) return null;
   const err = error as ApiError & { payload?: any };
-  const detail = err?.payload?.detail || err?.payload?.error || err?.message || "Request failed";
+  const detail =
+    err?.payload?.detail || err?.payload?.error || err?.message || "We could not complete this action.";
   return (
     <div className="rounded-xl border border-red-200 bg-red-50/95 px-3 py-2 text-sm text-red-700 shadow-sm">
       {detail}

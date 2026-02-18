@@ -24,8 +24,8 @@ export default function StopInspector() {
     <Card className="h-full">
       <CardHeader>
         <div>
-          <CardTitle>Stop Inspector</CardTitle>
-          <CardDescription>Details and adjustments.</CardDescription>
+          <CardTitle>Stop Details</CardTitle>
+          <CardDescription>View stop information and planned actions.</CardDescription>
         </div>
       </CardHeader>
       {!stopGroup ? (
@@ -38,7 +38,7 @@ export default function StopInspector() {
           </div>
           <div className="text-xs text-steel-500">Items in stop: {stopGroup.length}</div>
           <Button variant="secondary" size="sm" disabled>
-            Edit Stop
+            Edit stop
           </Button>
         </div>
       )}

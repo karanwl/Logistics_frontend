@@ -6,7 +6,7 @@ export default function UnauthorizedPage({
 }: {
   searchParams?: { message?: string };
 }) {
-  const message = searchParams?.message || "You do not have access to this page.";
+  const message = searchParams?.message || "Your account does not currently include this page.";
 
   return (
     <div className="page-shell">
@@ -17,8 +17,8 @@ export default function UnauthorizedPage({
         <div className="card max-w-xl">
           <div className="card-header">
             <div>
-              <div className="text-xl font-semibold">Access restricted</div>
-              <div className="card-subtitle">This section is limited to authorized roles.</div>
+              <div className="text-xl font-semibold">Page not available</div>
+              <div className="card-subtitle">This section is limited to specific team roles.</div>
             </div>
           </div>
           <div className="empty-state">{message}</div>

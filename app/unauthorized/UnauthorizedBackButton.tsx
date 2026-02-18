@@ -16,7 +16,7 @@ export default function UnauthorizedBackButton() {
 
   return (
     <Button type="button" onClick={goBack}>
-      Go back
+      Return
     </Button>
   );
 }

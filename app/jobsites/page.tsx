@@ -25,7 +25,7 @@ export default function AdminJobsitesPage() {
 
   const onCreate = async () => {
     if (!name.trim() || !address.trim()) {
-      setError("Jobsite name and address are required.");
+      setError("Location name and address are required.");
       return;
     }
     setError("");
@@ -52,7 +52,7 @@ export default function AdminJobsitesPage() {
   const saveEdit = async () => {
     if (!editingId) return;
     if (!editValues.name.trim() || !editValues.address.trim()) {
-      setError("Jobsite name and address are required.");
+      setError("Location name and address are required.");
       return;
     }
     setError("");
@@ -70,7 +70,7 @@ export default function AdminJobsitesPage() {
   };
 
   const onDelete = async (jobsite: any) => {
-    const confirmed = window.confirm(`Delete jobsite "${jobsite.name}"? This cannot be undone.`);
+    const confirmed = window.confirm(`Delete location "${jobsite.name}"? This cannot be undone.`);
     if (!confirmed) return;
     await deleteJobsite.mutateAsync({ jobsite_id: String(jobsite.id) });
     refetch();
@@ -91,47 +91,47 @@ export default function AdminJobsitesPage() {
       <div className="admin-section">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Create Jobsite</div>
-            <div className="card-subtitle">Add a new location to the routing network.</div>
+            <div className="text-xl font-semibold">Add Location</div>
+            <div className="card-subtitle">Create a new delivery location for planning.</div>
           </div>
         </div>
         <div className="admin-form-grid">
           <div className="admin-field space-y-1.5">
-            <label htmlFor="jobsiteName">Jobsite name</label>
+            <label htmlFor="jobsiteName">Location name</label>
             <Input
               id="jobsiteName"
-              placeholder="Jobsite name"
+              placeholder="Location name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={error && !name.trim() ? "border-red-400" : ""}
             />
           </div>
           <div className="admin-field space-y-1.5 md:col-span-2">
-            <label htmlFor="jobsiteAddress">Jobsite address</label>
+            <label htmlFor="jobsiteAddress">Location address</label>
             <Input
               id="jobsiteAddress"
-              placeholder="Jobsite address"
+              placeholder="Location address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className={error && !address.trim() ? "border-red-400" : ""}
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={onCreate} disabled={createJobsite.isPending}>Create</Button>
+            <Button onClick={onCreate} disabled={createJobsite.isPending}>Add location</Button>
           </div>
         </div>
         {error ? <div className="mt-2 text-xs text-red-600">{error}</div> : null}
-        <div className="mt-2 text-xs text-steel-500">After creation, the server geocodes and updates Latitude/Longitude.</div>
+        <div className="mt-2 text-xs text-steel-500">Coordinates are filled automatically after saving.</div>
       </div>
       <div className="admin-section mt-6">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Jobsites</div>
-            <div className="card-subtitle">Latest locations available for scheduling.</div>
+            <div className="text-xl font-semibold">Locations</div>
+            <div className="card-subtitle">All saved locations available for planning.</div>
           </div>
         </div>
         <div className="mb-3">
-          <label className="text-xs text-steel-500" htmlFor="jobsiteSearch">Search</label>
+          <label className="text-xs text-steel-500" htmlFor="jobsiteSearch">Search locations</label>
           <Input
             id="jobsiteSearch"
             placeholder="Search by name or address"
@@ -161,7 +161,7 @@ export default function AdminJobsitesPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-steel-500" htmlFor={`jobsite-edit-contact-${j.id}`}>Site Contact</label>
+                    <label className="text-xs text-steel-500" htmlFor={`jobsite-edit-contact-${j.id}`}>On-site contact</label>
                     <Input
                       id={`jobsite-edit-contact-${j.id}`}
                       value={editValues.site_contact}
@@ -169,7 +169,7 @@ export default function AdminJobsitesPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-steel-500" htmlFor={`jobsite-edit-phone-${j.id}`}>Contact Number</label>
+                    <label className="text-xs text-steel-500" htmlFor={`jobsite-edit-phone-${j.id}`}>Contact number</label>
                     <Input
                       id={`jobsite-edit-phone-${j.id}`}
                       value={editValues.site_contact_number}

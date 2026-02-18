@@ -26,6 +26,14 @@ export default function PlannerHeader() {
   const isSolveActive =
     solveRun.isPending || solveJob?.status === "queued" || solveJob?.status === "running";
   const statusLabel = solveJob?.status || (plan ? "success" : "idle");
+  const statusText =
+    statusLabel === "failed"
+      ? "Issue"
+      : statusLabel === "running" || statusLabel === "queued"
+        ? "In progress"
+        : statusLabel === "success"
+          ? "Ready"
+          : "Not started";
   const routeCount = plan?.routes?.length || 0;
   const stopCount = useMemo(
     () => (plan?.routes || []).reduce((sum, route) => sum + (route.stops?.length || 0), 0),
@@ -67,7 +75,7 @@ export default function PlannerHeader() {
 
   const runPublish = async () => {
     if (!plan) return;
-    setPublishMessage("Publishing...");
+    setPublishMessage("Publishing plan...");
     try {
       await publish.mutateAsync({
         routes: plan.routes,
@@ -76,9 +84,9 @@ export default function PlannerHeader() {
         fleet: (plan.meta as any)?.fleet || { trucks, vans },
         plan_date: selectedDate
       });
-      setPublishMessage("Plan published successfully.");
+      setPublishMessage("Plan finalized successfully.");
     } catch (e: any) {
-      setPublishMessage(e?.message || "Publish failed.");
+      setPublishMessage(e?.message || "Could not finalize the plan.");
     }
   };
 
@@ -88,9 +96,9 @@ export default function PlannerHeader() {
       <div className="card-header grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div className="space-y-2">
           <div className="panel-title">Planning Controls</div>
-          <div className="text-2xl font-semibold tracking-tight">Dispatch Plan Console</div>
+          <div className="text-2xl font-semibold tracking-tight">Daily Delivery Planning</div>
           <div className="card-subtitle">
-            Solve, review, and publish route plans with date-locked operational metadata.
+            Build, review, and finalize today&apos;s delivery plan.
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Badge className="border-steel-300 bg-white text-steel-700">
@@ -104,7 +112,7 @@ export default function PlannerHeader() {
         </div>
         <div className="flex w-full flex-col gap-3 rounded-xl border border-steel-200 bg-white/75 p-3 xl:w-auto">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-steel-500">Plan Date</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-steel-500">Plan Date</label>
             <div className="w-full sm:w-auto">
               <DatePickerInput
                 className="w-full sm:w-auto"
@@ -114,7 +122,7 @@ export default function PlannerHeader() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-            <Badge className={statusToneClass}>{statusLabel}</Badge>
+            <Badge className={statusToneClass}>{statusText}</Badge>
             <Button onClick={runSolve} disabled={isSolveActive}>
               {isSolveActive ? (
                 <span
@@ -122,10 +130,10 @@ export default function PlannerHeader() {
                   aria-hidden="true"
                 />
               ) : null}
-              {isSolveActive ? "Running..." : "Run Plan"}
+              {isSolveActive ? "Creating..." : "Create Plan"}
             </Button>
             <Button variant="outline" onClick={runPublish} disabled={!plan || publish.isPending}>
-              {publish.isPending ? "Publishing..." : "Publish Plan"}
+              {publish.isPending ? "Finalizing..." : "Finalize Plan"}
             </Button>
           </div>
         </div>

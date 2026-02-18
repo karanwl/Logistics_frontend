@@ -133,7 +133,7 @@ export default function UnassignedPanel({
   const assignGroupToVehicle = (group: UnassignedGroup) => {
     if (!editable || !allowAssignToRoute || !plan) return;
     if (!targetVehicleId) {
-      setMessage("Select a target vehicle.");
+      setMessage("Select a vehicle first.");
       return;
     }
     const nextRoutes = (plan.routes || []).map((route) => {
@@ -167,7 +167,7 @@ export default function UnassignedPanel({
 
     setPlan({ ...plan, routes: nextRoutes });
     setMessage(
-      `Added ${group.deliveryIds.length} delivery${group.deliveryIds.length === 1 ? "" : "ies"} from ${group.job_name} to vehicle ${targetVehicleId}.`
+      `Added ${group.deliveryIds.length} deliver${group.deliveryIds.length === 1 ? "y" : "ies"} from ${group.job_name} to vehicle ${targetVehicleId}.`
     );
   };
 
@@ -176,14 +176,14 @@ export default function UnassignedPanel({
       <div className="card-header">
         <div>
           <div className="text-xl font-semibold">Unassigned Deliveries</div>
-          <div className="card-subtitle">Grouped by job. Each card contains all sales orders for that job.</div>
+          <div className="card-subtitle">Grouped by location, with all related sales orders together.</div>
         </div>
         <Badge>{unassigned.length}</Badge>
       </div>
 
       {editable && allowAssignToRoute ? (
         <div className="mb-3 rounded-lg border border-steel-200 bg-white/80 p-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Assign Group To Vehicle</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-steel-600">Assign Group to Vehicle</div>
           <div className="mt-1 text-[11px] text-steel-500">
             Plan date: {planDate || (plan as any)?.plan_date || (plan as any)?.target_date || "--"}
           </div>
@@ -209,9 +209,9 @@ export default function UnassignedPanel({
 
       <div className="grid gap-2 sm:grid-cols-2">
         {!plan ? (
-          <div className="empty-state">No plan loaded.</div>
+          <div className="empty-state">No plan is loaded yet.</div>
         ) : groupedUnassigned.length === 0 ? (
-          <div className="empty-state">All deliveries were assigned.</div>
+          <div className="empty-state">All deliveries are assigned.</div>
         ) : (
           groupedUnassigned.map((group) => (
             <div key={group.key} className="rounded-lg border border-steel-100 p-3">
@@ -231,7 +231,7 @@ export default function UnassignedPanel({
                     onClick={() => assignGroupToVehicle(group)}
                     disabled={!targetVehicleId}
                   >
-                    Add Job Group To Vehicle {targetVehicleId || "--"}
+                    Assign to Vehicle {targetVehicleId || "--"}
                   </Button>
                 </div>
               ) : null}

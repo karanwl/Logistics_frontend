@@ -151,7 +151,7 @@ function LivePlannerWorkspace({
 
   const saveChanges = async () => {
     if (!selectedDate || !plan || !canEdit) return;
-    setSaveMessage("Saving changes...");
+    setSaveMessage("Saving updates...");
     try {
       await publish.mutateAsync({
         routes: plan.routes || [],
@@ -161,11 +161,11 @@ function LivePlannerWorkspace({
         plan_date: selectedDate,
         driver_profiles: (plan as any)?.driver_profiles || []
       } as any);
-      setSaveMessage("Changes saved. Drivers were notified.");
+      setSaveMessage("Updates saved. Drivers were notified.");
       liveQuery.refetch();
       planQuery.refetch();
     } catch (error: any) {
-      setSaveMessage(error?.message || "Failed to save changes.");
+      setSaveMessage(error?.message || "Could not save updates.");
     }
   };
 
@@ -174,32 +174,32 @@ function LivePlannerWorkspace({
       <section className="card !p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold">Live Planner</div>
+            <div className="text-lg font-semibold">Live Delivery View</div>
             <div className="card-subtitle">
-              Same planner board, with live delivery updates shown directly inside each stop card.
+              Today&apos;s plan with live delivery updates shown on each stop.
             </div>
             <div className="mt-1 text-xs text-steel-500">
               Date {liveQuery.data?.date || today}
               {liveQuery.data?.last_status_update_at ? ` | Last update ${liveQuery.data.last_status_update_at}` : ""}
-              {source === "deliveries" ? " | Source: delivery-backed live plan" : ""}
+              {source === "deliveries" ? " | Source: live delivery data" : ""}
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="rounded-full border border-steel-200 bg-steel-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-steel-600">
-              Auto Refresh 10s
+              Auto refresh 10s
             </div>
             <Button variant="outline" onClick={() => liveQuery.refetch()}>
-              Refresh Live
+              Refresh live data
             </Button>
             <Button variant="outline" onClick={() => planQuery.refetch()}>
-              Reload Plan
+              Reload plan
             </Button>
             <Button variant={editMode ? "default" : "outline"} onClick={() => setEditMode((value) => !value)} disabled={!canEdit}>
-              {editMode ? "Editing Enabled" : "Enable Editing"}
+              {editMode ? "Editing on" : "Turn editing on"}
             </Button>
             <Button variant="secondary" onClick={saveChanges} disabled={!canEdit || !editMode || !plan || publish.isPending}>
-              {publish.isPending ? "Saving..." : "Save Changes"}
+              {publish.isPending ? "Saving..." : "Save updates"}
             </Button>
           </div>
         </div>
@@ -229,7 +229,7 @@ function LivePlannerWorkspace({
 
         {!canEdit ? (
           <div className="mt-3 text-xs text-steel-500">
-            Editing is only enabled for today UTC ({today}). Loaded plan date: {selectedDate}.
+            Editing is only available for today ({today}). Loaded plan date: {selectedDate}.
           </div>
         ) : null}
         {saveMessage ? <div className="mt-2 text-xs text-steel-500">{saveMessage}</div> : null}
@@ -239,11 +239,11 @@ function LivePlannerWorkspace({
         <div className="space-y-6 xl:col-span-8">
           {planQuery.isLoading ? (
             <section className="card">
-              <div className="empty-state">Loading today&apos;s (UTC) editable plan...</div>
+              <div className="empty-state">Loading today&apos;s editable plan...</div>
             </section>
           ) : !planQuery.data?.published ? (
             <section className="card">
-              <div className="empty-state">No published/live plan is available for today (UTC) yet.</div>
+              <div className="empty-state">No final plan is available for today yet.</div>
             </section>
           ) : (
             <RouteBoard editable={editMode && canEdit} />

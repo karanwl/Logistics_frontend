@@ -15,10 +15,10 @@ export default function RouteBoard({ editable = true }: { editable?: boolean }) 
       <section className="card">
         <div className="card-header">
           <div>
-            <div className="panel-title">Route Board</div>
-            <div className="text-lg font-semibold">Assigned Routes</div>
+            <div className="panel-title">Trip Board</div>
+            <div className="text-lg font-semibold">Assigned Deliveries</div>
             <div className="card-subtitle">
-              {editable ? "Drag and reorder stops, then recalculate where needed." : "Read-only operational view."}
+              {editable ? "Drag to reorder stops and adjust the delivery sequence." : "View-only plan summary."}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -27,7 +27,7 @@ export default function RouteBoard({ editable = true }: { editable?: boolean }) 
           </div>
         </div>
         {routes.length === 0 ? (
-          <div className="empty-state">Run a plan to generate routes.</div>
+          <div className="empty-state">Create a plan to generate delivery trips.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
             {routes.map((route) => (

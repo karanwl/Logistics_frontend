@@ -49,9 +49,9 @@ export default function LoginPage() {
         return;
       }
       const payload = await res.json().catch(() => ({}));
-      setError(payload?.detail || "Login failed. Check credentials.");
+      setError(payload?.detail || "Sign in failed. Please check your email and password.");
     } catch {
-      setError("Login failed. Check credentials.");
+      setError("Sign in failed. Please check your email and password.");
     }
   };
 
@@ -60,20 +60,19 @@ export default function LoginPage() {
       <div className="auth-layout">
         <section className="auth-hero">
           <div className="auth-badge">Secure Access</div>
-          <h1 className="auth-title">Logistics Planner</h1>
+          <h1 className="auth-title">Logistics Operations</h1>
           <p className="auth-subtitle">
-            Plan routes, balance schedules, and stay ahead of every delivery with a single control
-            center.
+            Plan daily delivery work, keep teams aligned, and track progress from one place.
           </p>
           <ul className="auth-list">
-            <li>Live schedule visibility for dispatch and admin teams</li>
-            <li>Route optimization views across planners and managers</li>
-            <li>Centralized status tracking for every delivery</li>
+            <li>Clear daily view for operations and leadership teams</li>
+            <li>Easy review of planned trips and driver workload</li>
+            <li>Simple progress tracking for every customer delivery</li>
           </ul>
           <div className="auth-cta">
-            <span className="auth-cta-label">Need access?</span>
+            <span className="auth-cta-label">Need an account?</span>
             <a className="auth-cta-link" href="/auth/request-access">
-              Request an account
+              Request access
             </a>
           </div>
         </section>
@@ -82,7 +81,7 @@ export default function LoginPage() {
           <CardHeader>
             <div>
               <CardTitle>Sign in</CardTitle>
-              <div className="card-subtitle">Welcome back. Enter your details to continue.</div>
+              <div className="card-subtitle">Welcome back. Sign in to continue.</div>
             </div>
           </CardHeader>
           <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
@@ -107,7 +106,7 @@ export default function LoginPage() {
             <div className="page-actions">
               <Button type="submit">Sign In</Button>
               <a className="text-xs text-steel-500" href="/auth/request-access">
-                Request access
+                Request an account
               </a>
             </div>
           </form>

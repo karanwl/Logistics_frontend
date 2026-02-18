@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
   const onCreate = async () => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     if (!form.name.trim() || !emailOk || form.password.trim().length < 6) {
-      setCreateError("Name, valid email, and password (min 6 chars) are required.");
+      setCreateError("Name, valid email, and a password with at least 6 characters are required.");
       return;
     }
     setCreateError("");
@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
   const saveUpdates = async () => {
     const invalidPasswords = Object.values(userEdits).some((edit: any) => edit?.password && edit.password.length < 6);
     if (invalidPasswords) {
-      setSaveStatus("Passwords must be at least 6 characters.");
+      setSaveStatus("Any new password must be at least 6 characters.");
       return;
     }
     const updates = Object.entries(userEdits).map(([record_id, edits]) => {
@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
     });
     const payload = updates.filter((u) => Object.keys(u.patch).length > 0);
     if (payload.length === 0) {
-      setSaveStatus("No changes to save.");
+      setSaveStatus("There are no changes to save.");
       return;
     }
     setSaveStatus("Saving...");
@@ -94,8 +94,8 @@ export default function AdminUsersPage() {
       <div className="admin-section">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Create User</div>
-            <div className="card-subtitle">Admin-only user management.</div>
+            <div className="text-xl font-semibold">Add Team Member</div>
+            <div className="card-subtitle">Create accounts for people who need access.</div>
           </div>
         </div>
         <div className="admin-form-grid">
@@ -146,19 +146,19 @@ export default function AdminUsersPage() {
           </div>
         </div>
         <div className="mt-4">
-          <Button onClick={onCreate} disabled={createUser.isPending}>Create User</Button>
+          <Button onClick={onCreate} disabled={createUser.isPending}>Create Account</Button>
           {createError ? <div className="mt-2 text-xs text-red-600">{createError}</div> : null}
         </div>
       </div>
       <div className="admin-section mt-6">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Users</div>
-            <div className="card-subtitle">Update roles, activation, or reset passwords.</div>
+            <div className="text-xl font-semibold">Team Access</div>
+            <div className="card-subtitle">Update access level, account status, or reset passwords.</div>
           </div>
           <div className="page-actions">
             <Button variant="secondary" onClick={saveUpdates} disabled={updateUser.isPending}>
-              Save updates
+              Save changes
             </Button>
             <div className="text-xs text-steel-500">{saveStatus}</div>
           </div>

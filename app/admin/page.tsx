@@ -13,56 +13,56 @@ export default function AdminHomePage() {
       <div className="admin-section">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Manager/Admin Tasks</div>
-            <div className="card-subtitle">Quick access to daily tools.</div>
+            <div className="text-xl font-semibold">Operations Shortcuts</div>
+            <div className="card-subtitle">Quick access to the tools your team uses every day.</div>
           </div>
-          <div className="admin-pill">Admin</div>
+          <div className="admin-pill">Leadership</div>
         </div>
         <div className="admin-grid">
           <div className="admin-tile">
-            <div className="admin-tile-title">Create Jobsite</div>
-            <div className="admin-tile-subtitle">Add new locations and keep delivery routing accurate.</div>
+            <div className="admin-tile-title">Manage Locations</div>
+            <div className="admin-tile-subtitle">Add and update customer locations to keep daily plans accurate.</div>
             <Link href="/jobsites" className="admin-tile-link">
-              Open jobsites
+              Open locations
             </Link>
           </div>
           <div className="admin-tile">
-            <div className="admin-tile-title">Schedule Board</div>
-            <div className="admin-tile-subtitle">Monitor daily flow, backlog, and upcoming deliveries.</div>
+            <div className="admin-tile-title">Delivery Calendar</div>
+            <div className="admin-tile-subtitle">Review today&apos;s work, upcoming deliveries, and pending items.</div>
             <Link href="/schedule" className="admin-tile-link">
-              View schedule
+              Open calendar
             </Link>
           </div>
           <div className="admin-tile">
-            <div className="admin-tile-title">Published Plans</div>
-            <div className="admin-tile-subtitle">Review and share finalized routes.</div>
+            <div className="admin-tile-title">Final Plans</div>
+            <div className="admin-tile-subtitle">Review finalized trip plans before execution.</div>
             <Link href="/planner/published" className="admin-tile-link">
-              See published plans
+              Open final plans
             </Link>
           </div>
           <div className="admin-tile">
-            <div className="admin-tile-title">Meeting Intake</div>
-            <div className="admin-tile-subtitle">Capture new orders and publish to the schedule.</div>
+            <div className="admin-tile-title">New Orders</div>
+            <div className="admin-tile-subtitle">Enter new orders and send them to the calendar.</div>
             <Link href="/meeting-intake" className="admin-tile-link">
-              Start intake
+              Add orders
             </Link>
           </div>
           <div className="admin-tile">
-            <div className="admin-tile-title">Manage Users</div>
-            <div className="admin-tile-subtitle">Create accounts and control access.</div>
+            <div className="admin-tile-title">Team Access</div>
+            <div className="admin-tile-subtitle">Create accounts and manage who can view each area.</div>
             {isAdmin ? (
               <Link href="/users" className="admin-tile-link">
-                Manage users
+                Manage access
               </Link>
             ) : (
               <button
                 type="button"
                 className="admin-tile-link text-steel-400 cursor-not-allowed text-left"
                 onClick={() => {
-                  window.location.href = "/unauthorized?message=Admin%20access%20required.";
+                  window.location.href = "/unauthorized?message=This%20section%20is%20for%20administrators%20only.";
                 }}
               >
-                Manage users
+                Manage access
               </button>
             )}
           </div>

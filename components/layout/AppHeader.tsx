@@ -9,28 +9,28 @@ type RoleKey = "admin" | "manager" | "coordinator";
 
 const ROLE_LINKS: Record<RoleKey, { href: string; label: string }[]> = {
   admin: [
-    { href: "/schedule", label: "Schedule" },
-    { href: "/planner", label: "Planner" },
-    { href: "/planner/dashboard", label: "Dashboard" },
-    { href: "/planner/live", label: "Live Progress" },
-    { href: "/planner/manual", label: "Manual Runs" },
-    { href: "/planner/published", label: "Published" },
-    { href: "/meeting-intake", label: "Meeting Intake" },
-    { href: "/jobsites", label: "Jobsites" },
-    { href: "/users", label: "Users" },
-    { href: "/admin", label: "Admin" }
+    { href: "/schedule", label: "Delivery Calendar" },
+    { href: "/planner", label: "Daily Planning" },
+    { href: "/planner/dashboard", label: "Performance" },
+    { href: "/planner/live", label: "Live Updates" },
+    { href: "/planner/manual", label: "Custom Plans" },
+    { href: "/planner/published", label: "Final Plans" },
+    { href: "/meeting-intake", label: "New Orders" },
+    { href: "/jobsites", label: "Locations" },
+    { href: "/users", label: "Team Access" },
+    { href: "/admin", label: "Operations Hub" }
   ],
   manager: [
-    { href: "/schedule", label: "Schedule" },
-    { href: "/planner", label: "Planner" },
-    { href: "/planner/dashboard", label: "Dashboard" },
-    { href: "/planner/live", label: "Live Progress" },
-    { href: "/planner/manual", label: "Manual Runs" },
-    { href: "/planner/published", label: "Published" },
-    { href: "/meeting-intake", label: "Meeting Intake" },
-    { href: "/jobsites", label: "Jobsites" }
+    { href: "/schedule", label: "Delivery Calendar" },
+    { href: "/planner", label: "Daily Planning" },
+    { href: "/planner/dashboard", label: "Performance" },
+    { href: "/planner/live", label: "Live Updates" },
+    { href: "/planner/manual", label: "Custom Plans" },
+    { href: "/planner/published", label: "Final Plans" },
+    { href: "/meeting-intake", label: "New Orders" },
+    { href: "/jobsites", label: "Locations" }
   ],
-  coordinator: [{ href: "/schedule", label: "Schedule" }]
+  coordinator: [{ href: "/schedule", label: "Delivery Calendar" }]
 };
 
 function resolveRoleKey(rawRole: unknown): RoleKey {
@@ -41,9 +41,9 @@ function resolveRoleKey(rawRole: unknown): RoleKey {
 }
 
 function subtitleForRole(roleKey: RoleKey): string {
-  if (roleKey === "admin") return "Admin Workspace";
-  if (roleKey === "manager") return "Manager Workspace";
-  return "Coordinator Workspace";
+  if (roleKey === "admin") return "Executive Operations View";
+  if (roleKey === "manager") return "Management Operations View";
+  return "Daily Operations View";
 }
 
 export default function AppHeader() {
@@ -74,8 +74,8 @@ export default function AppHeader() {
 
   return (
     <SiteHeader
-      title="Logistics Planner"
-      subtitle={isAuthPage ? "Operations Console" : subtitle}
+      title="Logistics Operations"
+      subtitle={isAuthPage ? "Operations Portal" : subtitle}
       links={filteredLinks}
       currentPath={pathname || ""}
     />

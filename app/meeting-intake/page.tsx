@@ -160,7 +160,7 @@ export default function MeetingIntakePage() {
     });
     if (Object.keys(errors).length) {
       setRowErrors(errors);
-      setPublishMessage("Fix highlighted rows (jobsite, date, and sales order are required).");
+      setPublishMessage("Please complete the highlighted rows (location, date, and sales order are required).");
       return;
     }
     setRowErrors({});
@@ -179,16 +179,16 @@ export default function MeetingIntakePage() {
       exp_frame: row.exp_frame
     }));
     if (deliveries.length === 0) {
-      setPublishMessage("Nothing to publish.");
+      setPublishMessage("There are no rows to publish.");
       return;
     }
-    setPublishMessage("Publishing...");
+    setPublishMessage("Saving and publishing...");
     try {
       await bulkCreate.mutateAsync({ deliveries });
       setPublishMessage("Published successfully.");
       window.location.href = "/schedule?view=calendar";
     } catch (e: any) {
-      setPublishMessage(e?.message || "Publish failed.");
+      setPublishMessage(e?.message || "Could not publish. Please try again.");
     }
   };
 
@@ -197,24 +197,24 @@ export default function MeetingIntakePage() {
       <div className="admin-section overflow-visible" id="meetingIntake" style={{ overflow: "visible" }}>
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Morning Meeting Intake</div>
-            <div className="card-subtitle">Add sales orders after the meeting, then publish to the schedule.</div>
+            <div className="text-xl font-semibold">New Orders Entry</div>
+            <div className="card-subtitle">Add new orders and send them to the delivery calendar.</div>
           </div>
           <div className="page-actions">
             <div className="flex items-center gap-2">
               {!showJobsiteForm ? (
                 <Button variant="secondary" onClick={() => setShowJobsiteForm(true)}>
-                  Add Jobsite
+                  Add location
                 </Button>
               ) : (
                 <>
                   <Input
-                    placeholder="Jobsite name"
+                    placeholder="Location name"
                     value={jobsiteName}
                     onChange={(e) => setJobsiteName(e.target.value)}
                   />
                   <Input
-                    placeholder="Jobsite address"
+                    placeholder="Location address"
                     value={jobsiteAddress}
                     onChange={(e) => setJobsiteAddress(e.target.value)}
                   />
@@ -222,7 +222,7 @@ export default function MeetingIntakePage() {
                     variant="secondary"
                     onClick={() => {
                       if (!jobsiteName.trim() || !jobsiteAddress.trim()) {
-                        setJobsiteFormError("Jobsite name and address are required.");
+                        setJobsiteFormError("Location name and address are required.");
                         return;
                       }
                       setJobsiteFormError("");
@@ -246,7 +246,7 @@ export default function MeetingIntakePage() {
                       );
                     }}
                   >
-                    Create
+                    Add
                   </Button>
                   <Button variant="ghost" onClick={() => setShowJobsiteForm(false)}>
                     Cancel
@@ -255,12 +255,12 @@ export default function MeetingIntakePage() {
               )}
             </div>
             {jobsiteFormError ? <div className="text-xs text-red-600">{jobsiteFormError}</div> : null}
-            <Button onClick={publish} disabled={bulkCreate.isPending}>Publish</Button>
+            <Button onClick={publish} disabled={bulkCreate.isPending}>Publish to calendar</Button>
           </div>
         </div>
         <div className="grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 text-xs font-semibold text-steel-600 [&>div]:border [&>div]:border-steel-200 [&>div]:bg-white/90 [&>div]:px-2 [&>div]:py-2">
-          <div>Planned Date</div>
-          <div>Jobsite Name</div>
+          <div>Date</div>
+          <div>Location</div>
           <div>Sales Order #</div>
           <div>Large Skids</div>
           <div>Medium Skids</div>
@@ -292,7 +292,7 @@ export default function MeetingIntakePage() {
               >
                 <Input
                   className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
-                  placeholder="Type jobsite name"
+                  placeholder="Type location name"
                   value={row.jobsite_query}
                   onChange={(e) => {
                     const value = e.target.value;

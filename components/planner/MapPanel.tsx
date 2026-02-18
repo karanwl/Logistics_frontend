@@ -64,7 +64,7 @@ export default function MapPanel() {
         });
         usingFallbackStyle.current = !hasToken;
         if (!hasToken) {
-          setMapError("Mapbox token is missing. Showing fallback map style.");
+          setMapError("Map service key is missing. Showing a basic map view.");
         }
 
         mapInstance.current.addControl(new mapboxgl.default.NavigationControl({ showCompass: false }), "top-right");
@@ -91,14 +91,14 @@ export default function MapPanel() {
             try {
               usingFallbackStyle.current = true;
               mapInstance.current.setStyle(FALLBACK_STYLE);
-              setMapError("Mapbox access failed. Showing fallback map style.");
+              setMapError("Map service access failed. Showing a basic map view.");
             } catch {
-              setMapError("Unable to load map style.");
+              setMapError("Unable to load map view.");
             }
           }
         });
       } catch (error) {
-        setMapError("Unable to initialize map.");
+        setMapError("Unable to start the map.");
       }
     };
 
@@ -305,7 +305,7 @@ export default function MapPanel() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <CardTitle>Route Map</CardTitle>
-            <div className="card-subtitle">Visual route trace by vehicle and reload run segments.</div>
+            <div className="card-subtitle">Map view of each vehicle trip, including depot restock runs.</div>
           </div>
           <div className="flex items-center gap-2 text-xs text-steel-600">
             <span className="rounded-full border border-steel-200 bg-white px-2 py-1">{routeCount} routes</span>
@@ -318,19 +318,19 @@ export default function MapPanel() {
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-steel-600">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-5 rounded-full bg-[#2563eb]" />
-            <span>Vehicle route</span>
+            <span>Vehicle trip</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-5 rounded-full bg-[#06b6d4]" />
-            <span>Post-reload run</span>
+            <span>After restock</span>
           </div>
           {hasReloadRun ? (
             <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-sky-700">
-              Depot reload present
+              Depot restock included
             </span>
           ) : (
             <span className="rounded-full border border-steel-200 bg-white px-2 py-0.5 text-steel-600">
-              No reload segments
+              No reloads
             </span>
           )}
         </div>

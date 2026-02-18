@@ -33,7 +33,7 @@ function normalizeNodes(data: any): DebugNode[] {
 }
 
 function nodeHeading(node: DebugNode) {
-  return `${node.node}: ${String(node.label || `Node ${node.node}`)}`;
+  return `${node.node}: ${String(node.label || `Point ${node.node}`)}`;
 }
 
 function MatrixTable({
@@ -53,7 +53,7 @@ function MatrixTable({
         <div className="card-header">
           <div>
             <div className="text-lg font-semibold">{title}</div>
-            <div className="card-subtitle">No matrix data was returned.</div>
+            <div className="card-subtitle">No table data was returned.</div>
           </div>
         </div>
       </section>
@@ -75,7 +75,7 @@ function MatrixTable({
           <thead>
             <tr className="bg-steel-50">
               <th className="sticky left-0 z-20 border-b border-r border-steel-200 bg-steel-50 px-2 py-1 text-left">
-                From \ To
+                From / To
               </th>
               {nodes.map((node) => (
                 <th key={`col-${node.node}`} className="border-b border-steel-200 px-2 py-1 text-left whitespace-nowrap">
@@ -88,7 +88,7 @@ function MatrixTable({
             {matrix.map((row, rowIdx) => (
               <tr key={`row-${rowIdx}`} className="odd:bg-white even:bg-steel-50/40">
                 <th className="sticky left-0 z-10 border-r border-steel-200 bg-white px-2 py-1 text-left whitespace-nowrap">
-                  {nodeHeading(nodes[rowIdx] || { node: rowIdx, label: `Node ${rowIdx}` })}
+                  {nodeHeading(nodes[rowIdx] || { node: rowIdx, label: `Point ${rowIdx}` })}
                 </th>
                 {Array.isArray(row)
                   ? row.map((cell, colIdx) => (
@@ -143,9 +143,9 @@ export default function PlannerMatrixDebugPage() {
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-xl font-semibold">Planner Matrix Debug</div>
+              <div className="text-xl font-semibold">Planning Detail View</div>
               <div className="card-subtitle">
-                Inspect matrix indices by job names and solver diagnostics to understand dropped nodes.
+                Review detailed planning data for advanced analysis.
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function PlannerMatrixDebugPage() {
               />
             </div>
             <div className="lg:col-span-3">
-              <label className="text-xs text-steel-500">Primary Route Nodes (optional comma list)</label>
+              <label className="text-xs text-steel-500">Primary stop order (optional comma list)</label>
               <Input
                 className="mt-1 h-9"
                 value={routeNodes}
@@ -184,7 +184,7 @@ export default function PlannerMatrixDebugPage() {
               />
             </div>
             <div className="lg:col-span-3">
-              <label className="text-xs text-steel-500">Compare Route Nodes (optional comma list)</label>
+              <label className="text-xs text-steel-500">Comparison stop order (optional comma list)</label>
               <Input
                 className="mt-1 h-9"
                 value={compareNodes}
@@ -205,7 +205,7 @@ export default function PlannerMatrixDebugPage() {
                 }
                 disabled={debugQuery.isFetching}
               >
-                {debugQuery.isFetching ? "Loading..." : "Load Debug Data"}
+                {debugQuery.isFetching ? "Loading..." : "Load details"}
               </Button>
               <Button variant="outline" onClick={() => debugQuery.refetch()} disabled={debugQuery.isFetching}>
                 Refresh
@@ -216,7 +216,7 @@ export default function PlannerMatrixDebugPage() {
 
         {debugQuery.error ? (
           <section className="card">
-            <div className="empty-state">{String((debugQuery.error as any)?.message || "Failed to load debug data.")}</div>
+            <div className="empty-state">{String((debugQuery.error as any)?.message || "Could not load details.")}</div>
           </section>
         ) : null}
 
@@ -225,7 +225,7 @@ export default function PlannerMatrixDebugPage() {
             <section className="card">
               <div className="card-header">
                 <div>
-                  <div className="text-lg font-semibold">Run Diagnostics</div>
+                  <div className="text-lg font-semibold">Run Details</div>
                   <div className="card-subtitle">
                     Date {String(data?.target_date || "-")} | Nodes {formatNumber(data?.node_count)} | Deliveries {formatNumber(data?.delivery_count)}
                   </div>
@@ -237,17 +237,17 @@ export default function PlannerMatrixDebugPage() {
                   <div className="text-base font-semibold">{formatNumber(data?.run_debug?.route_count)}</div>
                 </div>
                 <div className="rounded-lg border border-steel-100 bg-steel-50/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Dropped Nodes</div>
+                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Unplanned Points</div>
                   <div className="text-base font-semibold">{formatNumber(data?.run_debug?.dropped_count)}</div>
                 </div>
                 <div className="rounded-lg border border-steel-100 bg-steel-50/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Max Distance Leg</div>
+                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Longest Distance Segment</div>
                   <div className="text-sm font-semibold">
                     {formatNumber(data?.matrix_extremes?.max_distance?.distance_m)} m
                   </div>
                 </div>
                 <div className="rounded-lg border border-steel-100 bg-steel-50/60 px-3 py-2">
-                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Max Duration Leg</div>
+                  <div className="text-[11px] uppercase tracking-wide text-steel-500">Longest Time Segment</div>
                   <div className="text-sm font-semibold">
                     {formatNumber(data?.matrix_extremes?.max_duration?.duration_s)} s
                   </div>
@@ -256,9 +256,9 @@ export default function PlannerMatrixDebugPage() {
 
               <div className="mt-4 grid gap-3 xl:grid-cols-2">
                 <div className="rounded-lg border border-steel-100 p-3">
-                  <div className="text-sm font-semibold">Dropped Node Details</div>
+                  <div className="text-sm font-semibold">Unplanned Point Details</div>
                   {dropped.length === 0 ? (
-                    <div className="mt-2 text-xs text-steel-500">No dropped nodes for this run.</div>
+                    <div className="mt-2 text-xs text-steel-500">No unplanned points for this run.</div>
                   ) : (
                     <div className="mt-2 space-y-2 text-xs">
                       {dropped.map((item: any) => (
@@ -269,7 +269,7 @@ export default function PlannerMatrixDebugPage() {
                           <div className="text-steel-500">
                             {Array.isArray(item.tokens) && item.tokens.length > 0
                               ? item.tokens.map((t: any) => t.job_name || t.delivery_id || t.token).join(" | ")
-                              : "No token details"}
+                              : "No item details"}
                           </div>
                         </div>
                       ))}
@@ -278,9 +278,9 @@ export default function PlannerMatrixDebugPage() {
                 </div>
 
                 <div className="rounded-lg border border-steel-100 p-3">
-                  <div className="text-sm font-semibold">Route Breakdown</div>
+                  <div className="text-sm font-semibold">Trip Breakdown</div>
                   {routes.length === 0 ? (
-                    <div className="mt-2 text-xs text-steel-500">No route output for this run.</div>
+                    <div className="mt-2 text-xs text-steel-500">No trip details for this run.</div>
                   ) : (
                     <div className="mt-2 space-y-2 text-xs">
                       {routes.map((route: any, idx: number) => (
@@ -305,17 +305,17 @@ export default function PlannerMatrixDebugPage() {
             <section className="card">
               <div className="card-header">
                 <div>
-                  <div className="text-lg font-semibold">Node Index</div>
-                  <div className="card-subtitle">Node number to job name/address mapping used by matrix rows/columns.</div>
+                  <div className="text-lg font-semibold">Point Index</div>
+                  <div className="card-subtitle">Reference list used to build the planning tables.</div>
                 </div>
               </div>
               <div className="overflow-auto max-h-[40vh] rounded-lg border border-steel-100">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-steel-50">
-                      <th className="px-2 py-1 text-left">Node</th>
+                      <th className="px-2 py-1 text-left">Point</th>
                       <th className="px-2 py-1 text-left">Label</th>
-                      <th className="px-2 py-1 text-left">Tokens / Jobs</th>
+                      <th className="px-2 py-1 text-left">Related Items</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -335,8 +335,8 @@ export default function PlannerMatrixDebugPage() {
               </div>
             </section>
 
-            <MatrixTable title="Distance Matrix" matrix={distanceMatrix} nodes={nodes} unit="meters" />
-            <MatrixTable title="Duration Matrix" matrix={durationMatrix} nodes={nodes} unit="seconds" />
+            <MatrixTable title="Distance Table" matrix={distanceMatrix} nodes={nodes} unit="meters" />
+            <MatrixTable title="Time Table" matrix={durationMatrix} nodes={nodes} unit="seconds" />
           </>
         ) : null}
       </div>

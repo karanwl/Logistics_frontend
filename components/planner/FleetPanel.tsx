@@ -9,6 +9,14 @@ export default function FleetPanel() {
   const { trucks, vans, setTrucks, setVans, solveJob } = usePlannerState();
   const totalVehicles = Math.max(0, Number(trucks || 0)) + Math.max(0, Number(vans || 0));
   const solveState = String(solveJob?.status || "idle").toLowerCase();
+  const solveLabel =
+    solveState === "failed"
+      ? "Issue"
+      : solveState === "queued" || solveState === "running"
+        ? "In progress"
+        : solveState === "success"
+          ? "Ready"
+          : "Not started";
   const solveToneClass =
     solveState === "failed"
       ? "border-rose-300 bg-rose-50 text-rose-700"
@@ -23,8 +31,8 @@ export default function FleetPanel() {
       <div className="card-header">
         <div>
           <div className="panel-title">Fleet Setup</div>
-          <div className="text-xl font-semibold">Vehicle Availability</div>
-          <div className="card-subtitle">Set available trucks and vans before running the solver.</div>
+          <div className="text-xl font-semibold">Available Vehicles</div>
+          <div className="card-subtitle">Set how many trucks and vans are available today.</div>
         </div>
         <Badge className="border-steel-300 bg-white text-steel-700">{totalVehicles} total</Badge>
       </div>
@@ -32,23 +40,23 @@ export default function FleetPanel() {
         <div className="space-y-2 rounded-xl border border-steel-200 bg-white/80 p-3">
           <label className="text-xs font-semibold uppercase tracking-wide text-steel-500">Trucks</label>
           <Input type="number" min={0} value={trucks} onChange={(e) => setTrucks(Number(e.target.value))} />
-          <div className="text-xs text-steel-500">Used for higher-capacity and truck-required stops.</div>
+          <div className="text-xs text-steel-500">Best for larger loads and truck-only deliveries.</div>
         </div>
         <div className="space-y-2 rounded-xl border border-steel-200 bg-white/80 p-3">
           <label className="text-xs font-semibold uppercase tracking-wide text-steel-500">Vans</label>
           <Input type="number" min={0} value={vans} onChange={(e) => setVans(Number(e.target.value))} />
-          <div className="text-xs text-steel-500">Preferred for light stops and short service time.</div>
+          <div className="text-xs text-steel-500">Best for lighter deliveries and quicker stops.</div>
         </div>
         <div className="rounded-xl border border-steel-200 bg-steel-50/80 p-3 md:col-span-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Solve Status</div>
-            <Badge className={solveToneClass}>{solveJob?.status || "idle"}</Badge>
+            <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Plan Status</div>
+            <Badge className={solveToneClass}>{solveLabel}</Badge>
           </div>
           <div className="mt-2 text-xs text-steel-600">
-            Last solve finished: {solveJob?.finished_at || "--"}
+            Last update: {solveJob?.finished_at || "--"}
           </div>
           <div className="mt-1 text-xs text-steel-500">
-            Recommended: keep this aligned with actual on-road vehicle availability.
+            Keep this aligned with actual vehicles available for dispatch.
           </div>
         </div>
       </div>

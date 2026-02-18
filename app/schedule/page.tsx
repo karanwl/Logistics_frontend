@@ -109,8 +109,8 @@ const TIME_OPTIONS = ["", ...buildTimeOptions(6, 18, 15)];
 
 const PICKUP_VEHICLE_OPTIONS = [
   { value: "both", label: "Both" },
-  { value: "van", label: "Van only" },
-  { value: "truck", label: "Truck only" }
+  { value: "van", label: "Van preferred" },
+  { value: "truck", label: "Truck preferred" }
 ];
 
 function pickupVehicleLabel(value: string | undefined | null) {
@@ -307,17 +307,17 @@ export default function SchedulePage() {
     for (const updates of Object.values(edits)) {
       const scheduled = (updates as any)?.scheduled_date;
       if (scheduled && !dateRegex.test(String(scheduled))) {
-        setSaveStatus("Scheduled date must be YYYY-MM-DD.");
+        setSaveStatus("Please enter a valid scheduled date.");
         return;
       }
       const ws = (updates as any)?.window_start;
       if (ws && !timeRegex.test(String(ws))) {
-        setSaveStatus("Window start must be HH:MM (24h).");
+        setSaveStatus("Please enter a valid start time.");
         return;
       }
       const we = (updates as any)?.window_end;
       if (we && !timeRegex.test(String(we))) {
-        setSaveStatus("Window end must be HH:MM (24h).");
+        setSaveStatus("Please enter a valid end time.");
         return;
       }
     }
@@ -326,10 +326,10 @@ export default function SchedulePage() {
       ...updates
     }));
     if (payload.length === 0) {
-      setSaveStatus("No changes to save.");
+      setSaveStatus("There are no changes to save.");
       return;
     }
-    setSaveStatus("Saving...");
+    setSaveStatus("Saving updates...");
     const result: any = await bulkUpdate.mutateAsync({ deliveries: payload });
     const updated = Number(result?.updated || 0);
     const errors = Array.isArray(result?.errors) ? result.errors : [];
@@ -367,15 +367,15 @@ export default function SchedulePage() {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
     if (drawerDelivery.scheduled_date && !dateRegex.test(String(drawerDelivery.scheduled_date))) {
-      setDrawerError("Scheduled date must be YYYY-MM-DD.");
+      setDrawerError("Please enter a valid scheduled date.");
       return;
     }
     if (drawerDelivery.window_start && !timeRegex.test(String(drawerDelivery.window_start))) {
-      setDrawerError("Window start must be HH:MM (24h).");
+      setDrawerError("Please enter a valid start time.");
       return;
     }
     if (drawerDelivery.window_end && !timeRegex.test(String(drawerDelivery.window_end))) {
-      setDrawerError("Window end must be HH:MM (24h).");
+      setDrawerError("Please enter a valid end time.");
       return;
     }
     setDrawerError("");
@@ -407,10 +407,10 @@ export default function SchedulePage() {
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="board-field board-search w-72">
               <label htmlFor="boardSearch" className="sr-only">Search deliveries</label>
-              <Input id="boardSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input id="boardSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="board-field board-week w-48 text-center">
-              <label htmlFor="boardWeek" className="text-xs text-steel-500 block">Week of</label>
+              <label htmlFor="boardWeek" className="text-xs text-steel-500 block">Week starting</label>
               <DatePickerInput
                 id="boardWeek"
                 className="h-9"
@@ -419,10 +419,10 @@ export default function SchedulePage() {
               />
             </div>
             <div className="flex items-center justify-end gap-3">
-              <div className="view-toggle" role="group" aria-label="Schedule view">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List</button>
+              <div className="view-toggle" role="group" aria-label="View type">
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -432,7 +432,7 @@ export default function SchedulePage() {
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="calendar-filters w-72">
               <label htmlFor="calendarSearch" className="sr-only">Search deliveries</label>
-              <Input id="calendarSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input id="calendarSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="calendar-title-wrap flex items-center gap-3 justify-center w-64">
               <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, -1))} aria-label="Previous month">
@@ -444,10 +444,10 @@ export default function SchedulePage() {
               </button>
             </div>
             <div className="flex items-center justify-end gap-3">
-              <div className="view-toggle" role="group" aria-label="Schedule view">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List</button>
+              <div className="view-toggle" role="group" aria-label="View type">
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -457,31 +457,31 @@ export default function SchedulePage() {
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
             <div className="calendar-filters w-72">
               <label htmlFor="listSearch" className="sr-only">Search deliveries</label>
-              <Input id="listSearch" type="search" placeholder="Search Deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input id="listSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="flex items-center gap-2 justify-center w-64">
               <label htmlFor="listDate" className="text-xs text-steel-500">Date</label>
-              <DatePickerInput
-                id="listDate"
-                className="h-9"
-                value={listDate}
-                onChange={(value) => setListDate(value)}
-              />
-            </div>
-            <div className="flex items-center justify-end gap-3">
-              {canEdit ? (
-                <>
-                  <label className="text-xs text-steel-500">
-                    <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} /> Edit mode
-                  </label>
-                  <Button variant="secondary" onClick={saveChanges} disabled={bulkUpdate.isPending}>Save changes</Button>
+                <DatePickerInput
+                  id="listDate"
+                  className="h-9"
+                  value={listDate}
+                  onChange={(value) => setListDate(value)}
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                {canEdit ? (
+                  <>
+                    <label className="text-xs text-steel-500">
+                    <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} /> Editing
+                    </label>
+                  <Button variant="secondary" onClick={saveChanges} disabled={bulkUpdate.isPending}>Save updates</Button>
                   <div className="text-xs text-steel-500">{saveStatus}</div>
                 </>
               ) : null}
-              <div className="view-toggle" role="group" aria-label="Schedule view">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List</button>
+              <div className="view-toggle" role="group" aria-label="View type">
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -501,7 +501,7 @@ export default function SchedulePage() {
                     <DroppableColumn key={key} columnKey={key} title={key} items={grouped[key] || []} />
                   );
                 })}
-                <DroppableColumn columnKey="unscheduled" title="Unscheduled" items={grouped.unscheduled || []} />
+                <DroppableColumn columnKey="unscheduled" title="Not Scheduled" items={grouped.unscheduled || []} />
               </div>
             </DndContext>
           </div>
@@ -550,7 +550,7 @@ export default function SchedulePage() {
                 {canEdit && editMode && (
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("ps_delivered")}>
-                      Packing Slip Delivered {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Packing Slip Sent {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                 )}
@@ -561,7 +561,7 @@ export default function SchedulePage() {
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("job_name")}>
-                      Job Name {sort.key === "job_name" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Location {sort.key === "job_name" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">
@@ -586,7 +586,7 @@ export default function SchedulePage() {
                   </th>
                   <th className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("requires_empty_truck")}>
-                      Needs Empty Truck? {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                      Needs Empty Truck {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                   <th className="text-left py-2">
@@ -802,8 +802,8 @@ export default function SchedulePage() {
           <div className="drawer-header">
             <div>
               <p className="panel-title">Edit</p>
-              <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery</h2>
-              <p className="card-subtitle" id="inlineEditSubtitle">Update delivery details.</p>
+              <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
+              <p className="card-subtitle" id="inlineEditSubtitle">Review and update this delivery.</p>
             </div>
             <button className="btn btn-secondary icon-only" type="button" data-drawer-close aria-label="Close" onClick={closeDrawer}>
               ?
@@ -814,7 +814,7 @@ export default function SchedulePage() {
               <div className="empty-state">No delivery selected.</div>
             ) : (
               <div className="grid gap-3">
-                <label className="text-xs text-steel-500">Job</label>
+                <label className="text-xs text-steel-500">Location</label>
                 <div className="text-sm font-semibold">{drawerDelivery.job_name}</div>
                 <label className="text-xs text-steel-500">Scheduled Date</label>
                 <DatePickerInput
@@ -856,7 +856,7 @@ export default function SchedulePage() {
                   </select>
                 </div>
                 <div className="page-actions">
-                  <Button onClick={saveDrawer} disabled={updateDelivery.isPending}>Save</Button>
+                  <Button onClick={saveDrawer} disabled={updateDelivery.isPending}>Save updates</Button>
                   <Button variant="secondary" onClick={closeDrawer}>Cancel</Button>
                 </div>
                 {drawerError ? <div className="text-xs text-red-600">{drawerError}</div> : null}
@@ -867,8 +867,8 @@ export default function SchedulePage() {
       </div>
 
       <footer className="site-footer">
-        <div>Logistics Planner</div>
-        <div>Internal scheduling tools</div>
+        <div>Logistics Operations</div>
+        <div>Delivery planning workspace</div>
       </footer>
     </AppShell>
   );

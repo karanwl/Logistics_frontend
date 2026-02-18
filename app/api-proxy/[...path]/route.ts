@@ -38,7 +38,7 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }) {
     return NextResponse.json(
       {
         detail:
-          "Proxy upstream request failed. Check FASTAPI_BASE_URL (no quotes/trailing spaces) and backend availability."
+          "We could not connect to the service right now. Please try again in a moment."
       },
       { status: 502 }
     );

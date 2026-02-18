@@ -6,10 +6,10 @@ export default function StatusPage() {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Action completed</div>
+            <div className="text-xl font-semibold">Update complete</div>
           </div>
         </div>
-        <div className="empty-state">Replace with action results page.</div>
+        <div className="empty-state">This page will show next-step details after each action.</div>
       </div>
     </AppShell>
   );

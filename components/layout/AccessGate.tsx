@@ -17,13 +17,13 @@ export default function AccessGate({ children }: { children: ReactNode }) {
 
   const denial = useMemo(() => {
     if (isPublic) return "";
-    if (pathname.startsWith("/admin")) return isAdmin ? "" : "Admin access required.";
-    if (pathname.startsWith("/users")) return isAdmin ? "" : "Admin access required.";
-    if (pathname.startsWith("/meeting-intake")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
-    if (pathname.startsWith("/jobsites")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
-    if (pathname.startsWith("/deliveries")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
-    if (pathname.startsWith("/planner/published")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
-    if (pathname.startsWith("/planner")) return isManagerOrAdmin ? "" : "Manager or Admin access required.";
+    if (pathname.startsWith("/admin")) return isAdmin ? "" : "This page is for administrators only.";
+    if (pathname.startsWith("/users")) return isAdmin ? "" : "This page is for administrators only.";
+    if (pathname.startsWith("/meeting-intake")) return isManagerOrAdmin ? "" : "This page is for managers and administrators.";
+    if (pathname.startsWith("/jobsites")) return isManagerOrAdmin ? "" : "This page is for managers and administrators.";
+    if (pathname.startsWith("/deliveries")) return isManagerOrAdmin ? "" : "This page is for managers and administrators.";
+    if (pathname.startsWith("/planner/published")) return isManagerOrAdmin ? "" : "This page is for managers and administrators.";
+    if (pathname.startsWith("/planner")) return isManagerOrAdmin ? "" : "This page is for managers and administrators.";
     return "";
   }, [isAdmin, isManagerOrAdmin, isPublic, pathname]);
 
@@ -33,11 +33,11 @@ export default function AccessGate({ children }: { children: ReactNode }) {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Checking access</div>
-            <div className="card-subtitle">Loading your permissions.</div>
+            <div className="text-xl font-semibold">Checking your access</div>
+            <div className="card-subtitle">Please wait while we open your workspace.</div>
           </div>
         </div>
-        <div className="empty-state">Please wait a moment.</div>
+        <div className="empty-state">One moment...</div>
       </div>
     );
   }
@@ -47,8 +47,8 @@ export default function AccessGate({ children }: { children: ReactNode }) {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Access restricted</div>
-            <div className="card-subtitle">You do not have permission to view this section.</div>
+            <div className="text-xl font-semibold">This area is restricted</div>
+            <div className="card-subtitle">Your current account does not include this section.</div>
           </div>
         </div>
         <div className="empty-state">{denial}</div>

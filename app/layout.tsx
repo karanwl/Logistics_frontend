@@ -7,8 +7,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 const sora = Sora({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "Logistics Planner",
-  description: "Route planning and dispatch console"
+  title: "Logistics Operations",
+  description: "Delivery planning and operations management"
 };
 
 import type { ReactNode } from "react";

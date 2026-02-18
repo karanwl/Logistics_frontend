@@ -42,8 +42,8 @@ export default function PublishedPlansPage() {
           <div className="card xl:col-span-3">
             <div className="card-header">
               <div>
-                <div className="text-xl font-semibold">Published Plans</div>
-                <div className="card-subtitle">Select a plan to preview routes.</div>
+                <div className="text-xl font-semibold">Final Plans</div>
+                <div className="card-subtitle">Select a date to review the finalized delivery plan.</div>
               </div>
             </div>
             <div className="space-y-2">
@@ -61,7 +61,7 @@ export default function PublishedPlansPage() {
               ))}
               {!listQuery.isLoading && items.length === 0 ? (
                 <div className="rounded-lg border border-steel-100 bg-white/70 px-3 py-2 text-xs text-steel-500">
-                  No published plans found.
+                  No final plans found.
                 </div>
               ) : null}
             </div>
@@ -93,19 +93,19 @@ function PublishedPlanToolbar({
     <section className="card mb-6">
       <div className="card-header">
         <div>
-          <div className="text-lg font-semibold">Published Plan Preview</div>
+          <div className="text-lg font-semibold">Final Plan Preview</div>
           <div className="card-subtitle">
-            Published plans are view-only here. Use Live Progress to edit today&apos;s UTC plan ({today}).
+            Plans are view-only here. Use Live Updates to edit today&apos;s plan ({today}).
           </div>
           {source === "deliveries" ? (
             <div className="mt-1 text-xs text-steel-500">
-              Source: delivery-backed live plan (no published blob required).
+              Source: live delivery data.
             </div>
           ) : null}
         </div>
       </div>
       <div className="text-xs text-steel-500">
-        {selectedDate ? `Selected date ${selectedDate}.` : "Select a published plan date to preview."}
+        {selectedDate ? `Selected date ${selectedDate}.` : "Select a date to preview the final plan."}
       </div>
     </section>
   );
@@ -137,7 +137,7 @@ function PublishedPlanPreview({
             <div className="card-subtitle">Select a plan to view it.</div>
           </div>
         </div>
-        <div className="empty-state">Select a plan to preview.</div>
+        <div className="empty-state">Select a final plan to preview.</div>
       </div>
     );
   }
@@ -148,7 +148,7 @@ function PublishedPlanPreview({
         {source === "deliveries" ? (
           <div className="card !py-2">
             <div className="text-xs text-steel-500">
-              Viewing the live delivery-backed route plan for the selected day.
+              Viewing the live delivery plan for the selected day.
             </div>
           </div>
         ) : null}

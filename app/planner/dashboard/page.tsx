@@ -238,7 +238,7 @@ export default function PlannerDashboardPage() {
           asText(item)
             .replace("compared day(s)", "matched days")
             .replace("Route time", "Drive time")
-            .replace("manual", "before software")
+            .replace("manual", "before planning")
         )
         .filter(Boolean)
     : [];
@@ -298,7 +298,7 @@ export default function PlannerDashboardPage() {
     focusFilter === "all"
       ? "All days"
       : focusFilter === "winning_days"
-        ? "Winning days"
+        ? "Better days"
         : focusFilter === "needs_attention"
           ? "Needs attention"
           : focusFilter === "distance"
@@ -320,8 +320,8 @@ export default function PlannerDashboardPage() {
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-xl font-semibold">Results Dashboard</div>
-              <div className="card-subtitle">See what changed after using the planning tool.</div>
+              <div className="text-xl font-semibold">Performance Dashboard</div>
+              <div className="card-subtitle">See how final plans compare with your original plans.</div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <label className="text-xs text-steel-500">From</label>
@@ -358,18 +358,18 @@ export default function PlannerDashboardPage() {
           ) : null}
           {rangeValid ? (
             <div className="mt-2 text-xs text-steel-500">
-              Showing {startIso} to {endIso} ({Math.round(rangeDays)} days). Days with both plans: {Math.round(comparedDays)}.
+              Showing {startIso} to {endIso} ({Math.round(rangeDays)} days). Days with both versions: {Math.round(comparedDays)}.
             </div>
           ) : null}
           {rangeValid ? (
             <div className="mt-1 flex items-center gap-3 text-[11px] text-steel-500">
-              <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Better than before software
+                Better than original plan
               </span>
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-rose-500" />
-                Worse than before software
+                Worse than original plan
               </span>
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-steel-400" />
@@ -377,7 +377,7 @@ export default function PlannerDashboardPage() {
               </span>
             </div>
           ) : null}
-          {dashboardQuery.isLoading ? <div className="mt-2 text-xs text-steel-500">Loading dashboard data...</div> : null}
+          {dashboardQuery.isLoading ? <div className="mt-2 text-xs text-steel-500">Loading results...</div> : null}
           {dashboardQuery.error ? (
             <div className="mt-2 text-xs text-rose-700">{(dashboardQuery.error as Error).message}</div>
           ) : null}
@@ -387,7 +387,7 @@ export default function PlannerDashboardPage() {
           <div className="card-header">
             <div>
               <div className="text-lg font-semibold">Quick Summary</div>
-              <div className="card-subtitle">Top numbers at a glance.</div>
+              <div className="card-subtitle">Key outcomes at a glance.</div>
             </div>
           </div>
 
@@ -407,10 +407,10 @@ export default function PlannerDashboardPage() {
               detail="Total change in this date range"
             />
             <ImpactCell
-              label="Service Capacity"
+              label="Delivery Capacity"
               value={formatSignedCount(stopsServedChange)}
               toneValue={stopsServedChange}
-              detail="Extra stops completed"
+              detail="Change in deliveries completed"
             />
           </div>
         </section>
@@ -455,7 +455,7 @@ export default function PlannerDashboardPage() {
               </label>
             </div>
             <div className="mt-2 text-[11px] text-steel-500">
-              Savings = distance savings + labor savings + daily operating savings from fewer routes.
+              Estimated savings = distance + labor + daily operating savings from fewer trips.
             </div>
           </div>
 
@@ -522,7 +522,7 @@ export default function PlannerDashboardPage() {
               label="Days Needing Attention"
               value={String(needsAttentionDays)}
               toneValue={-needsAttentionDays}
-              detail="Days where results were worse than before"
+              detail="Days where results were below the original plan"
               onClick={() => setFocusFilter("needs_attention")}
               active={focusFilter === "needs_attention"}
             />
@@ -540,8 +540,8 @@ export default function PlannerDashboardPage() {
           <section className="card">
             <div className="card-header">
               <div>
-                <div className="text-lg font-semibold">Before Software Totals</div>
-                <div className="card-subtitle">What the team handled before the tool.</div>
+                <div className="text-lg font-semibold">Original Plan Totals</div>
+                <div className="card-subtitle">What was planned before optimization.</div>
               </div>
             </div>
             <MetricsGrid metrics={totalsManual} />
@@ -550,8 +550,8 @@ export default function PlannerDashboardPage() {
           <section className="card">
             <div className="card-header">
               <div>
-                <div className="text-lg font-semibold">With Software Totals</div>
-                <div className="card-subtitle">What the team handled with the tool.</div>
+                <div className="text-lg font-semibold">Final Plan Totals</div>
+                <div className="card-subtitle">What is planned after optimization.</div>
               </div>
             </div>
             <MetricsGrid metrics={totalsPublished} />
@@ -562,14 +562,14 @@ export default function PlannerDashboardPage() {
           <div className="card-header">
             <div>
               <div className="text-lg font-semibold">Daily Results</div>
-              <div className="card-subtitle">Color-coded day-by-day changes.</div>
+              <div className="card-subtitle">Day-by-day performance changes.</div>
             </div>
           </div>
 
           <div className="mb-3 flex flex-wrap gap-2">
             <FilterChip label="All days" active={focusFilter === "all"} onClick={() => setFocusFilter("all")} />
             <FilterChip
-              label="Winning days"
+              label="Better days"
               active={focusFilter === "winning_days"}
               onClick={() => setFocusFilter("winning_days")}
             />
@@ -593,7 +593,7 @@ export default function PlannerDashboardPage() {
           </div>
 
           {timeline.length === 0 ? (
-            <div className="text-sm text-steel-500">No days in this range have both before and after data yet.</div>
+            <div className="text-sm text-steel-500">No days in this range have both original and final plan data yet.</div>
           ) : filteredTimeline.length === 0 ? (
             <div className="text-sm text-steel-500">No days match this view. Choose another view to see results.</div>
           ) : (
@@ -602,12 +602,12 @@ export default function PlannerDashboardPage() {
                 <thead>
                   <tr className="border-b border-steel-100 text-steel-500">
                     <th className="px-2 py-2 text-left font-semibold">Date</th>
-                    <th className="px-2 py-2 text-right font-semibold">Before Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">After Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">Stops Served</th>
+                    <th className="px-2 py-2 text-right font-semibold">Original Stops</th>
+                    <th className="px-2 py-2 text-right font-semibold">Final Stops</th>
+                    <th className="px-2 py-2 text-right font-semibold">Stop Change</th>
                     <th className="px-2 py-2 text-right font-semibold">Distance Saved</th>
                     <th className="px-2 py-2 text-right font-semibold">Time Saved</th>
-                    <th className="px-2 py-2 text-right font-semibold">Fewer Routes</th>
+                    <th className="px-2 py-2 text-right font-semibold">Route Change</th>
                   </tr>
                 </thead>
                 <tbody>

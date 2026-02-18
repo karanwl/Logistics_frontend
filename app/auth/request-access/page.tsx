@@ -7,10 +7,10 @@ export default function RequestAccessPage() {
       <div className="max-w-lg">
         <div className="card">
           <CardHeader>
-            <CardTitle>Request access</CardTitle>
+            <CardTitle>Request an account</CardTitle>
           </CardHeader>
           <div className="empty-state">
-            Account creation is managed by your administrator. Please contact admin to request access.
+            Account setup is managed by your company administrator. Please contact them to request access.
           </div>
           <div className="page-actions mt-3">
             <a className="text-xs text-steel-500" href="/auth/login">Sign in</a>

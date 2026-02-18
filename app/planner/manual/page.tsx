@@ -164,18 +164,18 @@ function ManualPlannerWorkspace() {
 
   const handleRecalculate = async () => {
     if (!plan) return;
-    setMessage("Recalculating matrix totals...");
+    setMessage("Recalculating route totals...");
     try {
       await applyRecalculatedRoutes();
-      setMessage("Matrix totals updated.");
+      setMessage("Route totals updated.");
     } catch (error: any) {
-      setMessage(error?.message || "Failed to recalculate manual run.");
+      setMessage(error?.message || "Could not recalculate this custom plan.");
     }
   };
 
   const handleSave = async () => {
     if (!plan) return;
-    setMessage("Saving manual run...");
+    setMessage("Saving custom plan...");
     try {
       const currentRoutes = plan.routes || [];
       const fleet = {
@@ -195,9 +195,9 @@ function ManualPlannerWorkspace() {
         driver_profiles: (plan as any)?.driver_profiles || []
       });
       await Promise.all([listQuery.refetch(), planQuery.refetch()]);
-      setMessage(`Manual run saved for ${selectedDate}.`);
+      setMessage(`Custom plan saved for ${selectedDate}.`);
     } catch (error: any) {
-      setMessage(error?.message || "Failed to save manual run.");
+      setMessage(error?.message || "Could not save this custom plan.");
     }
   };
 
@@ -236,7 +236,7 @@ function ManualPlannerWorkspace() {
       };
     });
     setPlan({ ...plan, routes: nextRoutes });
-    setMessage(`Added depot reload to vehicle ${reloadVehicleId}. Recalculate to refresh totals.`);
+    setMessage(`Added a depot restock stop to vehicle ${reloadVehicleId}. Recalculate to refresh totals.`);
   };
 
   return (
@@ -244,8 +244,8 @@ function ManualPlannerWorkspace() {
       <section className="card xl:col-span-3">
         <div className="card-header">
           <div>
-            <div className="text-xl font-semibold">Manual Runs</div>
-            <div className="card-subtitle">Saved human-built runs for comparison.</div>
+            <div className="text-xl font-semibold">Custom Plans</div>
+            <div className="card-subtitle">Saved hand-built plans for review and comparison.</div>
           </div>
         </div>
         <div className="space-y-2">
@@ -266,7 +266,7 @@ function ManualPlannerWorkspace() {
           })}
           {!listQuery.isLoading && savedItems.length === 0 ? (
             <div className="rounded-lg border border-steel-100 bg-white/70 px-3 py-2 text-xs text-steel-500">
-              No manual runs saved yet.
+              No custom plans saved yet.
             </div>
           ) : null}
         </div>
@@ -276,21 +276,21 @@ function ManualPlannerWorkspace() {
         <section className="card">
           <div className="card-header">
             <div>
-              <div className="text-lg font-semibold">Manual Run Builder</div>
+              <div className="text-lg font-semibold">Custom Plan Builder</div>
               <div className="card-subtitle">
-                Build routes manually from selected-day jobs, then store metrics for dashboards.
+                Build trips manually for the selected day and save the result.
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <DatePickerInput value={selectedDate} onChange={(value) => setSelectedDate(value)} />
               <Button variant="outline" onClick={() => planQuery.refetch()}>
-                Load Jobs
+                Load deliveries
               </Button>
               <Button variant="outline" onClick={handleRecalculate} disabled={!plan || recalcMutation.isPending}>
                 {recalcMutation.isPending ? "Recalculating..." : "Recalculate"}
               </Button>
               <Button onClick={handleSave} disabled={!plan || saveMutation.isPending || recalcMutation.isPending}>
-                {saveMutation.isPending ? "Saving..." : "Save Manual Run"}
+                {saveMutation.isPending ? "Saving..." : "Save custom plan"}
               </Button>
             </div>
           </div>
@@ -333,7 +333,7 @@ function ManualPlannerWorkspace() {
             </div>
 
             <div className="rounded-lg border border-steel-100 bg-white p-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Depot Reload</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Depot Restock</div>
               <div className="mt-2 flex items-center gap-2">
                 <select
                   className="h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
@@ -349,7 +349,7 @@ function ManualPlannerWorkspace() {
                   ))}
                 </select>
                 <Button variant="secondary" size="sm" onClick={handleAddDepotReload} disabled={!plan || !reloadVehicleId}>
-                  Add Depot Reload
+                  Add Depot Restock
                 </Button>
               </div>
             </div>
@@ -362,7 +362,7 @@ function ManualPlannerWorkspace() {
           <div className="space-y-6 xl:col-span-8">
             {planQuery.isLoading ? (
               <section className="card">
-                <div className="empty-state">Loading jobs for {selectedDate}...</div>
+                <div className="empty-state">Loading deliveries for {selectedDate}...</div>
               </section>
             ) : (
               <RouteBoard editable />
