@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, api } from "@/lib/api/client";
+import { readErrorMessage } from "@/lib/errors/client";
 import { SolveJobDTO } from "@/lib/types/planner";
 
 export function useSolvePolling(
@@ -29,13 +30,15 @@ export function useSolvePolling(
           return;
         }
         timer = setTimeout(poll, 2000);
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
           active = false;
           if (timer) clearTimeout(timer);
           router.replace("/schedule");
           return;
         }
+        // Keep polling unless we hit terminal 404.
+        void readErrorMessage(error, "Solve status polling failed.");
         timer = setTimeout(poll, 3000);
       }
     };

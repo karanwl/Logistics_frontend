@@ -7,6 +7,7 @@ import { usePlannerState } from "@/hooks/usePlannerState";
 import { useSolveRun, usePublishPlan } from "@/lib/api/planner";
 import { useSolvePolling } from "@/hooks/useSolvePolling";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 import { useMemo, useState } from "react";
 
 export default function PlannerHeader() {
@@ -23,6 +24,7 @@ export default function PlannerHeader() {
   const solveRun = useSolveRun();
   const publish = usePublishPlan();
   const [publishMessage, setPublishMessage] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not complete this action.");
   const isSolveActive =
     solveRun.isPending || solveJob?.status === "queued" || solveJob?.status === "running";
   const statusLabel = solveJob?.status || (plan ? "success" : "idle");
@@ -65,16 +67,19 @@ export default function PlannerHeader() {
   });
 
   const runSolve = async () => {
+    clearFormError();
     try {
       const job = await solveRun.mutateAsync({ trucks, vans, plan_date: selectedDate });
       setSolveJob(job);
-    } catch (e) {
+    } catch (error) {
       setSolveJob(null);
+      setFormError(error, "Could not start planning run.");
     }
   };
 
   const runPublish = async () => {
     if (!plan) return;
+    clearFormError();
     setPublishMessage("Publishing plan...");
     try {
       await publish.mutateAsync({
@@ -85,8 +90,9 @@ export default function PlannerHeader() {
         plan_date: selectedDate
       });
       setPublishMessage("Plan finalized successfully.");
-    } catch (e: any) {
-      setPublishMessage(e?.message || "Could not finalize the plan.");
+    } catch (error: unknown) {
+      setPublishMessage("");
+      setFormError(error, "Could not finalize the plan.");
     }
   };
 
@@ -139,7 +145,7 @@ export default function PlannerHeader() {
         </div>
       </div>
       <div className="mt-3">
-        <ErrorBanner error={solveRun.error || publish.error} />
+        <ErrorBanner error={formError || solveRun.error || publish.error} />
         {publishMessage ? (
           <div className="mt-2 text-xs text-steel-600">{publishMessage}</div>
         ) : null}

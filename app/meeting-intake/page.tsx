@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { useJobsites, useBulkCreateDeliveries, useCreateJobsite } from "@/lib/api/planner";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 
 interface IntakeRow {
   sales_order: string;
@@ -46,6 +48,7 @@ export default function MeetingIntakePage() {
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   const [openJobsiteIndex, setOpenJobsiteIndex] = useState<number | null>(null);
   const [publishMessage, setPublishMessage] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not publish. Please try again.");
   const [jobsiteFormError, setJobsiteFormError] = useState("");
   const [rowErrors, setRowErrors] = useState<Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }>>({});
   const jobsites = data?.jobsites || [];
@@ -148,6 +151,7 @@ export default function MeetingIntakePage() {
   }, [openJobsiteIndex, jobsites]);
 
   const publish = async () => {
+    clearFormError();
     const errors: Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }> = {};
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     rows.forEach((row, idx) => {
@@ -187,8 +191,9 @@ export default function MeetingIntakePage() {
       await bulkCreate.mutateAsync({ deliveries });
       setPublishMessage("Published successfully.");
       window.location.href = "/schedule?view=calendar";
-    } catch (e: any) {
-      setPublishMessage(e?.message || "Could not publish. Please try again.");
+    } catch (error: unknown) {
+      setPublishMessage("");
+      setFormError(error, "Could not publish. Please try again.");
     }
   };
 
@@ -226,6 +231,7 @@ export default function MeetingIntakePage() {
                         return;
                       }
                       setJobsiteFormError("");
+                      clearFormError();
                       createJobsite.mutate(
                         { name: jobsiteName, address: jobsiteAddress },
                         {
@@ -241,6 +247,9 @@ export default function MeetingIntakePage() {
                                 jobsite_query: jobsiteName
                               });
                             }
+                          },
+                          onError: (error: unknown) => {
+                            setFormError(error, "Could not create location. Please try again.");
                           }
                         }
                       );
@@ -255,6 +264,7 @@ export default function MeetingIntakePage() {
               )}
             </div>
             {jobsiteFormError ? <div className="text-xs text-red-600">{jobsiteFormError}</div> : null}
+            {formError ? <ErrorBanner error={formError} /> : null}
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish to calendar</Button>
           </div>
         </div>

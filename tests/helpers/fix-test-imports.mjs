@@ -3,6 +3,7 @@ import path from "node:path";
 
 const JS_EXTENSION_PATTERN = /\.(?:[cm]?js|json|node)$/i;
 const RELATIVE_IMPORT_PATTERN = /(from\s+["'])(\.\.?\/[^"']+)(["'])/g;
+const ALIAS_IMPORT_PATTERN = /(from\s+["'])@\/([^"']+)(["'])/g;
 
 async function listJavaScriptFiles(rootDir) {
   const output = [];
@@ -35,6 +36,18 @@ function patchRelativeImports(source) {
   });
 }
 
+function patchAliasImports(source, filePath, distRoot) {
+  return source.replace(ALIAS_IMPORT_PATTERN, (_match, prefix, aliasPath, suffix) => {
+    const withExtension = JS_EXTENSION_PATTERN.test(aliasPath) ? aliasPath : `${aliasPath}.js`;
+    const absoluteTarget = path.join(distRoot, withExtension);
+    let relativeTarget = path.relative(path.dirname(filePath), absoluteTarget).replace(/\\/g, "/");
+    if (!relativeTarget.startsWith(".")) {
+      relativeTarget = `./${relativeTarget}`;
+    }
+    return `${prefix}${relativeTarget}${suffix}`;
+  });
+}
+
 async function main() {
   const distRoot = path.resolve(process.cwd(), ".test-dist");
   const jsFiles = await listJavaScriptFiles(distRoot);
@@ -42,7 +55,7 @@ async function main() {
   await Promise.all(
     jsFiles.map(async (filePath) => {
       const original = await readFile(filePath, "utf8");
-      const patched = patchRelativeImports(original);
+      const patched = patchAliasImports(patchRelativeImports(original), filePath, distRoot);
       if (patched !== original) {
         await writeFile(filePath, patched, "utf8");
       }

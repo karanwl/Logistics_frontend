@@ -5,6 +5,8 @@ import AppShell from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useUsers, useCreateUser, useUpdateUser } from "@/lib/api/planner";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 
 export default function AdminUsersPage() {
   const { data, refetch } = useUsers();
@@ -15,6 +17,7 @@ export default function AdminUsersPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
   const [createError, setCreateError] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not save user changes.");
 
   const users = data?.users || [];
   const roles = data?.roles || ["coordinator", "driver", "manager", "admin"];
@@ -40,15 +43,20 @@ export default function AdminUsersPage() {
   }, [baseUsers, isDirty]);
 
   const onCreate = async () => {
+    clearFormError();
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim());
     if (!form.name.trim() || !emailOk || form.password.trim().length < 6) {
       setCreateError("Name, valid email, and a password with at least 6 characters are required.");
       return;
     }
     setCreateError("");
-    await createUser.mutateAsync({ ...form, active: true });
-    setForm({ name: "", email: "", password: "", role: "coordinator" });
-    refetch();
+    try {
+      await createUser.mutateAsync({ ...form, active: true });
+      setForm({ name: "", email: "", password: "", role: "coordinator" });
+      refetch();
+    } catch (error) {
+      setFormError(error, "Could not create user. Please try again.");
+    }
   };
 
   const updateEdit = (record_id: string, patch: any) => {
@@ -60,6 +68,7 @@ export default function AdminUsersPage() {
   };
 
   const saveUpdates = async () => {
+    clearFormError();
     const invalidPasswords = Object.values(userEdits).some((edit: any) => edit?.password && edit.password.length < 6);
     if (invalidPasswords) {
       setSaveStatus("Any new password must be at least 6 characters.");
@@ -80,13 +89,18 @@ export default function AdminUsersPage() {
       return;
     }
     setSaveStatus("Saving...");
-    for (const item of payload) {
-      await updateUser.mutateAsync({ record_id: item.record_id, updates: item.patch });
+    try {
+      for (const item of payload) {
+        await updateUser.mutateAsync({ record_id: item.record_id, updates: item.patch });
+      }
+      setIsDirty(false);
+      setSaveStatus("Saved.");
+      setUserEdits({});
+      refetch();
+    } catch (error) {
+      setSaveStatus("");
+      setFormError(error, "Could not save user updates. Please try again.");
     }
-    setIsDirty(false);
-    setSaveStatus("Saved.");
-    setUserEdits({});
-    refetch();
   };
 
   return (
@@ -148,6 +162,7 @@ export default function AdminUsersPage() {
         <div className="mt-4">
           <Button onClick={onCreate} disabled={createUser.isPending}>Create Account</Button>
           {createError ? <div className="mt-2 text-xs text-red-600">{createError}</div> : null}
+          {formError ? <div className="mt-2"><ErrorBanner error={formError} /></div> : null}
         </div>
       </div>
       <div className="admin-section mt-6">

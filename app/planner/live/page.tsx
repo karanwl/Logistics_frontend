@@ -5,6 +5,8 @@ import AppShell from "@/components/layout/AppShell";
 import RouteBoard from "@/components/planner/RouteBoard";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { Button } from "@/components/ui/button";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import { useLiveToday, usePublishedPlan, usePublishPlan } from "@/lib/api/planner";
 import { normalizePublishedPlan } from "@/lib/planner/normalizePlan";
@@ -124,6 +126,7 @@ function LivePlannerWorkspace({
   const publish = usePublishPlan();
   const [editMode, setEditMode] = useState(true);
   const [saveMessage, setSaveMessage] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not save updates.");
 
   const summary = liveQuery.data?.summary || {
     done: 0,
@@ -151,6 +154,7 @@ function LivePlannerWorkspace({
 
   const saveChanges = async () => {
     if (!selectedDate || !plan || !canEdit) return;
+    clearFormError();
     setSaveMessage("Saving updates...");
     try {
       await publish.mutateAsync({
@@ -164,8 +168,9 @@ function LivePlannerWorkspace({
       setSaveMessage("Updates saved. Drivers were notified.");
       liveQuery.refetch();
       planQuery.refetch();
-    } catch (error: any) {
-      setSaveMessage(error?.message || "Could not save updates.");
+    } catch (error: unknown) {
+      setSaveMessage("");
+      setFormError(error, "Could not save updates.");
     }
   };
 
@@ -232,6 +237,7 @@ function LivePlannerWorkspace({
             Editing is only available for today ({today}). Loaded plan date: {selectedDate}.
           </div>
         ) : null}
+        {formError ? <div className="mt-2"><ErrorBanner error={formError} /></div> : null}
         {saveMessage ? <div className="mt-2 text-xs text-steel-500">{saveMessage}</div> : null}
       </section>
 

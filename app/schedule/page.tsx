@@ -6,9 +6,11 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
+import { useFormError } from "@/hooks/useFormError";
 import { useCurrentUser } from "@/lib/api/auth";
 import { api } from "@/lib/api/client";
 import {
@@ -18,6 +20,7 @@ import {
   useDeleteDelivery
 } from "@/lib/api/planner";
 import { startOfWeek, addDays, formatDate } from "@/lib/utils/dates";
+import { readErrorMessage } from "@/lib/errors/client";
 import { normalizePhotoUrls, resolvePhotoUrl } from "@/lib/utils/photos";
 
 const MONTH_NAMES = [
@@ -175,6 +178,7 @@ export default function SchedulePage() {
   const [drawerDetail, setDrawerDetail] = useState<any | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not save schedule changes.");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "scheduled_date",
     dir: "asc"
@@ -290,11 +294,16 @@ export default function SchedulePage() {
     const from = active.data.current?.from;
     const to = over.data.current?.columnKey || over.id;
     if (!from || !to || from === to) return;
-    await reschedule.mutateAsync({
-      delivery_id: active.data.current.deliveryId,
-      scheduled_date: to === "unscheduled" ? null : to
-    });
-    refetch();
+    clearFormError();
+    try {
+      await reschedule.mutateAsync({
+        delivery_id: active.data.current.deliveryId,
+        scheduled_date: to === "unscheduled" ? null : to
+      });
+      refetch();
+    } catch (error: unknown) {
+      setFormError(error, "Could not reschedule delivery.");
+    }
   };
 
   const updateEdit = (deliveryId: string, patch: any) => {
@@ -305,6 +314,7 @@ export default function SchedulePage() {
   };
 
   const saveChanges = async () => {
+    clearFormError();
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
     for (const updates of Object.values(edits)) {
@@ -333,7 +343,14 @@ export default function SchedulePage() {
       return;
     }
     setSaveStatus("Saving updates...");
-    const result: any = await bulkUpdate.mutateAsync({ deliveries: payload });
+    let result: any;
+    try {
+      result = await bulkUpdate.mutateAsync({ deliveries: payload });
+    } catch (error: unknown) {
+      setSaveStatus("");
+      setFormError(error, "Could not save updates.");
+      return;
+    }
     const updated = Number(result?.updated || 0);
     const errors = Array.isArray(result?.errors) ? result.errors : [];
     if (errors.length > 0) {
@@ -373,7 +390,7 @@ export default function SchedulePage() {
         setDrawerDetail(detail || null);
       })
       .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Could not load delivery details.";
+        const message = readErrorMessage(err, "Could not load delivery details.");
         setDrawerError(message);
       })
       .finally(() => {
@@ -480,6 +497,7 @@ export default function SchedulePage() {
 
         <div className="schedule-toggle hidden" />
       </section>
+      {formError ? <ErrorBanner error={formError} /> : null}
 
       <div id="boardView" className={view === "board" ? "" : "hidden"}>
         <section className="board-shell">
@@ -783,8 +801,13 @@ export default function SchedulePage() {
                           onClick={async () => {
                             const ok = window.confirm("Delete this delivery?");
                             if (!ok) return;
-                            await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
-                            refetch();
+                            clearFormError();
+                            try {
+                              await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
+                              refetch();
+                            } catch (error: unknown) {
+                              setFormError(error, "Could not delete delivery.");
+                            }
                           }}
                         >
                           Delete

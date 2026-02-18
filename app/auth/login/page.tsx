@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { ApiError, apiClient, ensureCsrfCookie, getCookie } from "@/lib/api/client";
+import { apiClient, ensureCsrfCookie, getCookie } from "@/lib/api/client";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 
 const schema = z.object({
   email: z.string().email(),
@@ -18,11 +19,13 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
+  const { formError, clearFormError, setFormError } = useFormError(
+    "Sign in failed. Please check your email and password."
+  );
   const form = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormData) => {
-    setError(null);
+    clearFormError();
     let csrf = getCookie("csrf_token");
     if (!csrf) {
       csrf = await ensureCsrfCookie();
@@ -43,11 +46,7 @@ export default function LoginPage() {
       });
       window.location.href = "/schedule";
     } catch (error) {
-      if (error instanceof ApiError) {
-        setError(error.message || "Sign in failed. Please check your email and password.");
-        return;
-      }
-      setError("Sign in failed. Please check your email and password.");
+      setFormError(error);
     }
   };
 
@@ -98,7 +97,7 @@ export default function LoginPage() {
                 {...form.register("password")}
               />
             </div>
-            {error && <div className="text-sm text-red-600">{error}</div>}
+            {formError ? <ErrorBanner error={formError} /> : null}
             <div className="page-actions">
               <Button type="submit">Sign In</Button>
               <a className="text-xs text-steel-500" href="/auth/request-access">

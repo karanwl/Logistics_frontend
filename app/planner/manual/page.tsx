@@ -6,6 +6,8 @@ import RouteBoard from "@/components/planner/RouteBoard";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import { normalizePublishedPlan } from "@/lib/planner/normalizePlan";
 import { formatDate } from "@/lib/utils/dates";
@@ -78,6 +80,7 @@ function ManualPlannerWorkspace() {
   const [newVehicleType, setNewVehicleType] = useState("truck");
   const [reloadVehicleId, setReloadVehicleId] = useState("");
   const [message, setMessage] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not update this custom plan.");
 
   const planQuery = useManualPlan(selectedDate);
   const listQuery = useManualPlansList();
@@ -164,17 +167,20 @@ function ManualPlannerWorkspace() {
 
   const handleRecalculate = async () => {
     if (!plan) return;
+    clearFormError();
     setMessage("Recalculating route totals...");
     try {
       await applyRecalculatedRoutes();
       setMessage("Route totals updated.");
-    } catch (error: any) {
-      setMessage(error?.message || "Could not recalculate this custom plan.");
+    } catch (error: unknown) {
+      setMessage("");
+      setFormError(error, "Could not recalculate this custom plan.");
     }
   };
 
   const handleSave = async () => {
     if (!plan) return;
+    clearFormError();
     setMessage("Saving custom plan...");
     try {
       const currentRoutes = plan.routes || [];
@@ -196,8 +202,9 @@ function ManualPlannerWorkspace() {
       });
       await Promise.all([listQuery.refetch(), planQuery.refetch()]);
       setMessage(`Custom plan saved for ${selectedDate}.`);
-    } catch (error: any) {
-      setMessage(error?.message || "Could not save this custom plan.");
+    } catch (error: unknown) {
+      setMessage("");
+      setFormError(error, "Could not save this custom plan.");
     }
   };
 
@@ -355,6 +362,7 @@ function ManualPlannerWorkspace() {
             </div>
           </div>
 
+          {formError ? <div className="mt-2"><ErrorBanner error={formError} /></div> : null}
           {message ? <div className="mt-2 text-xs text-steel-500">{message}</div> : null}
         </section>
 

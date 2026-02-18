@@ -7,8 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "npm run test:build && node tests/helpers/fix-test-imports.mjs && node --test --test-isolation=none .test-dist/tests/*.test.js",
+    "lint": "next lint && npm run lint:errors",
+    "lint:errors": "node scripts/check-error-normalization.mjs",
+    "test": "npm run lint:errors && npm run test:build && node tests/helpers/fix-test-imports.mjs && node --test --test-isolation=none .test-dist/tests/*.test.js",
     "test:build": "tsc -p tsconfig.test.json"
   },
   "dependencies": {

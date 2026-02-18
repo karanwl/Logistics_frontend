@@ -5,6 +5,8 @@ import AppShell from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useJobsites, useCreateJobsite, useUpdateJobsite, useDeleteJobsite } from "@/lib/api/planner";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useFormError } from "@/hooks/useFormError";
 
 export default function AdminJobsitesPage() {
   const { data, refetch } = useJobsites();
@@ -14,6 +16,7 @@ export default function AdminJobsitesPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState("");
+  const { formError, clearFormError, setFormError } = useFormError("Could not update location data.");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
@@ -24,15 +27,20 @@ export default function AdminJobsitesPage() {
   });
 
   const onCreate = async () => {
+    clearFormError();
     if (!name.trim() || !address.trim()) {
       setError("Location name and address are required.");
       return;
     }
     setError("");
-    await createJobsite.mutateAsync({ name, address });
-    setName("");
-    setAddress("");
-    refetch();
+    try {
+      await createJobsite.mutateAsync({ name, address });
+      setName("");
+      setAddress("");
+      refetch();
+    } catch (error) {
+      setFormError(error, "Could not create location. Please try again.");
+    }
   };
 
   const startEdit = (jobsite: any) => {
@@ -50,30 +58,40 @@ export default function AdminJobsitesPage() {
   };
 
   const saveEdit = async () => {
+    clearFormError();
     if (!editingId) return;
     if (!editValues.name.trim() || !editValues.address.trim()) {
       setError("Location name and address are required.");
       return;
     }
     setError("");
-    await updateJobsite.mutateAsync({
-      jobsite_id: editingId,
-      updates: {
-        name: editValues.name.trim(),
-        address: editValues.address.trim(),
-        site_contact: editValues.site_contact.trim(),
-        site_contact_number: editValues.site_contact_number.trim()
-      }
-    });
-    setEditingId(null);
-    refetch();
+    try {
+      await updateJobsite.mutateAsync({
+        jobsite_id: editingId,
+        updates: {
+          name: editValues.name.trim(),
+          address: editValues.address.trim(),
+          site_contact: editValues.site_contact.trim(),
+          site_contact_number: editValues.site_contact_number.trim()
+        }
+      });
+      setEditingId(null);
+      refetch();
+    } catch (error) {
+      setFormError(error, "Could not update location. Please try again.");
+    }
   };
 
   const onDelete = async (jobsite: any) => {
+    clearFormError();
     const confirmed = window.confirm(`Delete location "${jobsite.name}"? This cannot be undone.`);
     if (!confirmed) return;
-    await deleteJobsite.mutateAsync({ jobsite_id: String(jobsite.id) });
-    refetch();
+    try {
+      await deleteJobsite.mutateAsync({ jobsite_id: String(jobsite.id) });
+      refetch();
+    } catch (error) {
+      setFormError(error, "Could not delete location. Please try again.");
+    }
   };
 
   const normalizedSearch = search.trim().toLowerCase();
@@ -121,6 +139,7 @@ export default function AdminJobsitesPage() {
           </div>
         </div>
         {error ? <div className="mt-2 text-xs text-red-600">{error}</div> : null}
+        {formError ? <div className="mt-2"><ErrorBanner error={formError} /></div> : null}
         <div className="mt-2 text-xs text-steel-500">Coordinates are filled automatically after saving.</div>
       </div>
       <div className="admin-section mt-6">

@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
+import { buildIdempotencyKey } from "@/lib/api/idempotency";
 import { PlanDTO, SolveJobDTO } from "@/lib/types/planner";
 
 export const useSolveRun = () =>
@@ -40,11 +41,17 @@ export const usePublishPlan = () =>
       plan_date?: string;
       driver_profiles?: unknown[];
     }) =>
-      api.post(
-        "/plan/publish",
-        JSON.stringify(payload),
-        { "content-type": "application/json" }
-      )
+      {
+        const idempotencyKey = buildIdempotencyKey("plan-publish", payload);
+        return api.post(
+          "/plan/publish",
+          JSON.stringify(payload),
+          {
+            "content-type": "application/json",
+            "x-idempotency-key": idempotencyKey
+          }
+        );
+      }
   });
 
 export const usePublishedPlan = (date: string) =>
@@ -126,11 +133,17 @@ export const useManualSavePlan = () =>
       plan_date?: string;
       driver_profiles?: unknown[];
     }) =>
-      api.post<any>(
-        "/plan/manual/save",
-        JSON.stringify(payload),
-        { "content-type": "application/json" }
-      )
+      {
+        const idempotencyKey = buildIdempotencyKey("plan-manual-save", payload);
+        return api.post<any>(
+          "/plan/manual/save",
+          JSON.stringify(payload),
+          {
+            "content-type": "application/json",
+            "x-idempotency-key": idempotencyKey
+          }
+        );
+      }
   });
 
 export const usePlanMatrixDebug = (params: {
@@ -244,11 +257,17 @@ export const useUpdateDelivery = () =>
 export const useBulkCreateDeliveries = () =>
   useMutation({
     mutationFn: (payload: { deliveries: any[] }) =>
-      api.post(
-        "/deliveries/bulk-create",
-        JSON.stringify(payload),
-        { "content-type": "application/json" }
-      )
+      {
+        const idempotencyKey = buildIdempotencyKey("deliveries-bulk-create", payload);
+        return api.post(
+          "/deliveries/bulk-create",
+          JSON.stringify(payload),
+          {
+            "content-type": "application/json",
+            "x-idempotency-key": idempotencyKey
+          }
+        );
+      }
   });
 
 export const useCreateJobsite = () =>
@@ -279,11 +298,17 @@ export const useDeleteJobsite = () =>
 export const useBulkUpdateDeliveries = () =>
   useMutation({
     mutationFn: (payload: { deliveries: any[] }) =>
-      api.post(
-        "/deliveries/bulk-update",
-        JSON.stringify(payload),
-        { "content-type": "application/json" }
-      )
+      {
+        const idempotencyKey = buildIdempotencyKey("deliveries-bulk-update", payload);
+        return api.post(
+          "/deliveries/bulk-update",
+          JSON.stringify(payload),
+          {
+            "content-type": "application/json",
+            "x-idempotency-key": idempotencyKey
+          }
+        );
+      }
   });
 
 export const useDeleteDelivery = () =>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePlannerState } from "@/hooks/usePlannerState";
+import { readErrorMessage } from "@/lib/errors/client";
 
 const FALLBACK_STYLE: any = {
   version: 8,
@@ -98,7 +99,7 @@ export default function MapPanel() {
           }
         });
       } catch (error) {
-        setMapError("Unable to start the map.");
+        setMapError(readErrorMessage(error, "Unable to start the map."));
       }
     };
 
