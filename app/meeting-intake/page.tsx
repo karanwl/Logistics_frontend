@@ -52,7 +52,32 @@ export default function MeetingIntakePage() {
   const [jobsiteFormError, setJobsiteFormError] = useState("");
   const [rowErrors, setRowErrors] = useState<Record<number, { sales_order?: boolean; jobsite?: boolean; date?: boolean }>>({});
   const jobsites = data?.jobsites || [];
+  const normalizedJobsites = useMemo(
+    () =>
+      (jobsites || [])
+        .map((jobsite: any) => ({
+          id: String(jobsite?.id ?? jobsite?.jobsite_id ?? "").trim(),
+          name: String(jobsite?.name ?? "").trim(),
+        }))
+        .filter((jobsite) => Boolean(jobsite.id) && Boolean(jobsite.name)),
+    [jobsites]
+  );
   const jobsiteRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const findJobsiteByName = (query: string) => {
+    const normalized = String(query || "").trim().toLowerCase();
+    if (!normalized) return null;
+    return (
+      normalizedJobsites.find(
+        (jobsite) => jobsite.name.toLowerCase() === normalized
+      ) || null
+    );
+  };
+
+  const selectJobsite = (index: number, jobsite: { id: string; name: string }) => {
+    updateRow(index, { jobsite_id: String(jobsite.id), jobsite_query: String(jobsite.name) });
+    setOpenJobsiteIndex(null);
+  };
 
   const enforceJobsiteValue = (index: number) => {
     setRows((prev) => {
@@ -68,9 +93,7 @@ export default function MeetingIntakePage() {
         return next;
       }
 
-      const match = jobsites.find(
-        (j: any) => String(j.name || "").trim().toLowerCase() === query.toLowerCase()
-      );
+      const match = findJobsiteByName(query);
       if (match) {
         next[index] = { ...row, jobsite_id: String(match.id), jobsite_query: String(match.name || query) };
         return next;
@@ -148,7 +171,7 @@ export default function MeetingIntakePage() {
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [openJobsiteIndex, jobsites]);
+  }, [openJobsiteIndex, normalizedJobsites]);
 
   const publish = async () => {
     clearFormError();
@@ -306,7 +329,7 @@ export default function MeetingIntakePage() {
                   value={row.jobsite_query}
                   onChange={(e) => {
                     const value = e.target.value;
-                    const match = jobsites.find((j: any) => (j.name || "").toLowerCase() === value.toLowerCase());
+                    const match = findJobsiteByName(value);
                     updateRow(idx, {
                       jobsite_query: value,
                       jobsite_id: match ? String(match.id) : ""
@@ -324,24 +347,24 @@ export default function MeetingIntakePage() {
                     }, 120);
                   }}
                 />
-                {openJobsiteIndex === idx && row.jobsite_query ? (
+                {openJobsiteIndex === idx ? (
                   <div className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
-                    {jobsites
-                      .filter((j: any) =>
-                        (j.name || "").toLowerCase().includes(row.jobsite_query.toLowerCase())
+                    {normalizedJobsites
+                      .filter((jobsite) =>
+                        jobsite.name.toLowerCase().includes(row.jobsite_query.toLowerCase())
                       )
                       .slice(0, 8)
-                      .map((j: any) => (
+                      .map((jobsite) => (
                         <button
                           type="button"
-                          key={j.id}
+                          key={jobsite.id}
                           className="block w-full px-2 py-1 text-left hover:bg-steel-50"
-                          onClick={() => {
-                            updateRow(idx, { jobsite_id: String(j.id), jobsite_query: j.name });
-                            setOpenJobsiteIndex(null);
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            selectJobsite(idx, jobsite);
                           }}
                         >
-                          {j.name}
+                          {jobsite.name}
                         </button>
                       ))}
                   </div>
