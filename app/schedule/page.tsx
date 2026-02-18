@@ -844,57 +844,46 @@ export default function SchedulePage() {
             ) : drawerLoading ? (
               <div className="empty-state">Loading delivery details...</div>
             ) : (
-              <div className="grid gap-4">
-                <div className="delivery-popup-summary">
-                  <div>
-                    <div className="text-xs text-steel-500">Location</div>
-                    <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
+              <div className="delivery-popup-layout">
+                <div className="delivery-popup-left">
+                  <div className="delivery-popup-summary">
+                    <div>
+                      <div className="text-xs text-steel-500">Location</div>
+                      <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Status</div>
+                      <div className="text-sm">{drawerData.status || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Date</div>
+                      <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Window</div>
+                      <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
+                    </div>
                   </div>
+
                   <div>
-                    <div className="text-xs text-steel-500">Status</div>
-                    <div className="text-sm">{drawerData.status || "--"}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-steel-500">Date</div>
-                    <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-steel-500">Window</div>
-                    <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
+                    <div className="text-xs text-steel-500">Driver Notes</div>
+                    <div className="delivery-popup-notes">{drawerData.driver_notes || "No notes"}</div>
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-xs text-steel-500">Driver Notes</div>
-                  <div className="delivery-popup-notes">{drawerData.driver_notes || "No notes"}</div>
-                </div>
-
-                <div>
+                <div className="delivery-popup-right">
                   <div className="text-xs text-steel-500">POD Photos</div>
                   {drawerPhotoUrls.length > 0 ? (
-                    <div className="delivery-popup-photos">
+                    <div className="delivery-popup-pod-stack">
                       {drawerPhotoUrls.map((url) => (
-                        <a key={url} href={url} target="_blank" rel="noreferrer" className="delivery-popup-photo-link">
-                          <img src={url} alt="POD" className="delivery-popup-photo" loading="lazy" />
+                        <a key={url} href={url} target="_blank" rel="noreferrer" className="delivery-popup-pod-link">
+                          <img src={url} alt="POD" className="delivery-popup-pod-image" loading="lazy" />
                         </a>
                       ))}
                     </div>
                   ) : (
                     <div className="text-sm text-steel-500">No POD photos uploaded yet.</div>
                   )}
-                </div>
-
-                <div className="page-actions">
-                  <Button asChild variant="outline">
-                    <Link
-                      href={`/deliveries/${encodeURIComponent(String(drawerData.delivery_id || drawerDelivery?.delivery_id || ""))}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open Full Delivery
-                    </Link>
-                  </Button>
-                  <Button variant="secondary" onClick={closeDrawer}>Close</Button>
                 </div>
               </div>
             )}
