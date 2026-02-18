@@ -26,6 +26,21 @@ export type ApiErrorOptions = {
   exposeMessage?: boolean;
 };
 
+export const API_ERROR_CODES = [
+  "VALIDATION_ERROR",
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "CONFLICT",
+  "RATE_LIMITED",
+  "BAD_GATEWAY",
+  "SERVICE_UNAVAILABLE",
+  "GATEWAY_TIMEOUT",
+  "INTERNAL_ERROR"
+] as const satisfies readonly ApiErrorCode[];
+
+const API_ERROR_CODE_SET = new Set<string>(API_ERROR_CODES);
+
 const STATUS_CODE_MAP: Record<number, ApiErrorCode> = {
   400: "VALIDATION_ERROR",
   401: "UNAUTHORIZED",
@@ -40,6 +55,10 @@ const STATUS_CODE_MAP: Record<number, ApiErrorCode> = {
 
 export function statusToCode(status: number): ApiErrorCode {
   return STATUS_CODE_MAP[status] || "INTERNAL_ERROR";
+}
+
+export function isApiErrorCode(value: unknown): value is ApiErrorCode {
+  return typeof value === "string" && API_ERROR_CODE_SET.has(value);
 }
 
 export function normalizeStatus(status: number): number {

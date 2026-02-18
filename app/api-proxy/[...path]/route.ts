@@ -1,8 +1,26 @@
 import { z } from "zod";
-import { ApiError } from "../../../lib/errors/model";
-import { withErrorHandling } from "../../../lib/errors/server";
+import { ApiError } from "../../../lib/errors/model.js";
+import { withErrorHandling } from "../../../lib/errors/server.js";
 
 const DEFAULT_BASE_URL = "https://logistics-backend-6f0pea.fly.dev";
+const WEBHOOK_SIGNATURE_HEADERS = [
+  "stripe-signature",
+  "x-webhook-signature",
+  "x-signature"
+] as const;
+const PASS_THROUGH_REQUEST_HEADER_DENYLIST = new Set([
+  "host",
+  "content-length",
+  "accept-encoding"
+]);
+const PASS_THROUGH_RESPONSE_HEADER_DENYLIST = new Set([
+  "set-cookie",
+  "content-encoding",
+  "content-length",
+  "transfer-encoding"
+]);
+const CALLBACK_PATH_PATTERN = /(callback|webhook)/i;
+const WEBHOOK_PATH_PATTERN = /webhook/i;
 
 function resolveBaseUrl(rawBaseUrl: string | undefined): string {
   const trimmed = (rawBaseUrl || "").trim();
@@ -15,12 +33,16 @@ const BASE_URL = resolveBaseUrl(process.env.FASTAPI_BASE_URL);
 const callbackPayloadSchema = z.record(z.string(), z.unknown());
 const signatureSchema = z.string().min(8).max(2048);
 
+function pathMatches(path: string[], pattern: RegExp): boolean {
+  return path.some((segment) => pattern.test(segment));
+}
+
 function isCallbackPath(path: string[]): boolean {
-  return path.some((segment) => /(callback|webhook)/i.test(segment));
+  return pathMatches(path, CALLBACK_PATH_PATTERN);
 }
 
 function isWebhookPath(path: string[]): boolean {
-  return path.some((segment) => /webhook/i.test(segment));
+  return pathMatches(path, WEBHOOK_PATH_PATTERN);
 }
 
 function readMessage(payload: unknown): string {
@@ -50,12 +72,17 @@ async function parsePayload(res: Response): Promise<unknown> {
   }
 }
 
-function validateWebhookSignatureIfPresent(req: Request, path: string[]) {
+function readWebhookSignature(headers: Headers): string | null {
+  for (const header of WEBHOOK_SIGNATURE_HEADERS) {
+    const value = headers.get(header);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function validateWebhookSignatureIfPresent(req: Request, path: string[]): void {
   if (!isWebhookPath(path)) return;
-  const signature =
-    req.headers.get("stripe-signature") ||
-    req.headers.get("x-webhook-signature") ||
-    req.headers.get("x-signature");
+  const signature = readWebhookSignature(req.headers);
   if (signature == null) return;
   const parsed = signatureSchema.safeParse(signature);
   if (!parsed.success) {
@@ -66,6 +93,21 @@ function validateWebhookSignatureIfPresent(req: Request, path: string[]) {
       details: parsed.error.flatten()
     });
   }
+}
+
+function getProxyUrl(req: Request, path: string[]): string {
+  const requestUrl = new URL(req.url);
+  const proxyPath = path.join("/");
+  return `${BASE_URL.replace(/\/$/, "")}/${proxyPath}${requestUrl.search}`;
+}
+
+function cloneRequestHeaders(req: Request, correlationId: string): Headers {
+  const headers = new Headers(req.headers);
+  for (const header of PASS_THROUGH_REQUEST_HEADER_DENYLIST) {
+    headers.delete(header);
+  }
+  headers.set("x-correlation-id", correlationId);
+  return headers;
 }
 
 async function readBody(req: Request, path: string[]): Promise<BodyInit | undefined> {
@@ -98,18 +140,32 @@ async function readBody(req: Request, path: string[]): Promise<BodyInit | undefi
   return JSON.stringify(validated.data);
 }
 
-async function proxyRequest(req: Request, params: { path: string[] }, correlationId: string) {
-  const targetUrl = new URL(req.url);
-  const path = params.path.join("/");
-  const url = `${BASE_URL.replace(/\/$/, "")}/${path}${targetUrl.search}`;
+function appendSetCookieHeaders(source: Headers, target: Headers): void {
+  const rawSetCookie: unknown = (source as Headers & { getSetCookie?: () => unknown }).getSetCookie?.();
+  if (Array.isArray(rawSetCookie)) {
+    for (const cookie of rawSetCookie) {
+      target.append("set-cookie", cookie);
+    }
+    return;
+  }
+  if (typeof rawSetCookie === "string" && rawSetCookie.length > 0) {
+    target.append("set-cookie", rawSetCookie);
+  }
+}
+
+function copyResponseHeaders(source: Headers, target: Headers): void {
+  source.forEach((value, key) => {
+    if (PASS_THROUGH_RESPONSE_HEADER_DENYLIST.has(key.toLowerCase())) return;
+    target.set(key, value);
+  });
+}
+
+async function proxyRequest(req: Request, params: { path: string[] }, correlationId: string): Promise<Response> {
+  const url = getProxyUrl(req, params.path);
 
   validateWebhookSignatureIfPresent(req, params.path);
 
-  const headers = new Headers(req.headers);
-  headers.delete("host");
-  headers.delete("content-length");
-  headers.delete("accept-encoding");
-  headers.set("x-correlation-id", correlationId);
+  const headers = cloneRequestHeaders(req, correlationId);
 
   const init: RequestInit = {
     method: req.method,
@@ -141,26 +197,8 @@ async function proxyRequest(req: Request, params: { path: string[] }, correlatio
   }
 
   const responseHeaders = new Headers();
-  const setCookie = (res.headers as any).getSetCookie?.() ?? [];
-  if (Array.isArray(setCookie)) {
-    for (const cookie of setCookie) {
-      responseHeaders.append("set-cookie", cookie);
-    }
-  } else if (typeof setCookie === "string" && setCookie.length > 0) {
-    responseHeaders.append("set-cookie", setCookie);
-  }
-  res.headers.forEach((value, key) => {
-    const lower = key.toLowerCase();
-    if (lower === "set-cookie") {
-      // Handled via getSetCookie() above.
-      return;
-    }
-    if (lower === "content-encoding" || lower === "content-length" || lower === "transfer-encoding") {
-      // Let Next/Fetch handle encoding/length for the proxied response.
-      return;
-    }
-    responseHeaders.set(key, value);
-  });
+  appendSetCookieHeaders(res.headers, responseHeaders);
+  copyResponseHeaders(res.headers, responseHeaders);
 
   responseHeaders.set("x-correlation-id", correlationId);
 

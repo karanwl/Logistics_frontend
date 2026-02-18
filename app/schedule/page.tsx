@@ -18,6 +18,7 @@ import {
   useDeleteDelivery
 } from "@/lib/api/planner";
 import { startOfWeek, addDays, formatDate } from "@/lib/utils/dates";
+import { normalizePhotoUrls, resolvePhotoUrl } from "@/lib/utils/photos";
 
 const MONTH_NAMES = [
   "January",
@@ -119,32 +120,6 @@ function pickupVehicleLabel(value: string | undefined | null) {
   if (!normalized) return "--";
   const match = PICKUP_VEHICLE_OPTIONS.find((opt) => opt.value === normalized);
   return match ? match.label : normalized;
-}
-
-function normalizePhotoUrls(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of value) {
-    const url = typeof item === "string" ? item.trim() : "";
-    if (!url || seen.has(url)) continue;
-    seen.add(url);
-    out.push(url);
-  }
-  return out;
-}
-
-function resolvePhotoUrl(raw: string): string {
-  const value = raw.trim();
-  if (!value) return value;
-  if (value.startsWith("/uploads/")) return `/api-proxy${value}`;
-  if (!value.startsWith("s3://")) return value;
-  const body = value.slice("s3://".length);
-  const slash = body.indexOf("/");
-  if (slash <= 0 || slash === body.length - 1) return value;
-  const bucket = body.slice(0, slash);
-  const key = body.slice(slash + 1);
-  return `https://${bucket}.s3.amazonaws.com/${key}`;
 }
 
 function DeliveryCard({ delivery, columnKey, index }: { delivery: any; columnKey: string; index: number }) {

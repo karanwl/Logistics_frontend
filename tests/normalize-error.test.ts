@@ -39,3 +39,19 @@ test("normalizeError defaults unknown errors to internal error", () => {
   assert.equal(normalized.message, "Something went wrong. Please try again.");
   assert.equal(normalized.correlationId, "corr-3");
 });
+
+test("normalizeError supports status/statusCode from unknown objects", () => {
+  const normalized = normalizeError(
+    {
+      statusCode: "422",
+      message: "Invalid payload.",
+      details: { field: "email" }
+    },
+    { correlationId: "corr-4" }
+  );
+  assert.equal(normalized.status, 400);
+  assert.equal(normalized.code, "VALIDATION_ERROR");
+  assert.equal(normalized.message, "Invalid payload.");
+  assert.deepEqual(normalized.details, { field: "email" });
+  assert.equal(normalized.correlationId, "corr-4");
+});

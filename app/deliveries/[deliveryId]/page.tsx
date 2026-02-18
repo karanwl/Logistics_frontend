@@ -4,58 +4,7 @@ import AppShell from "@/components/layout/AppShell";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
-
-type PhotoSource = {
-  raw: string;
-  primary: string;
-  fallback?: string;
-};
-
-function normalizePhotoUrls(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of value) {
-    const candidate = typeof item === "string" ? item.trim() : "";
-    if (!candidate || seen.has(candidate)) continue;
-    seen.add(candidate);
-    out.push(candidate);
-  }
-  return out;
-}
-
-function s3RefToHttps(ref: string): string | null {
-  const trimmed = ref.trim();
-  if (!trimmed.startsWith("s3://")) return null;
-  const body = trimmed.slice("s3://".length);
-  const slash = body.indexOf("/");
-  if (slash <= 0 || slash === body.length - 1) return null;
-  const bucket = body.slice(0, slash);
-  const key = body.slice(slash + 1);
-  return `https://${bucket}.s3.amazonaws.com/${key}`;
-}
-
-function toPhotoSource(rawUrl: string): PhotoSource {
-  const raw = rawUrl.trim();
-  if (!raw) {
-    return { raw, primary: raw };
-  }
-
-  if (raw.startsWith("/uploads/")) {
-    return { raw, primary: `/api-proxy${raw}` };
-  }
-
-  if (raw.startsWith("http://")) {
-    return { raw, primary: `https://${raw.slice("http://".length)}`, fallback: raw };
-  }
-
-  const s3Https = s3RefToHttps(raw);
-  if (s3Https) {
-    return { raw, primary: s3Https };
-  }
-
-  return { raw, primary: raw };
-}
+import { normalizePhotoUrls, toPhotoSource, type PhotoSource } from "@/lib/utils/photos";
 
 export default function DeliveryDetailPage({
   params

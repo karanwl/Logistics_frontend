@@ -1,4 +1,4 @@
-import { ApiError } from "./model";
+import { ApiError } from "./model.js";
 
 function readString(value: unknown): string | null {
   if (typeof value !== "string") return null;

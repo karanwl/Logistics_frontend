@@ -1,4 +1,4 @@
-import { ApiError, type ApiErrorCode, statusToCode } from "@/lib/errors/model";
+import { ApiError, isApiErrorCode, statusToCode } from "@/lib/errors/model";
 
 const TRANSIENT_STATUS = new Set([502, 503, 504]);
 const RETRY_DELAYS_MS = [250, 500, 1000];
@@ -69,22 +69,7 @@ function parseErrorPayload(payload: unknown, status: number, correlationId?: str
     readString(obj?.error) ||
     "Request failed.";
   const codeFromBody = readString(obj?.code);
-  const code =
-    codeFromBody &&
-    [
-      "VALIDATION_ERROR",
-      "UNAUTHORIZED",
-      "FORBIDDEN",
-      "NOT_FOUND",
-      "CONFLICT",
-      "RATE_LIMITED",
-      "BAD_GATEWAY",
-      "SERVICE_UNAVAILABLE",
-      "GATEWAY_TIMEOUT",
-      "INTERNAL_ERROR"
-    ].includes(codeFromBody)
-      ? (codeFromBody as ApiErrorCode)
-      : statusToCode(status);
+  const code = isApiErrorCode(codeFromBody) ? codeFromBody : statusToCode(status);
 
   return new ApiError({
     status,

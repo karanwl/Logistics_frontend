@@ -5,7 +5,7 @@ import {
   type ErrorResponseBody,
   normalizeStatus,
   statusToCode
-} from "./model";
+} from "./model.js";
 
 const DEFAULT_MESSAGE = "Something went wrong. Please try again.";
 
@@ -20,6 +20,14 @@ export type NormalizedError = {
 function safeObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object") return null;
   return value as Record<string, unknown>;
+}
+
+function readRoutePath(request: Request): string {
+  try {
+    return new URL(request.url).pathname;
+  } catch {
+    return "unknown";
+  }
 }
 
 function readStatusFromUnknown(error: unknown): number | null {
@@ -49,6 +57,14 @@ function sanitizeCause(error: unknown): { name: string; message: string } | unde
 
 function isPublicMessage(status: number): boolean {
   return status < 500;
+}
+
+function readObjectMessage(obj: Record<string, unknown> | null): string | null {
+  return obj && typeof obj.message === "string" ? obj.message : null;
+}
+
+function readObjectDetails(obj: Record<string, unknown> | null): unknown {
+  return obj?.details;
 }
 
 export function getCorrelationId(request: Request): string {
@@ -84,13 +100,14 @@ export function normalizeError(
 
   const status = readStatusFromUnknown(error) ?? 500;
   const obj = safeObject(error);
-  const objectMessage = obj && typeof obj.message === "string" ? obj.message : null;
+  const objectMessage = readObjectMessage(obj);
+  const objectDetails = readObjectDetails(obj);
 
   return {
     status,
     code: statusToCode(status),
     message: isPublicMessage(status) && objectMessage ? objectMessage : DEFAULT_MESSAGE,
-    details: status < 500 && obj?.details !== undefined ? obj.details : undefined,
+    details: status < 500 && objectDetails !== undefined ? objectDetails : undefined,
     correlationId: options.correlationId
   };
 }
@@ -142,17 +159,14 @@ export function withErrorHandling<TContext extends Record<string, unknown>>(
 ) {
   return async (request: Request, context: TContext): Promise<Response> => {
     const correlationId = getCorrelationId(request);
-    const route = (() => {
-      try {
-        return new URL(request.url).pathname;
-      } catch {
-        return "unknown";
-      }
-    })();
+    const route = readRoutePath(request);
     try {
-      const result = await handler(request, {
+      const enrichedContext = {
         ...(context || ({} as TContext)),
         correlationId
+      } as TContext & { correlationId: string };
+      const result = await handler(request, {
+        ...enrichedContext
       });
       return withCorrelationHeader(result, correlationId);
     } catch (error) {

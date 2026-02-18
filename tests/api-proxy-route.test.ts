@@ -23,3 +23,25 @@ test("api proxy callback rejects invalid JSON payload with deterministic 400", a
   assert.ok(typeof body.correlationId === "string" && body.correlationId.length > 0);
   assert.equal(response.headers.get("x-correlation-id"), body.correlationId);
 });
+
+test("api proxy webhook rejects invalid signature header", async () => {
+  const request = makeTestRequest("http://localhost/api-proxy/provider/webhook", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "stripe-signature": "short"
+    },
+    body: "{}"
+  });
+
+  const response = await POST(request as any, {
+    params: { path: ["provider", "webhook"] }
+  } as any);
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(body.code, "VALIDATION_ERROR");
+  assert.equal(body.message, "Invalid webhook signature header.");
+  assert.ok(typeof body.correlationId === "string" && body.correlationId.length > 0);
+  assert.equal(response.headers.get("x-correlation-id"), body.correlationId);
+});
