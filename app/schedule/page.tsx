@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
@@ -776,17 +777,29 @@ export default function SchedulePage() {
                       )}
                     </td>
                     <td className="py-2">
-                      <Button
-                        variant="secondary"
-                        onClick={async () => {
-                          const ok = window.confirm("Delete this delivery?");
-                          if (!ok) return;
-                          await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
-                          refetch();
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <Link
+                            href={`/deliveries/${encodeURIComponent(String(d.delivery_id || ""))}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View POD
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={async () => {
+                            const ok = window.confirm("Delete this delivery?");
+                            if (!ok) return;
+                            await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
+                            refetch();
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
