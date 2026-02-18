@@ -5,6 +5,58 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 
+type PhotoSource = {
+  raw: string;
+  primary: string;
+  fallback?: string;
+};
+
+function normalizePhotoUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const candidate = typeof item === "string" ? item.trim() : "";
+    if (!candidate || seen.has(candidate)) continue;
+    seen.add(candidate);
+    out.push(candidate);
+  }
+  return out;
+}
+
+function s3RefToHttps(ref: string): string | null {
+  const trimmed = ref.trim();
+  if (!trimmed.startsWith("s3://")) return null;
+  const body = trimmed.slice("s3://".length);
+  const slash = body.indexOf("/");
+  if (slash <= 0 || slash === body.length - 1) return null;
+  const bucket = body.slice(0, slash);
+  const key = body.slice(slash + 1);
+  return `https://${bucket}.s3.amazonaws.com/${key}`;
+}
+
+function toPhotoSource(rawUrl: string): PhotoSource {
+  const raw = rawUrl.trim();
+  if (!raw) {
+    return { raw, primary: raw };
+  }
+
+  if (raw.startsWith("/uploads/")) {
+    return { raw, primary: `/api-proxy${raw}` };
+  }
+
+  if (raw.startsWith("http://")) {
+    return { raw, primary: `https://${raw.slice("http://".length)}`, fallback: raw };
+  }
+
+  const s3Https = s3RefToHttps(raw);
+  if (s3Https) {
+    return { raw, primary: s3Https };
+  }
+
+  return { raw, primary: raw };
+}
+
 export default function DeliveryDetailPage({
   params
 }: {
@@ -16,9 +68,8 @@ export default function DeliveryDetailPage({
     enabled: Boolean(params.deliveryId)
   });
   const delivery = data || {};
-  const photoUrls = Array.isArray(delivery.photo_urls)
-    ? delivery.photo_urls.filter((url: unknown) => typeof url === "string" && url.trim().length > 0)
-    : [];
+  const photoUrls = normalizePhotoUrls(delivery.photo_urls);
+  const photoSources = photoUrls.map(toPhotoSource);
 
   return (
     <AppShell>
@@ -59,22 +110,30 @@ export default function DeliveryDetailPage({
               <div className="admin-tile-subtitle">
                 {photoUrls.length > 0 ? `${photoUrls.length} photo(s)` : "No photos uploaded yet."}
               </div>
-              {photoUrls.length > 0 ? (
+              {photoSources.length > 0 ? (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {photoUrls.map((url: string) => (
+                  {photoSources.map((photo: PhotoSource) => (
                     <a
-                      key={url}
-                      href={url}
+                      key={photo.raw}
+                      href={photo.primary}
                       target="_blank"
                       rel="noreferrer"
                       className="admin-tile-link"
                       title="Open full photo"
                     >
                       <img
-                        src={url}
+                        src={photo.primary}
                         alt={`Delivery ${params.deliveryId} proof photo`}
                         className="h-40 w-full rounded-md object-cover"
                         loading="lazy"
+                        onError={(event) => {
+                          const img = event.currentTarget;
+                          const fallback = img.dataset.fallback || "";
+                          if (fallback && img.src !== fallback) {
+                            img.src = fallback;
+                          }
+                        }}
+                        data-fallback={photo.fallback || ""}
                       />
                     </a>
                   ))}
