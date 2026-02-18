@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { ensureCsrfCookie, getCookie } from "@/lib/api/client";
+import { ApiError, apiClient, ensureCsrfCookie, getCookie } from "@/lib/api/client";
 
 const schema = z.object({
   email: z.string().email(),
@@ -33,24 +33,20 @@ export default function LoginPage() {
     if (csrf) body.set("csrf_token", csrf);
 
     try {
-      const res = await fetch("/api-proxy/login", {
+      await apiClient("/login", {
         method: "POST",
         body: body.toString(),
         headers: {
           "content-type": "application/x-www-form-urlencoded",
-          accept: "application/json",
           ...(csrf ? { "X-CSRF-Token": csrf } : {})
-        },
-        credentials: "include",
-        cache: "no-store"
+        }
       });
-      if (res.ok) {
-        window.location.href = "/schedule";
+      window.location.href = "/schedule";
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message || "Sign in failed. Please check your email and password.");
         return;
       }
-      const payload = await res.json().catch(() => ({}));
-      setError(payload?.detail || "Sign in failed. Please check your email and password.");
-    } catch {
       setError("Sign in failed. Please check your email and password.");
     }
   };

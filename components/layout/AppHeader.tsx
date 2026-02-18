@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useCurrentUser } from "@/lib/api/auth";
+import { api } from "@/lib/api/client";
 
 type RoleKey = "admin" | "manager" | "coordinator";
 
@@ -62,7 +63,7 @@ export default function AppHeader() {
         label: "Logout",
         onClick: async () => {
           try {
-            await fetch("/api-proxy/logout", { credentials: "include" });
+            await api.get("/logout");
           } catch {
             // no-op
           }

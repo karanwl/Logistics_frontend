@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".test-dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "incremental": false
+  },
+  "include": [
+    "next-env.d.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "lib/errors/model.ts",
+    "lib/errors/server.ts",
+    "components/shared/ErrorFallback.tsx",
+    "app/api-proxy/[...path]/route.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
