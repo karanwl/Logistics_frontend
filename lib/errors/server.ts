@@ -5,7 +5,7 @@ import {
   type ErrorResponseBody,
   normalizeStatus,
   statusToCode
-} from "./model.js";
+} from "./model";
 
 const DEFAULT_MESSAGE = "Something went wrong. Please try again.";
 

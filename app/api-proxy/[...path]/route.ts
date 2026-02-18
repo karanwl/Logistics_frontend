@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ApiError } from "../../../lib/errors/model.js";
-import { withErrorHandling } from "../../../lib/errors/server.js";
+import { ApiError } from "../../../lib/errors/model";
+import { withErrorHandling } from "../../../lib/errors/server";
 
 const DEFAULT_BASE_URL = "https://logistics-backend-6f0pea.fly.dev";
 const WEBHOOK_SIGNATURE_HEADERS = [
