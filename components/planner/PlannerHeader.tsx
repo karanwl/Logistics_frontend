@@ -130,12 +130,6 @@ export default function PlannerHeader() {
           </div>
         </div>
       </div>
-      <div className="mt-3 rounded-lg border border-steel-200/80 bg-steel-50/70 p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Execution</div>
-        <div className="mt-1 text-sm text-steel-600">
-          Solver output remains editable before publish. Publish writes the current route state and meta snapshot.
-        </div>
-      </div>
       <div className="mt-3">
         <ErrorBanner error={solveRun.error || publish.error} />
         {publishMessage ? (
