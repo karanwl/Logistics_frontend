@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/lib/api/auth";
+import { api } from "@/lib/api/client";
 import {
   useDeliveries,
   useRescheduleDelivery,
   useBulkUpdateDeliveries,
-  useUpdateDelivery,
   useDeleteDelivery
 } from "@/lib/api/planner";
 import { startOfWeek, addDays, formatDate } from "@/lib/utils/dates";
@@ -121,6 +121,32 @@ function pickupVehicleLabel(value: string | undefined | null) {
   return match ? match.label : normalized;
 }
 
+function normalizePhotoUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    const url = typeof item === "string" ? item.trim() : "";
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
+}
+
+function resolvePhotoUrl(raw: string): string {
+  const value = raw.trim();
+  if (!value) return value;
+  if (value.startsWith("/uploads/")) return `/api-proxy${value}`;
+  if (!value.startsWith("s3://")) return value;
+  const body = value.slice("s3://".length);
+  const slash = body.indexOf("/");
+  if (slash <= 0 || slash === body.length - 1) return value;
+  const bucket = body.slice(0, slash);
+  const key = body.slice(slash + 1);
+  return `https://${bucket}.s3.amazonaws.com/${key}`;
+}
+
 function DeliveryCard({ delivery, columnKey, index }: { delivery: any; columnKey: string; index: number }) {
   const id = `${delivery.delivery_id}`;
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -171,6 +197,8 @@ export default function SchedulePage() {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerDelivery, setDrawerDelivery] = useState<any | null>(null);
+  const [drawerDetail, setDrawerDetail] = useState<any | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState("");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "scheduled_date",
@@ -191,7 +219,6 @@ export default function SchedulePage() {
   const { data, refetch } = useDeliveries();
   const reschedule = useRescheduleDelivery();
   const bulkUpdate = useBulkUpdateDeliveries();
-  const updateDelivery = useUpdateDelivery();
   const deleteDelivery = useDeleteDelivery();
 
   const weekStart = useMemo(() => startOfWeek(parseDateKey(weekDate)), [weekDate]);
@@ -354,52 +381,40 @@ export default function SchedulePage() {
   };
 
   const openDrawer = (delivery: any) => {
-    setDrawerDelivery({ ...delivery });
+    const deliveryId = String(delivery?.delivery_id || "").trim();
+    setDrawerDelivery({ ...delivery, delivery_id: deliveryId });
+    setDrawerDetail(null);
+    setDrawerError("");
+    setDrawerLoading(true);
     setDrawerOpen(true);
+    if (!deliveryId) {
+      setDrawerLoading(false);
+      setDrawerError("Missing delivery id.");
+      return;
+    }
+    api
+      .get<Record<string, any>>(`/api/driver/deliveries/${encodeURIComponent(deliveryId)}`)
+      .then((detail) => {
+        setDrawerDetail(detail || null);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : "Could not load delivery details.";
+        setDrawerError(message);
+      })
+      .finally(() => {
+        setDrawerLoading(false);
+      });
   };
 
   const closeDrawer = () => {
     setDrawerOpen(false);
     setDrawerDelivery(null);
-  };
-
-  const saveDrawer = async () => {
-    if (!drawerDelivery) return;
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-    if (drawerDelivery.scheduled_date && !dateRegex.test(String(drawerDelivery.scheduled_date))) {
-      setDrawerError("Please enter a valid scheduled date.");
-      return;
-    }
-    if (drawerDelivery.window_start && !timeRegex.test(String(drawerDelivery.window_start))) {
-      setDrawerError("Please enter a valid start time.");
-      return;
-    }
-    if (drawerDelivery.window_end && !timeRegex.test(String(drawerDelivery.window_end))) {
-      setDrawerError("Please enter a valid end time.");
-      return;
-    }
+    setDrawerDetail(null);
+    setDrawerLoading(false);
     setDrawerError("");
-    const payload = {
-      jobsite_id: drawerDelivery.jobsite_id,
-      scheduled_date: drawerDelivery.scheduled_date,
-      sales_order: drawerDelivery.sales_order || "",
-      med_skid: Number(drawerDelivery.med_skid || 0),
-      small_skid: Number(drawerDelivery.small_skid || 0),
-      large_skid: Number(drawerDelivery.large_skid || 0),
-      door: Number(drawerDelivery.door || 0),
-      frame: Number(drawerDelivery.frame || 0),
-      exp_frame: Number(drawerDelivery.exp_frame || 0),
-      box: Number(drawerDelivery.box || 0),
-      pickup: Boolean(drawerDelivery.pickup),
-      requires_empty_truck: Boolean(drawerDelivery.requires_empty_truck),
-      window_start: drawerDelivery.window_start || "",
-      window_end: drawerDelivery.window_end || ""
-    };
-    await updateDelivery.mutateAsync({ delivery_id: drawerDelivery.delivery_id, updates: payload });
-    closeDrawer();
-    refetch();
   };
+  const drawerData = drawerDetail || drawerDelivery;
+  const drawerPhotoUrls = normalizePhotoUrls(drawerData?.photo_urls).map(resolvePhotoUrl);
 
   return (
     <AppShell>
@@ -814,67 +829,70 @@ export default function SchedulePage() {
         <div className="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="inlineEditTitle">
           <div className="drawer-header">
             <div>
-              <p className="panel-title">Edit</p>
+              <p className="panel-title">Details</p>
               <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
-              <p className="card-subtitle" id="inlineEditSubtitle">Review and update this delivery.</p>
+              <p className="card-subtitle" id="inlineEditSubtitle">Quick read-only view with POD.</p>
             </div>
             <button className="btn btn-secondary icon-only" type="button" data-drawer-close aria-label="Close" onClick={closeDrawer}>
               ?
             </button>
           </div>
           <div id="inlineEditBody" className="drawer-body">
-            {!drawerDelivery ? (
+            {!drawerData ? (
               <div className="empty-state">No delivery selected.</div>
+            ) : drawerLoading ? (
+              <div className="empty-state">Loading delivery details...</div>
             ) : (
               <div className="grid gap-3">
-                <label className="text-xs text-steel-500">Location</label>
-                <div className="text-sm font-semibold">{drawerDelivery.job_name}</div>
-                <label className="text-xs text-steel-500">Scheduled Date</label>
-                <DatePickerInput
-                  className="h-9 text-xs"
-                  value={drawerDelivery.scheduled_date || ""}
-                  onChange={(value) => setDrawerDelivery({ ...drawerDelivery, scheduled_date: value })}
-                />
-                <label className="text-xs text-steel-500">Sales Order</label>
-                <Input value={drawerDelivery.sales_order || ""} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, sales_order: e.target.value })} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input type="number" placeholder="Med Skid" value={drawerDelivery.med_skid || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, med_skid: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Small Skid" value={drawerDelivery.small_skid || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, small_skid: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Large Skid" value={drawerDelivery.large_skid || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, large_skid: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Door" value={drawerDelivery.door || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, door: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Frame" value={drawerDelivery.frame || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, frame: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Exp Frame" value={drawerDelivery.exp_frame || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, exp_frame: Number(e.target.value) })} />
-                  <Input type="number" placeholder="Box" value={drawerDelivery.box || 0} onChange={(e) => setDrawerDelivery({ ...drawerDelivery, box: Number(e.target.value) })} />
+                <div className="text-xs text-steel-500">Location</div>
+                <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
+                <div className="text-xs text-steel-500">Scheduled Date</div>
+                <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
+                <div className="text-xs text-steel-500">Window</div>
+                <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
+                <div className="text-xs text-steel-500">Sales Order</div>
+                <div className="text-sm">{drawerData.sales_order || "--"}</div>
+                <div className="text-xs text-steel-500">Status</div>
+                <div className="text-sm">{drawerData.status || "--"}</div>
+                <div className="text-xs text-steel-500">Driver Notes</div>
+                <div className="text-sm">{drawerData.driver_notes || "No notes"}</div>
+                <div className="text-xs text-steel-500">Items</div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>Large: {drawerData.large_skid || 0}</div>
+                  <div>Med: {drawerData.med_skid || 0}</div>
+                  <div>Small: {drawerData.small_skid || 0}</div>
+                  <div>Door: {drawerData.door || 0}</div>
+                  <div>Frame: {drawerData.frame || 0}</div>
+                  <div>Exp: {drawerData.exp_frame || 0}</div>
+                  <div>Box: {drawerData.box || 0}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <select
-                    className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
-                    value={drawerDelivery.window_start || ""}
-                    onChange={(e) => setDrawerDelivery({ ...drawerDelivery, window_start: e.target.value })}
-                  >
-                    <option value="">Start</option>
-                    {TIME_OPTIONS.map((t) => (
-                      <option key={`drawer-start-${t || "any"}`} value={t}>{t || "--"}</option>
+                <div className="text-xs text-steel-500">POD Photos</div>
+                {drawerPhotoUrls.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {drawerPhotoUrls.map((url) => (
+                      <a key={url} href={url} target="_blank" rel="noreferrer" className="rounded-md border border-steel-100 p-1">
+                        <img src={url} alt="POD" className="h-24 w-full rounded object-cover" loading="lazy" />
+                      </a>
                     ))}
-                  </select>
-                  <select
-                    className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
-                    value={drawerDelivery.window_end || ""}
-                    onChange={(e) => setDrawerDelivery({ ...drawerDelivery, window_end: e.target.value })}
-                  >
-                    <option value="">End</option>
-                    {TIME_OPTIONS.map((t) => (
-                      <option key={`drawer-end-${t || "any"}`} value={t}>{t || "--"}</option>
-                    ))}
-                  </select>
-                </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-steel-500">No POD photos uploaded yet.</div>
+                )}
                 <div className="page-actions">
-                  <Button onClick={saveDrawer} disabled={updateDelivery.isPending}>Save updates</Button>
-                  <Button variant="secondary" onClick={closeDrawer}>Cancel</Button>
+                  <Button asChild variant="outline">
+                    <Link
+                      href={`/deliveries/${encodeURIComponent(String(drawerData.delivery_id || drawerDelivery?.delivery_id || ""))}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open Full Delivery
+                    </Link>
+                  </Button>
+                  <Button variant="secondary" onClick={closeDrawer}>Close</Button>
                 </div>
-                {drawerError ? <div className="text-xs text-red-600">{drawerError}</div> : null}
               </div>
             )}
+            {drawerError ? <div className="mt-2 text-xs text-red-600">{drawerError}</div> : null}
           </div>
         </div>
       </div>
