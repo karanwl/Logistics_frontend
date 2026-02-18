@@ -121,16 +121,35 @@ export default function MapPanel() {
     const lineFeatures: any[] = [];
     const pointFeatures: any[] = [];
     const palette = ["#2563eb", "#16a34a", "#f97316", "#9333ea", "#0f766e", "#dc2626"];
+    const reloadRunPalette = ["#06b6d4", "#e11d48", "#22c55e", "#f59e0b", "#8b5cf6", "#14b8a6"];
     const boundsCoords: [number, number][] = [];
 
     plan.routes.forEach((route, routeIndex) => {
-      const coords: number[][] = [];
+      let runIndex = 0;
+      let runCoords: number[][] = [];
+      const colorForRun = (index: number) => {
+        if (index <= 0) return palette[routeIndex % palette.length];
+        return reloadRunPalette[(routeIndex + index - 1) % reloadRunPalette.length];
+      };
+      const flushRun = () => {
+        if (runCoords.length < 2) return;
+        lineFeatures.push({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: runCoords },
+          properties: {
+            route: routeIndex + 1,
+            run: runIndex + 1,
+            color: colorForRun(runIndex)
+          }
+        });
+      };
+
       route.stops.forEach((group, idx) => {
         const stopGroup = Array.isArray(group) ? group : [group];
         const depotStop = stopGroup.find((s) => s?.type === "depot");
         if (depotStop) {
           if (depotLon == null || depotLat == null) return;
-          coords.push([depotLon, depotLat]);
+          runCoords.push([depotLon, depotLat]);
           boundsCoords.push([depotLon, depotLat]);
           pointFeatures.push({
             type: "Feature",
@@ -140,6 +159,12 @@ export default function MapPanel() {
               route: routeIndex + 1
             }
           });
+          const depotLabel = String(depotStop.label || "").toLowerCase();
+          if (depotLabel.includes("reload")) {
+            flushRun();
+            runIndex += 1;
+            runCoords = [[depotLon, depotLat]];
+          }
           return;
         }
 
@@ -155,7 +180,7 @@ export default function MapPanel() {
           const lat = toNumber(d?.lat);
           if (lon == null || lat == null) return;
           if (!firstCoordAdded) {
-            coords.push([lon, lat]);
+            runCoords.push([lon, lat]);
             boundsCoords.push([lon, lat]);
             firstCoordAdded = true;
           }
@@ -170,13 +195,7 @@ export default function MapPanel() {
         });
       });
 
-      if (coords.length >= 2) {
-        lineFeatures.push({
-          type: "Feature",
-          geometry: { type: "LineString", coordinates: coords },
-          properties: { route: routeIndex + 1, color: palette[routeIndex % palette.length] }
-        });
-      }
+      flushRun();
     });
 
     const lineSource = map.getSource("plan-routes");
