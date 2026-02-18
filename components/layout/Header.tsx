@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 const links = [
-  { href: "/planner", label: "Daily Planning" },
-  { href: "/schedule", label: "Delivery Calendar" },
-  { href: "/planner/manual", label: "Custom Plans" },
-  { href: "/planner/published", label: "Final Plans" },
-  { href: "/admin", label: "Operations Hub" }
+  { href: "/planner", label: "Planner" },
+  { href: "/schedule", label: "Schedule" },
+  { href: "/planner/manual", label: "Manual Runs" },
+  { href: "/planner/published", label: "Published" },
+  { href: "/admin", label: "Admin" }
 ];
 
 export default function Header() {
@@ -16,8 +16,8 @@ export default function Header() {
           LP
         </div>
         <div>
-          <div className="text-sm font-semibold">Logistics Operations</div>
-          <div className="text-xs text-steel-500">Operations Portal</div>
+          <div className="text-sm font-semibold">Logistics Planner</div>
+          <div className="text-xs text-steel-500">Operations Console</div>
         </div>
       </div>
       <nav className="flex items-center gap-6 text-sm text-steel-600">
