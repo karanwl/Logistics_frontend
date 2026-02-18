@@ -35,8 +35,8 @@ function PlannerWorkspace() {
       <PlannerHeader />
 
       {!plan ? (
-        <div className="flex justify-center">
-          <div className="w-full max-w-xl">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="rounded-2xl border border-steel-200/80 bg-white/70 p-4 shadow-soft">
             <FleetPanel />
           </div>
         </div>
@@ -45,7 +45,7 @@ function PlannerWorkspace() {
           <div className="space-y-6 xl:col-span-8">
             <RouteBoard editable />
           </div>
-          <div className="space-y-6 xl:col-span-4">
+          <div className="space-y-6 xl:col-span-4 xl:sticky xl:top-24 xl:self-start">
             <MapPanel />
             <UnassignedPanel editable planDate={selectedDate} />
           </div>

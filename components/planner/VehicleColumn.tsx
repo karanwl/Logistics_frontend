@@ -40,6 +40,11 @@ export default function VehicleColumn({ route, editable = true }: { route: Route
 
   const driverAssignments = (plan?.meta as any)?.driver_assignments || {};
   const selectedDriver = driverAssignments[String(route.vehicle_id)] || "";
+  const isTruck = String(route.vehicle_type || "").toLowerCase() === "truck";
+  const vehicleShellClass = isTruck
+    ? "border-sky-300/90 bg-gradient-to-b from-sky-50/70 to-white"
+    : "border-emerald-300/90 bg-gradient-to-b from-emerald-50/70 to-white";
+  const vehicleLabel = `${isTruck ? "Truck" : "Van"} ${String(route.vehicle_id || "")}`;
   const setDriver = (value: string) => {
     if (!plan || !editable) return;
     const nextAssignments = { ...driverAssignments, [String(route.vehicle_id)]: value };
@@ -128,25 +133,28 @@ export default function VehicleColumn({ route, editable = true }: { route: Route
   };
 
   return (
-    <div className="rounded-xl border border-steel-100 bg-white p-3 shadow-soft">
+    <div className={`rounded-xl border p-3 shadow-soft ${vehicleShellClass}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="text-sm font-semibold">
-            {(route.vehicle_type || "Vehicle").toString().toUpperCase()}
-          </div>
-          <div className="text-xs text-steel-500">
-            {route.stops.length} stops - {formatDistance(route.total_distance_m)}
+          <div className="panel-title">{isTruck ? "Truck Route" : "Van Route"}</div>
+          <div className="text-sm font-semibold text-ink-900">{vehicleLabel}</div>
+          <div className="text-xs text-steel-600">
+            {route.stops.length} stops
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-right">
           {recalculating && <span className="text-[11px] text-steel-500">Recalculating...</span>}
-          <Badge>{formatDuration(route.total_time_s)}</Badge>
+          <Badge className="border-steel-300 bg-white text-steel-700">{formatDuration(route.total_time_s)}</Badge>
         </div>
       </div>
-      <div className="mt-2">
-        <label className="text-[11px] font-semibold uppercase text-steel-500">Driver</label>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Badge className="border-steel-300 bg-white text-steel-700">{formatDistance(route.total_distance_m)}</Badge>
+        <Badge className="border-steel-300 bg-white text-steel-700">{route.stops.length} stops</Badge>
+      </div>
+      <div className="mt-3 rounded-lg border border-steel-200 bg-white/80 p-2">
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Driver Assignment</label>
         <select
-          className="mt-1 w-full rounded-md border border-steel-200 bg-white px-2 py-1 text-xs"
+          className="mt-1 w-full rounded-md border border-steel-200 bg-white px-2 py-1.5 text-xs"
           value={selectedDriver}
           disabled={!editable}
           onChange={(e) => setDriver(e.target.value)}

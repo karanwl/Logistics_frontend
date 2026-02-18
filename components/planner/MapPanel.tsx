@@ -36,6 +36,16 @@ export default function MapPanel() {
   const usingFallbackStyle = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState("");
+  const routeCount = plan?.routes?.length || 0;
+  const stopCount = (plan?.routes || []).reduce((sum: number, route: any) => sum + (route?.stops?.length || 0), 0);
+  const hasReloadRun = (plan?.routes || []).some((route: any) =>
+    (route?.stops || []).some((group: any) => {
+      const stopGroup = Array.isArray(group) ? group : [group];
+      const depotStop = stopGroup.find((item: any) => item?.type === "depot");
+      if (!depotStop) return false;
+      return String(depotStop?.label || "").toLowerCase().includes("reload");
+    })
+  );
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -210,7 +220,7 @@ export default function MapPanel() {
         source: "plan-routes",
         paint: {
           "line-color": ["get", "color"],
-          "line-width": 3,
+          "line-width": 4,
           "line-opacity": 0.7
         }
       });
@@ -292,10 +302,38 @@ export default function MapPanel() {
   return (
     <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle>Route Map</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <CardTitle>Route Map</CardTitle>
+            <div className="card-subtitle">Visual route trace by vehicle and reload run segments.</div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-steel-600">
+            <span className="rounded-full border border-steel-200 bg-white px-2 py-1">{routeCount} routes</span>
+            <span className="rounded-full border border-steel-200 bg-white px-2 py-1">{stopCount} stops</span>
+          </div>
+        </div>
       </CardHeader>
       <div className="px-5 pb-5">
         <div ref={mapRef} className="w-full aspect-[16/10] rounded-lg border border-steel-100" />
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-steel-600">
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-5 rounded-full bg-[#2563eb]" />
+            <span>Vehicle route</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2.5 w-5 rounded-full bg-[#06b6d4]" />
+            <span>Post-reload run</span>
+          </div>
+          {hasReloadRun ? (
+            <span className="rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-sky-700">
+              Depot reload present
+            </span>
+          ) : (
+            <span className="rounded-full border border-steel-200 bg-white px-2 py-0.5 text-steel-600">
+              No reload segments
+            </span>
+          )}
+        </div>
         {mapError ? <div className="mt-2 text-xs text-rose-700">{mapError}</div> : null}
       </div>
     </Card>
