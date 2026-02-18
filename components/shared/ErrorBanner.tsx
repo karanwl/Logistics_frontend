@@ -16,7 +16,7 @@ export function ErrorBanner({ error }: { error: unknown }) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Ignore clipboard permission issues.
+      // error-normalization-ignore: clipboard permission failures should not block form flows.
     }
   };
 

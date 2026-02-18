@@ -63,20 +63,26 @@ function parseErrorPayload(payload: unknown, status: number, correlationId?: str
   }
 
   const obj = payload as ErrorPayload | null;
+  const nestedError = obj?.error && typeof obj.error === "object"
+    ? (obj.error as ErrorPayload)
+    : null;
   const message =
     readString(obj?.message) ||
     readString(obj?.detail) ||
     readString(obj?.error) ||
+    readString(nestedError?.message) ||
+    readString(nestedError?.detail) ||
+    readString(nestedError?.error) ||
     "Request failed.";
-  const codeFromBody = readString(obj?.code);
+  const codeFromBody = readString(obj?.code) || readString(nestedError?.code);
   const code = isApiErrorCode(codeFromBody) ? codeFromBody : statusToCode(status);
 
   return new ApiError({
     status,
     code,
     message,
-    details: obj?.details ?? obj?.detail,
-    correlationId: readString(obj?.correlationId) || correlationId,
+    details: nestedError?.details ?? nestedError?.detail ?? obj?.details ?? obj?.detail,
+    correlationId: readString(obj?.correlationId) || readString(nestedError?.correlationId) || correlationId,
     exposeMessage: status < 500
   });
 }
@@ -165,7 +171,7 @@ export async function apiClient<T>(path: string, init: RequestInit = {}): Promis
 
   if (!res.ok) {
     const payload = await parsePayload(res);
-    const correlationId = res.headers.get("x-correlation-id") || undefined;
+    const correlationId = res.headers.get("x-correlation-id") || res.headers.get("x-request-id") || undefined;
     const error = parseErrorPayload(payload, res.status, correlationId);
     applyAuthRedirects(error);
     throw error;

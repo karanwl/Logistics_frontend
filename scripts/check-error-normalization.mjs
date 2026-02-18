@@ -48,7 +48,7 @@ function findBlockEnd(text, openBraceIndex) {
 function validateFile(filePath) {
   const text = fs.readFileSync(filePath, "utf8");
   const violations = [];
-  const catchRegex = /catch\s*\(([^)]*)\)\s*\{/g;
+  const catchRegex = /catch\s*(\(([^)]*)\))?\s*\{/g;
   let match;
   while ((match = catchRegex.exec(text)) !== null) {
     const catchStart = match.index;

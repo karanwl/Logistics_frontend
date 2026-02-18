@@ -65,7 +65,7 @@ export default function AppHeader() {
           try {
             await api.get("/logout");
           } catch {
-            // no-op
+            // error-normalization-ignore: logout fallback still redirects to login route.
           }
           window.location.href = "/auth/login";
         }

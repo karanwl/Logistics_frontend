@@ -73,7 +73,7 @@ export function useDndPlanner(editable = true) {
       });
       setPlan({ ...plan, routes: updatedRoutes });
     } catch {
-      // leave existing metrics if recalc fails
+      // error-normalization-ignore: preserve current plan when recalc endpoint is unavailable.
     }
   };
 

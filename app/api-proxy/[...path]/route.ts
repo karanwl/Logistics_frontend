@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApiError } from "../../../lib/errors/model";
+import { ApiError, isApiErrorCode, type ApiErrorCode } from "../../../lib/errors/model";
 import { withErrorHandling } from "../../../lib/errors/server";
 
 const DEFAULT_BASE_URL = "https://logistics-backend-6f0pea.fly.dev";
@@ -45,15 +45,56 @@ function isWebhookPath(path: string[]): boolean {
   return pathMatches(path, WEBHOOK_PATH_PATTERN);
 }
 
+function readString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
 function readMessage(payload: unknown): string {
-  if (typeof payload === "string") return payload || "Request failed.";
-  if (payload && typeof payload === "object") {
-    const obj = payload as Record<string, unknown>;
-    if (typeof obj.message === "string" && obj.message.trim()) return obj.message;
-    if (typeof obj.detail === "string" && obj.detail.trim()) return obj.detail;
-    if (typeof obj.error === "string" && obj.error.trim()) return obj.error;
+  if (typeof payload === "string") return payload.trim() || "Request failed.";
+  const obj = asObject(payload);
+  if (obj) {
+    const nestedError = asObject(obj.error);
+    return (
+      readString(obj.message) ||
+      readString(obj.detail) ||
+      readString(obj.error) ||
+      readString(nestedError?.message) ||
+      readString(nestedError?.detail) ||
+      readString(nestedError?.error) ||
+      "Request failed."
+    );
   }
   return "Request failed.";
+}
+
+function readCode(payload: unknown): ApiErrorCode | undefined {
+  const obj = asObject(payload);
+  const nestedError = asObject(obj?.error);
+  const rawCode = readString(obj?.code) || readString(nestedError?.code);
+  return isApiErrorCode(rawCode) ? rawCode : undefined;
+}
+
+function readDetails(payload: unknown): unknown {
+  if (typeof payload === "string") return undefined;
+  const obj = asObject(payload);
+  const nestedError = asObject(obj?.error);
+  if (nestedError?.details !== undefined) return nestedError.details;
+  if (nestedError?.detail !== undefined) return nestedError.detail;
+  if (obj?.details !== undefined) return obj.details;
+  if (obj?.detail !== undefined) return obj.detail;
+  return obj || undefined;
+}
+
+function readCorrelationId(payload: unknown): string | undefined {
+  const obj = asObject(payload);
+  const nestedError = asObject(obj?.error);
+  return readString(obj?.correlationId) || readString(nestedError?.correlationId);
 }
 
 async function parsePayload(res: Response): Promise<unknown> {
@@ -62,12 +103,14 @@ async function parsePayload(res: Response): Promise<unknown> {
     try {
       return await res.json();
     } catch {
+      // error-normalization-ignore: invalid upstream JSON falls back to deterministic message.
       return { message: "Invalid JSON response from upstream service." };
     }
   }
   try {
     return await res.text();
   } catch {
+    // error-normalization-ignore: response stream may be unreadable after upstream disconnect.
     return "Unexpected upstream response.";
   }
 }
@@ -107,6 +150,7 @@ function cloneRequestHeaders(req: Request, correlationId: string): Headers {
     headers.delete(header);
   }
   headers.set("x-correlation-id", correlationId);
+  headers.set("x-request-id", correlationId);
   return headers;
 }
 
@@ -189,10 +233,16 @@ async function proxyRequest(req: Request, params: { path: string[] }, correlatio
 
   if (res.status >= 400) {
     const payload = await parsePayload(res);
+    const upstreamCorrelationId =
+      res.headers.get("x-correlation-id") ||
+      res.headers.get("x-request-id") ||
+      undefined;
     throw new ApiError({
       status: res.status,
+      code: readCode(payload),
       message: readMessage(payload),
-      details: typeof payload === "string" ? undefined : payload
+      details: readDetails(payload),
+      correlationId: readCorrelationId(payload) || upstreamCorrelationId
     });
   }
 
@@ -201,6 +251,7 @@ async function proxyRequest(req: Request, params: { path: string[] }, correlatio
   copyResponseHeaders(res.headers, responseHeaders);
 
   responseHeaders.set("x-correlation-id", correlationId);
+  responseHeaders.set("x-request-id", correlationId);
 
   return new Response(res.body, {
     status: res.status,

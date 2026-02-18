@@ -76,6 +76,7 @@ export default function VehicleColumn({ route, editable = true }: { route: Route
       });
       setPlan({ ...nextPlan, routes: updatedRoutes });
     } catch {
+      // error-normalization-ignore: keep optimistic route update when metric recompute fails.
       setPlan(nextPlan);
     } finally {
       setRecalculating(false);

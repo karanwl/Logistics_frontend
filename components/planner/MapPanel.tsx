@@ -78,7 +78,7 @@ export default function MapPanel() {
               setMapReady(true);
             }
           } catch {
-            // ignore style readiness race
+            // error-normalization-ignore: style readiness races are expected during map re-styling.
           }
         });
         mapInstance.current.on("error", (event: any) => {
@@ -94,6 +94,7 @@ export default function MapPanel() {
               mapInstance.current.setStyle(FALLBACK_STYLE);
               setMapError("Map service access failed. Showing a basic map view.");
             } catch {
+              // error-normalization-ignore: fallback style set can fail during map teardown.
               setMapError("Unable to load map view.");
             }
           }
@@ -108,7 +109,7 @@ export default function MapPanel() {
       try {
         mapInstance.current?.remove?.();
       } catch {
-        // ignore map teardown errors
+        // error-normalization-ignore: map teardown errors are non-actionable during unmount.
       } finally {
         mapInstance.current = null;
       }
@@ -281,7 +282,7 @@ export default function MapPanel() {
           { padding: 36, duration: 400, maxZoom: 14 }
         );
       } catch {
-        // ignore fit bounds errors for malformed coordinates
+        // error-normalization-ignore: invalid bounds should not break planner rendering.
       }
     }
   }, [plan, mapReady]);
@@ -292,7 +293,7 @@ export default function MapPanel() {
       try {
         mapInstance.current.resize();
       } catch {
-        // ignore map resize errors during teardown
+        // error-normalization-ignore: resize during teardown can throw and is safe to ignore.
       }
     };
     handleResize();
