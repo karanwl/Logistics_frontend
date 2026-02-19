@@ -13,7 +13,7 @@ export default function DeliveryDetailPage({
 }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["delivery-detail", params.deliveryId],
-    queryFn: () => api.get<Record<string, any>>(`/api/deliveries/${encodeURIComponent(params.deliveryId)}/details`),
+    queryFn: () => api.get<Record<string, any>>(`/deliveries/${encodeURIComponent(params.deliveryId)}/details`),
     enabled: Boolean(params.deliveryId)
   });
   const delivery = data || {};

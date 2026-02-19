@@ -394,7 +394,7 @@ export default function SchedulePage() {
       return;
     }
     api
-      .get<Record<string, any>>(`/api/deliveries/${encodeURIComponent(deliveryId)}/details`)
+      .get<Record<string, any>>(`/deliveries/${encodeURIComponent(deliveryId)}/details`)
       .then((detail) => {
         setDrawerDetail(detail || null);
       })
