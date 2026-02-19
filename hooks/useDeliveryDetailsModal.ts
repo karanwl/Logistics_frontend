@@ -16,8 +16,8 @@ export function useDeliveryDetailsModal() {
   const [detailData, setDetailData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const requestSeq = useRef(0);
 
   const close = useCallback(() => {
@@ -127,4 +127,3 @@ export function useDeliveryDetailsModal() {
     close
   };
 }
-

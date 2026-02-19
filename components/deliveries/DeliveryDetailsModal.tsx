@@ -10,8 +10,8 @@ type Props = {
   loading: boolean;
   error?: string;
   onClose: () => void;
-  panelRef: RefObject<HTMLDivElement | null>;
-  closeRef: RefObject<HTMLButtonElement | null>;
+  panelRef: RefObject<HTMLDivElement>;
+  closeRef: RefObject<HTMLButtonElement>;
   titleId?: string;
   containerId?: string;
   bodyId?: string;
@@ -154,4 +154,3 @@ export default function DeliveryDetailsModal({
     </div>
   );
 }
-
