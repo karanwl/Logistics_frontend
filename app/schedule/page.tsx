@@ -856,9 +856,7 @@ export default function SchedulePage() {
         <div className="delivery-popup-panel" role="dialog" aria-modal="true" aria-labelledby="inlineEditTitle">
           <div className="delivery-popup-header">
             <div>
-              <p className="panel-title">Delivery Snapshot</p>
               <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
-              <p className="card-subtitle" id="inlineEditSubtitle">Status, notes, and POD in one place.</p>
             </div>
             <button className="btn btn-secondary icon-only" type="button" aria-label="Close" onClick={closeDrawer}>
               X
@@ -897,13 +895,6 @@ export default function SchedulePage() {
                     <div>
                       <div className="text-xs text-steel-500">Assigned Driver</div>
                       <div className="text-sm">{drawerData.assigned_driver || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Contact</div>
-                      <div className="text-sm">
-                        {drawerData.site_contact || "--"}
-                        {drawerData.site_contact_number ? ` (${drawerData.site_contact_number})` : ""}
-                      </div>
                     </div>
                     <div className="col-span-2">
                       <div className="text-xs text-steel-500">Address</div>
