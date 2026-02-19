@@ -875,32 +875,12 @@ export default function SchedulePage() {
                 <div className="delivery-popup-left">
                   <div className="delivery-popup-summary">
                     <div>
-                      <div className="text-xs text-steel-500">Sales Order</div>
-                      <div className="text-sm">{drawerData.sales_order || "--"}</div>
-                    </div>
-                    <div>
                       <div className="text-xs text-steel-500">Location</div>
                       <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-steel-500">Address</div>
-                      <div className="text-sm">{drawerData.job_address || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Site Contact</div>
-                      <div className="text-sm">{drawerData.site_contact || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Contact Number</div>
-                      <div className="text-sm">{drawerData.site_contact_number || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Status</div>
-                      <div className="text-sm">{drawerData.status || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Assigned Driver</div>
-                      <div className="text-sm">{drawerData.assigned_driver || "--"}</div>
+                      <div className="text-xs text-steel-500">Sales Order</div>
+                      <div className="text-sm">{drawerData.sales_order || "--"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-steel-500">Date</div>
@@ -911,8 +891,23 @@ export default function SchedulePage() {
                       <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
                     </div>
                     <div>
-                      <div className="text-xs text-steel-500">Status Updated</div>
-                      <div className="text-sm">{drawerData.status_updated_at || "--"}</div>
+                      <div className="text-xs text-steel-500">Status</div>
+                      <div className="text-sm">{drawerData.status || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Assigned Driver</div>
+                      <div className="text-sm">{drawerData.assigned_driver || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Contact</div>
+                      <div className="text-sm">
+                        {drawerData.site_contact || "--"}
+                        {drawerData.site_contact_number ? ` (${drawerData.site_contact_number})` : ""}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="text-xs text-steel-500">Address</div>
+                      <div className="text-sm">{drawerData.job_address || "--"}</div>
                     </div>
                   </div>
 
