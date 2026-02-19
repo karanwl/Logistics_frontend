@@ -406,6 +406,15 @@ export default function SchedulePage() {
   };
   const drawerData = drawerDetail || drawerDelivery;
   const drawerPhotoUrls = normalizePhotoUrls(drawerData?.photo_urls).map(resolvePhotoUrl);
+  const deliveryLoads = [
+    { label: "Large Skids", value: Number(drawerData?.large_skid || 0) },
+    { label: "Medium Skids", value: Number(drawerData?.med_skid || 0) },
+    { label: "Small Skids", value: Number(drawerData?.small_skid || 0) },
+    { label: "Doors", value: Number(drawerData?.door || 0) },
+    { label: "Frames", value: Number(drawerData?.frame || 0) },
+    { label: "Express Frames", value: Number(drawerData?.exp_frame || 0) },
+    { label: "Boxes", value: Number(drawerData?.box || 0) }
+  ].filter((item) => item.value > 0);
   const listCellClass = canEdit && editMode ? "py-2 text-center align-middle" : "py-2";
   const listNumberInputClass = "hide-number-spin text-center";
 
@@ -866,10 +875,6 @@ export default function SchedulePage() {
                 <div className="delivery-popup-left">
                   <div className="delivery-popup-summary">
                     <div>
-                      <div className="text-xs text-steel-500">Delivery ID</div>
-                      <div className="text-sm font-semibold">{drawerData.delivery_id || "--"}</div>
-                    </div>
-                    <div>
                       <div className="text-xs text-steel-500">Sales Order</div>
                       <div className="text-sm">{drawerData.sales_order || "--"}</div>
                     </div>
@@ -912,48 +917,19 @@ export default function SchedulePage() {
                   </div>
 
                   <div className="delivery-popup-summary">
-                    <div>
-                      <div className="text-xs text-steel-500">Large Skids</div>
-                      <div className="text-sm">{Number(drawerData.large_skid || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Medium Skids</div>
-                      <div className="text-sm">{Number(drawerData.med_skid || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Small Skids</div>
-                      <div className="text-sm">{Number(drawerData.small_skid || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Doors</div>
-                      <div className="text-sm">{Number(drawerData.door || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Frames</div>
-                      <div className="text-sm">{Number(drawerData.frame || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Express Frames</div>
-                      <div className="text-sm">{Number(drawerData.exp_frame || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Boxes</div>
-                      <div className="text-sm">{Number(drawerData.box || 0)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Pickup</div>
-                      <div className="text-sm">{drawerData.pickup ? "Yes" : "No"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Pickup Vehicle</div>
-                      <div className="text-sm">
-                        {drawerData.pickup ? pickupVehicleLabel(drawerData.pickup_vehicle || "both") : "--"}
+                    {deliveryLoads.length > 0 ? (
+                      deliveryLoads.map((item) => (
+                        <div key={item.label}>
+                          <div className="text-xs text-steel-500">{item.label}</div>
+                          <div className="text-sm">{item.value}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div>
+                        <div className="text-xs text-steel-500">Load</div>
+                        <div className="text-sm">No load items</div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Requires Empty Truck</div>
-                      <div className="text-sm">{drawerData.requires_empty_truck ? "Yes" : "No"}</div>
-                    </div>
+                    )}
                   </div>
 
                   <div>
