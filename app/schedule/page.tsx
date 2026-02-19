@@ -493,9 +493,9 @@ export default function SchedulePage() {
             </div>
             <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} aria-controls="boardView" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} aria-controls="calendarView" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} aria-controls="listView" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -518,9 +518,9 @@ export default function SchedulePage() {
             </div>
             <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} aria-controls="boardView" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} aria-controls="calendarView" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} aria-controls="listView" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -548,13 +548,13 @@ export default function SchedulePage() {
                     <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} /> Editing
                     </label>
                   <Button variant="secondary" onClick={saveChanges} disabled={bulkUpdate.isPending}>Save updates</Button>
-                  <div className="text-xs text-steel-500">{saveStatus}</div>
+                  <div className="text-xs text-steel-500" aria-live="polite">{saveStatus}</div>
                 </>
               ) : null}
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} aria-controls="boardView" onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} aria-controls="calendarView" onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} aria-controls="listView" onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -568,7 +568,7 @@ export default function SchedulePage() {
         <section className="board-shell">
           <div id="scheduleBoard" className="planner-board scroll-area">
             <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+              <div className="schedule-board-grid grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 {days.map((d) => {
                   const key = formatDate(d);
                   return (
@@ -585,12 +585,12 @@ export default function SchedulePage() {
       <div id="calendarView" className={view === "calendar" ? "" : "hidden"}>
         <section className="calendar-shell">
           <div id="scheduleCalendar" className="planner-calendar scroll-area p-4">
-            <div className="grid grid-cols-7 gap-2 text-xs text-steel-500">
+            <div className="schedule-calendar-head grid grid-cols-7 gap-2 text-xs text-steel-500">
               {"Mon Tue Wed Thu Fri Sat Sun".split(" ").map((d) => (
                 <div key={d}>{d}</div>
               ))}
             </div>
-            <div className="mt-2 grid grid-cols-7 gap-2">
+            <div className="schedule-calendar-days mt-2 grid grid-cols-7 gap-2">
               {calendarDays.map((d) => {
                 const key = formatDate(d);
                 const inMonth = toMonthKey(d) === toMonthKey(monthDate);
@@ -740,7 +740,7 @@ export default function SchedulePage() {
                       {canEdit && editMode ? (
                         <div className="grid grid-cols-2 gap-2 justify-center">
                           <select
-                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
+                            className="h-11 md:h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_start || ""}
                             onChange={(e) => updateEdit(d.delivery_id, { window_start: e.target.value })}
                           >
@@ -750,7 +750,7 @@ export default function SchedulePage() {
                             ))}
                           </select>
                           <select
-                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
+                            className="h-11 md:h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_end || ""}
                             onChange={(e) => updateEdit(d.delivery_id, { window_end: e.target.value })}
                           >
@@ -780,7 +780,7 @@ export default function SchedulePage() {
                     <td className={`${listCellClass} min-w-[8rem]`}>
                       {canEdit && editMode ? (
                         <select
-                          className="h-10 w-full rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
+                          className="h-11 md:h-10 w-full rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                           defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
                           onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
                         >

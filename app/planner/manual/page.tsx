@@ -326,7 +326,7 @@ function ManualPlannerWorkspace() {
               <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Add Vehicle</div>
               <div className="mt-2 flex items-center gap-2">
                 <select
-                  className="h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
+                  className="h-11 md:h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
                   value={newVehicleType}
                   onChange={(e) => setNewVehicleType(e.target.value)}
                 >
@@ -343,7 +343,7 @@ function ManualPlannerWorkspace() {
               <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Depot Restock</div>
               <div className="mt-2 flex items-center gap-2">
                 <select
-                  className="h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
+                  className="h-11 md:h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
                   value={reloadVehicleId}
                   onChange={(e) => setReloadVehicleId(e.target.value)}
                   disabled={!vehicleIds.length}

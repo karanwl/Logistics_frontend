@@ -330,7 +330,7 @@ export default function PlannerDashboardPage() {
               <DatePickerInput value={endDate} onChange={setEndDate} />
               <label className="text-xs text-steel-500">Vehicle</label>
               <select
-                className="h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
+                className="h-11 md:h-9 rounded-md border border-steel-200 bg-white px-2 text-xs"
                 value={vehicleFilter}
                 onChange={(event) => setVehicleFilter(event.target.value as VehicleFilter)}
               >
@@ -342,13 +342,13 @@ export default function PlannerDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button className="h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(7)}>
+            <button className="h-10 md:h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(7)}>
               Last 7 Days
             </button>
-            <button className="h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(30)}>
+            <button className="h-10 md:h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(30)}>
               Last 30 Days
             </button>
-            <button className="h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(90)}>
+            <button className="h-10 md:h-8 rounded-md border border-steel-200 px-2 text-xs" onClick={() => applyPreset(90)}>
               Last 90 Days
             </button>
           </div>
@@ -429,7 +429,7 @@ export default function PlannerDashboardPage() {
               <label className="text-xs text-steel-600">
                 Cost per km (CAD)
                 <input
-                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  className="mt-1 h-11 md:h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={costPerKmInput}
                   onChange={(event) => setCostPerKmInput(event.target.value)}
                   inputMode="decimal"
@@ -438,7 +438,7 @@ export default function PlannerDashboardPage() {
               <label className="text-xs text-steel-600">
                 Labor per hour (CAD)
                 <input
-                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  className="mt-1 h-11 md:h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={laborPerHourInput}
                   onChange={(event) => setLaborPerHourInput(event.target.value)}
                   inputMode="decimal"
@@ -447,7 +447,7 @@ export default function PlannerDashboardPage() {
               <label className="text-xs text-steel-600">
                 Cost per day (CAD)
                 <input
-                  className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+                  className="mt-1 h-11 md:h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
                   value={routeCostInput}
                   onChange={(event) => setRouteCostInput(event.target.value)}
                   inputMode="decimal"
@@ -601,13 +601,13 @@ export default function PlannerDashboardPage() {
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="border-b border-steel-100 text-steel-500">
-                    <th className="px-2 py-2 text-left font-semibold">Date</th>
-                    <th className="px-2 py-2 text-right font-semibold">Original Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">Final Stops</th>
-                    <th className="px-2 py-2 text-right font-semibold">Stop Change</th>
-                    <th className="px-2 py-2 text-right font-semibold">Distance Saved</th>
-                    <th className="px-2 py-2 text-right font-semibold">Time Saved</th>
-                    <th className="px-2 py-2 text-right font-semibold">Route Change</th>
+                    <th scope="col" className="px-2 py-2 text-left font-semibold">Date</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Original Stops</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Final Stops</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Stop Change</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Distance Saved</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Time Saved</th>
+                    <th scope="col" className="px-2 py-2 text-right font-semibold">Route Change</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -667,6 +667,7 @@ function ImpactCell({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={Boolean(onClick && active)}
       className={`rounded-lg border px-3 py-2 text-left ${metricToneCard(toneValue)} ${onClick ? "cursor-pointer hover:opacity-90" : "cursor-default"} ${
         active ? "ring-2 ring-ink-900/20" : ""
       }`}
@@ -691,7 +692,8 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`h-8 rounded-full border px-3 text-xs ${
+      aria-pressed={active}
+      className={`h-10 md:h-8 rounded-full border px-3 text-xs ${
         active ? "border-ink-900 bg-ink-900 text-white" : "border-steel-200 bg-white text-steel-700"
       }`}
     >

@@ -190,7 +190,7 @@ export default function UnassignedPanel({
           <div className="mt-2">
             <label className="text-[11px] font-semibold uppercase text-steel-500">Vehicle</label>
             <select
-              className="mt-1 h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
+              className="mt-1 h-11 md:h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
               value={targetVehicleId}
               onChange={(e) => setTargetVehicleId(e.target.value)}
               disabled={vehicleIds.length === 0}

@@ -74,11 +74,11 @@ function MatrixTable({
         <table className="min-w-max w-full text-xs">
           <thead>
             <tr className="bg-steel-50">
-              <th className="sticky left-0 z-20 border-b border-r border-steel-200 bg-steel-50 px-2 py-1 text-left">
+              <th scope="col" className="sticky left-0 z-20 border-b border-r border-steel-200 bg-steel-50 px-2 py-1 text-left">
                 From / To
               </th>
               {nodes.map((node) => (
-                <th key={`col-${node.node}`} className="border-b border-steel-200 px-2 py-1 text-left whitespace-nowrap">
+                <th scope="col" key={`col-${node.node}`} className="border-b border-steel-200 px-2 py-1 text-left whitespace-nowrap">
                   {nodeHeading(node)}
                 </th>
               ))}
@@ -87,7 +87,7 @@ function MatrixTable({
           <tbody>
             {matrix.map((row, rowIdx) => (
               <tr key={`row-${rowIdx}`} className="odd:bg-white even:bg-steel-50/40">
-                <th className="sticky left-0 z-10 border-r border-steel-200 bg-white px-2 py-1 text-left whitespace-nowrap">
+                <th scope="row" className="sticky left-0 z-10 border-r border-steel-200 bg-white px-2 py-1 text-left whitespace-nowrap">
                   {nodeHeading(nodes[rowIdx] || { node: rowIdx, label: `Point ${rowIdx}` })}
                 </th>
                 {Array.isArray(row)
@@ -152,12 +152,12 @@ export default function PlannerMatrixDebugPage() {
           <div className="grid gap-3 lg:grid-cols-6">
             <div>
               <label className="text-xs text-steel-500">Plan Date</label>
-              <DatePickerInput className="mt-1 h-9" value={date} onChange={setDate} />
+              <DatePickerInput className="mt-1 h-11 md:h-9" value={date} onChange={setDate} />
             </div>
             <div>
               <label className="text-xs text-steel-500">Trucks</label>
               <Input
-                className="mt-1 h-9"
+                className="mt-1 h-11 md:h-9"
                 type="number"
                 min={0}
                 value={trucks}
@@ -167,7 +167,7 @@ export default function PlannerMatrixDebugPage() {
             <div>
               <label className="text-xs text-steel-500">Vans</label>
               <Input
-                className="mt-1 h-9"
+                className="mt-1 h-11 md:h-9"
                 type="number"
                 min={0}
                 value={vans}
@@ -177,7 +177,7 @@ export default function PlannerMatrixDebugPage() {
             <div className="lg:col-span-3">
               <label className="text-xs text-steel-500">Primary stop order (optional comma list)</label>
               <Input
-                className="mt-1 h-9"
+                className="mt-1 h-11 md:h-9"
                 value={routeNodes}
                 onChange={(e) => setRouteNodes(e.target.value)}
                 placeholder="Example: 4,7,9,3"
@@ -186,7 +186,7 @@ export default function PlannerMatrixDebugPage() {
             <div className="lg:col-span-3">
               <label className="text-xs text-steel-500">Comparison stop order (optional comma list)</label>
               <Input
-                className="mt-1 h-9"
+                className="mt-1 h-11 md:h-9"
                 value={compareNodes}
                 onChange={(e) => setCompareNodes(e.target.value)}
                 placeholder="Example: 4,9,7,3"
@@ -313,9 +313,9 @@ export default function PlannerMatrixDebugPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-steel-50">
-                      <th className="px-2 py-1 text-left">Point</th>
-                      <th className="px-2 py-1 text-left">Label</th>
-                      <th className="px-2 py-1 text-left">Related Items</th>
+                      <th scope="col" className="px-2 py-1 text-left">Point</th>
+                      <th scope="col" className="px-2 py-1 text-left">Label</th>
+                      <th scope="col" className="px-2 py-1 text-left">Related Items</th>
                     </tr>
                   </thead>
                   <tbody>

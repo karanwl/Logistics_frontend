@@ -72,15 +72,39 @@ export function DatePickerInput({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open]);
+
   useLayoutEffect(() => {
     if (!open || !inputRef.current) return;
     const update = () => {
       if (!inputRef.current) return;
       const rect = inputRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const horizontalPadding = 8;
+      const dropdownWidth = Math.min(332, viewportWidth - horizontalPadding * 2);
+      const desiredLeft = rect.left;
+      const maxLeft = viewportWidth - dropdownWidth - horizontalPadding;
+      const left = Math.max(horizontalPadding, Math.min(desiredLeft, maxLeft));
+      const dropdownHeight = 360;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const top = spaceBelow >= dropdownHeight
+        ? rect.bottom + 8
+        : Math.max(horizontalPadding, rect.top - dropdownHeight - 8);
       setDropdownStyle({
         position: "fixed",
-        top: rect.bottom + 8,
-        left: rect.left,
+        top,
+        left,
+        width: dropdownWidth,
+        maxHeight: viewportHeight - horizontalPadding * 2,
+        overflow: "auto",
         zIndex: 9999
       });
     };
@@ -113,6 +137,8 @@ export function DatePickerInput({
               ref={dropdownRef}
               style={dropdownStyle}
               className="rounded-xl border border-steel-200 bg-white/95 p-2 shadow-soft backdrop-blur"
+              role="dialog"
+              aria-label="Date picker"
             >
               <DayPicker
                 mode="single"
