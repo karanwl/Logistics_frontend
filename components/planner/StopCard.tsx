@@ -24,6 +24,13 @@ function normalizeDeliveryProgress(delivery?: DeliveryDTO): LiveProgress | null 
   return "upcoming";
 }
 
+function resolveStopDeliveryId(stopItem: RouteStopItem): string {
+  const candidate = (stopItem as RouteStopItem & { delivery_id?: unknown; job_id?: unknown }).id
+    ?? (stopItem as RouteStopItem & { delivery_id?: unknown; job_id?: unknown }).delivery_id
+    ?? (stopItem as RouteStopItem & { delivery_id?: unknown; job_id?: unknown }).job_id;
+  return asText(candidate);
+}
+
 function progressLabel(value: LiveProgress): string {
   if (value === "done") return "Delivered";
   if (value === "current") return "Current";
@@ -113,9 +120,10 @@ export default function StopCard({
   const departure = stopTime?.departure_s != null
     ? formatFromSeconds(stopTime?.departure_s)
     : formatFromHHMM(stopTime?.departure_hhmm);
-  const deliveryStops = stop.filter((s) => s.type === "delivery" && s.id);
-  const uniqueIds = Array.from(new Set(deliveryStops.map((s) => String(s.id))));
+  const deliveryStops = stop.filter((s) => s.type === "delivery");
+  const uniqueIds = Array.from(new Set(deliveryStops.map((s) => resolveStopDeliveryId(s)).filter(Boolean)));
   const primaryDeliveryId = uniqueIds[0] || "";
+  const canOpenDeliveryDetails = Boolean(!editable && onOpenDeliveryDetails && primaryDeliveryId);
   const deliveries = deliveriesById
     ? uniqueIds.map((id) => deliveriesById.get(id)).filter(Boolean) as DeliveryDTO[]
     : [];
@@ -150,8 +158,9 @@ export default function StopCard({
         return acc;
       }
 
-      if (!stopItem.id || !deliveriesById) return acc;
-      const delivery = deliveriesById.get(String(stopItem.id));
+      const stopDeliveryId = resolveStopDeliveryId(stopItem);
+      if (!stopDeliveryId || !deliveriesById) return acc;
+      const delivery = deliveriesById.get(stopDeliveryId);
       if (!delivery) return acc;
 
       const deliveryUnits = delivery.capacity_units || 0;
@@ -251,10 +260,10 @@ export default function StopCard({
       ref={setNodeRef}
       style={style}
       className={`w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-ink-900 ${stopLiveShell} ${
-        onOpenDeliveryDetails && primaryDeliveryId ? "cursor-pointer" : ""
+        canOpenDeliveryDetails ? "cursor-pointer" : ""
       }`}
       onClick={() => {
-        if (!onOpenDeliveryDetails || !primaryDeliveryId) return;
+        if (!canOpenDeliveryDetails || !onOpenDeliveryDetails || !primaryDeliveryId) return;
         onOpenDeliveryDetails(primaryDeliveryId);
       }}
       {...(editable ? attributes : {})}

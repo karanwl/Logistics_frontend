@@ -258,7 +258,7 @@ function LivePlannerWorkspace({
           ) : (
             <RouteBoard
               editable={editMode && canEdit}
-              onOpenDeliveryDetails={(deliveryId) => deliveryDetailsModal.open({ deliveryId })}
+              onOpenDeliveryDetails={!editMode ? (deliveryId) => deliveryDetailsModal.open({ deliveryId }) : undefined}
             />
           )}
         </div>
