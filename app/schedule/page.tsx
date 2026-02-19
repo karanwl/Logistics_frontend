@@ -493,9 +493,9 @@ export default function SchedulePage() {
             </div>
             <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -518,9 +518,9 @@ export default function SchedulePage() {
             </div>
             <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -552,9 +552,9 @@ export default function SchedulePage() {
                 </>
               ) : null}
               <div className="view-toggle" role="group" aria-label="View type">
-                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
-                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
-                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => setView("list")}>List view</button>
+                <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" aria-pressed={view === "board"} onClick={() => setView("board")}>Board view</button>
+                <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" aria-pressed={view === "calendar"} onClick={() => setView("calendar")}>Calendar view</button>
+                <button className={`toggle-btn ${view === "list" ? "is-active" : ""}`} type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>List view</button>
               </div>
             </div>
           </div>
@@ -622,83 +622,83 @@ export default function SchedulePage() {
               <thead className="text-xs text-steel-500 sticky top-0 bg-white/90 backdrop-blur z-10">
                 <tr>
                 {canEdit && editMode && (
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("ps_delivered")}>
                       Packing Slip Sent {sort.key === "ps_delivered" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
                 )}
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("scheduled_date")}>
                       Scheduled Date {sort.key === "scheduled_date" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("job_name")}>
                       Location {sort.key === "job_name" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("sales_order")}>
                       Sales Order # {sort.key === "sales_order" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("window_start")}>
                       Delivery Window {sort.key === "window_start" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("pickup")}>
                       Pickup? {sort.key === "pickup" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("pickup_vehicle")}>
                       Pickup Vehicle {sort.key === "pickup_vehicle" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("requires_empty_truck")}>
                       Needs Empty Truck {sort.key === "requires_empty_truck" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("large_skid")}>
                       Large Skids {sort.key === "large_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("med_skid")}>
                       Medium Skids {sort.key === "med_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("small_skid")}>
                       Small Skids {sort.key === "small_skid" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("door")}>
                       Doors {sort.key === "door" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("frame")}>
                       Frames {sort.key === "frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("exp_frame")}>
                       Express Frames {sort.key === "exp_frame" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">
+                  <th scope="col" className="text-left py-2">
                     <button type="button" className="hover:text-ink-900" onClick={() => toggleSort("box")}>
                       Boxes {sort.key === "box" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  {!editMode && <th className="text-left py-2">Actions</th>}
+                  {!editMode && <th scope="col" className="text-left py-2">Actions</th>}
                 </tr>
               </thead>
               <tbody>

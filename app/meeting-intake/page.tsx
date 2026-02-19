@@ -349,7 +349,11 @@ export default function MeetingIntakePage() {
                     }}
                   />
                   {openJobsiteIndex === idx ? (
-                    <div className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
+                    <div
+                      className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft"
+                      role="listbox"
+                      aria-label="Suggested locations"
+                    >
                       {normalizedJobsites
                         .filter((jobsite) =>
                           jobsite.name.toLowerCase().includes(row.jobsite_query.toLowerCase())
@@ -360,6 +364,7 @@ export default function MeetingIntakePage() {
                             type="button"
                             key={jobsite.id}
                             className="block w-full px-2 py-1 text-left hover:bg-steel-50"
+                            role="option"
                             onMouseDown={(event) => {
                               event.preventDefault();
                               selectJobsite(idx, jobsite);
@@ -431,6 +436,7 @@ export default function MeetingIntakePage() {
                   className="h-11 md:h-9 w-full rounded-none border-0 text-xs text-steel-500 hover:bg-steel-100 hover:text-ink-900"
                   onClick={() => removeRow(idx)}
                   disabled={rows.length === 1 && isRowEmpty(row)}
+                  aria-label={`Remove row ${idx + 1}`}
                 >
                   X
                 </button>

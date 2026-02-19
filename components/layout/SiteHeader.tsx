@@ -70,6 +70,7 @@ export default function SiteHeader({
             className="site-nav-toggle"
             aria-expanded={menuOpen}
             aria-controls={navId}
+            aria-label="Toggle navigation menu"
             onClick={() => setMenuOpen((open) => !open)}
           >
             {menuOpen ? "Close" : "Menu"}
@@ -89,6 +90,7 @@ export default function SiteHeader({
                   type="button"
                   className={`${className} site-nav-blocked`}
                   aria-disabled="true"
+                  aria-current={active ? "page" : undefined}
                   onClick={() => {
                     link.onClick?.();
                     setMenuOpen(false);
@@ -103,6 +105,7 @@ export default function SiteHeader({
                 <button
                   key={link.href}
                   type="button"
+                  aria-current={active ? "page" : undefined}
                   onClick={() => {
                     link.onClick?.();
                     setMenuOpen(false);
@@ -119,6 +122,7 @@ export default function SiteHeader({
                   key={link.href}
                   type="button"
                   className={className}
+                  aria-current={active ? "page" : undefined}
                   onClick={() => {
                     (link.onClick || (() => (window.location.href = "/auth/login")))();
                     setMenuOpen(false);
@@ -129,7 +133,13 @@ export default function SiteHeader({
               );
             }
             return (
-              <Link key={link.href} href={link.href} className={className} onClick={() => setMenuOpen(false)}>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={className}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
                 {link.label}
               </Link>
             );
