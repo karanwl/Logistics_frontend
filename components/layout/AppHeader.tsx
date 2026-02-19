@@ -75,7 +75,7 @@ export default function AppHeader() {
 
   return (
     <SiteHeader
-      title="Logistics Planner"
+      title="DeliveryOS"
       subtitle={isAuthPage ? "Operations Console" : subtitle}
       links={filteredLinks}
       currentPath={pathname || ""}

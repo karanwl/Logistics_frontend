@@ -7,7 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 const sora = Sora({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "Logistics Operations",
+  title: "DeliveryOS",
   description: "Delivery planning and operations management"
 };
 

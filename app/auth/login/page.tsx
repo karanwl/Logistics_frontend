@@ -55,7 +55,7 @@ export default function LoginPage() {
       <div className="auth-layout">
         <section className="auth-hero">
           <div className="auth-badge">Secure Access</div>
-          <h1 className="auth-title">Logistics Operations</h1>
+          <h1 className="auth-title">DeliveryOS</h1>
           <p className="auth-subtitle">
             Plan daily delivery work, keep teams aligned, and track progress from one place.
           </p>

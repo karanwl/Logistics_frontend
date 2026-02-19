@@ -1028,7 +1028,7 @@ export default function SchedulePage() {
       />
 
       <footer className="site-footer">
-        <div>Logistics Operations</div>
+        <div>DeliveryOS</div>
         <div>Delivery planning workspace</div>
       </footer>
     </AppShell>
