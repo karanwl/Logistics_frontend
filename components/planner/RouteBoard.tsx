@@ -6,7 +6,13 @@ import { useDndPlanner } from "@/hooks/useDndPlanner";
 import VehicleColumn from "@/components/planner/VehicleColumn";
 import { Badge } from "@/components/ui/badge";
 
-export default function RouteBoard({ editable = true }: { editable?: boolean }) {
+export default function RouteBoard({
+  editable = true,
+  onOpenDeliveryDetails
+}: {
+  editable?: boolean;
+  onOpenDeliveryDetails?: (deliveryId: string) => void;
+}) {
   const { routes, onDragEnd } = useDndPlanner(editable);
   const stopCount = routes.reduce((sum, route) => sum + (route.stops?.length || 0), 0);
 
@@ -37,7 +43,7 @@ export default function RouteBoard({ editable = true }: { editable?: boolean }) 
                 strategy={verticalListSortingStrategy}
               >
                 <div className="min-w-0">
-                  <VehicleColumn route={route} editable={editable} />
+                  <VehicleColumn route={route} editable={editable} onOpenDeliveryDetails={onOpenDeliveryDetails} />
                 </div>
               </SortableContext>
             ))}

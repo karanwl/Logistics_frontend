@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/layout/AppShell";
+import DeliveryDetailsModal from "@/components/deliveries/DeliveryDetailsModal";
 import RouteBoard from "@/components/planner/RouteBoard";
 import UnassignedPanel from "@/components/planner/UnassignedPanel";
 import { Button } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { useDeliveryDetailsModal } from "@/hooks/useDeliveryDetailsModal";
 import { useFormError } from "@/hooks/useFormError";
 import { PlannerStateProvider, usePlannerState } from "@/hooks/usePlannerState";
 import { useLiveToday, usePublishedPlan, usePublishPlan } from "@/lib/api/planner";
@@ -126,6 +128,7 @@ function LivePlannerWorkspace({
   const publish = usePublishPlan();
   const [editMode, setEditMode] = useState(true);
   const [saveMessage, setSaveMessage] = useState("");
+  const deliveryDetailsModal = useDeliveryDetailsModal();
   const { formError, clearFormError, setFormError } = useFormError("Could not save updates.");
 
   const summary = liveQuery.data?.summary || {
@@ -253,7 +256,10 @@ function LivePlannerWorkspace({
               <div className="empty-state">No final plan is available for today yet.</div>
             </section>
           ) : (
-            <RouteBoard editable={editMode && canEdit} />
+            <RouteBoard
+              editable={editMode && canEdit}
+              onOpenDeliveryDetails={(deliveryId) => deliveryDetailsModal.open({ deliveryId })}
+            />
           )}
         </div>
 
@@ -261,6 +267,18 @@ function LivePlannerWorkspace({
           <UnassignedPanel editable={editMode && canEdit} planDate={selectedDate} />
         </div>
       </div>
+
+      <DeliveryDetailsModal
+        open={deliveryDetailsModal.isOpen}
+        deliveryId={deliveryDetailsModal.deliveryId}
+        data={deliveryDetailsModal.data}
+        loading={deliveryDetailsModal.loading}
+        error={deliveryDetailsModal.error}
+        onClose={deliveryDetailsModal.close}
+        panelRef={deliveryDetailsModal.panelRef}
+        closeRef={deliveryDetailsModal.closeRef}
+        titleId="liveDeliveryDetailsTitle"
+      />
     </div>
   );
 }

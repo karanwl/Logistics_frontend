@@ -54,7 +54,8 @@ export default function StopCard({
   deliveriesById,
   stopTime,
   editable = true,
-  onAddPickupCustomStop
+  onAddPickupCustomStop,
+  onOpenDeliveryDetails
 }: {
   id: string;
   vehicleId: string | number;
@@ -71,6 +72,7 @@ export default function StopCard({
   };
   editable?: boolean;
   onAddPickupCustomStop?: (deliveryId: string) => void;
+  onOpenDeliveryDetails?: (deliveryId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id,
@@ -113,6 +115,7 @@ export default function StopCard({
     : formatFromHHMM(stopTime?.departure_hhmm);
   const deliveryStops = stop.filter((s) => s.type === "delivery" && s.id);
   const uniqueIds = Array.from(new Set(deliveryStops.map((s) => String(s.id))));
+  const primaryDeliveryId = uniqueIds[0] || "";
   const deliveries = deliveriesById
     ? uniqueIds.map((id) => deliveriesById.get(id)).filter(Boolean) as DeliveryDTO[]
     : [];
@@ -247,7 +250,13 @@ export default function StopCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-ink-900 ${stopLiveShell}`}
+      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors hover:border-ink-900 ${stopLiveShell} ${
+        onOpenDeliveryDetails && primaryDeliveryId ? "cursor-pointer" : ""
+      }`}
+      onClick={() => {
+        if (!onOpenDeliveryDetails || !primaryDeliveryId) return;
+        onOpenDeliveryDetails(primaryDeliveryId);
+      }}
       {...(editable ? attributes : {})}
       {...(editable ? listeners : {})}
     >

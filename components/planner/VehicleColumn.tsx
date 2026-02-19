@@ -6,7 +6,15 @@ import { useDrivers } from "@/lib/api/planner";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 
-export default function VehicleColumn({ route, editable = true }: { route: RouteDTO; editable?: boolean }) {
+export default function VehicleColumn({
+  route,
+  editable = true,
+  onOpenDeliveryDetails
+}: {
+  route: RouteDTO;
+  editable?: boolean;
+  onOpenDeliveryDetails?: (deliveryId: string) => void;
+}) {
   const { plan, setPlan } = usePlannerState();
   const driversQuery = useDrivers();
   const [recalculating, setRecalculating] = useState(false);
@@ -181,6 +189,7 @@ export default function VehicleColumn({ route, editable = true }: { route: Route
               stopTime={route.stop_times?.[index]}
               editable={editable}
               onAddPickupCustomStop={(deliveryId) => addPickupCustomStop(index, deliveryId)}
+              onOpenDeliveryDetails={onOpenDeliveryDetails}
             />
           );
         })}

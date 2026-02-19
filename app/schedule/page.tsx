@@ -1,17 +1,18 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DndContext, closestCenter, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import AppShell from "@/components/layout/AppShell";
+import DeliveryDetailsModal from "@/components/deliveries/DeliveryDetailsModal";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { Input } from "@/components/ui/input";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
+import { useDeliveryDetailsModal } from "@/hooks/useDeliveryDetailsModal";
 import { useFormError } from "@/hooks/useFormError";
 import { useCurrentUser } from "@/lib/api/auth";
-import { api } from "@/lib/api/client";
 import {
   useDeliveries,
   useRescheduleDelivery,
@@ -19,8 +20,6 @@ import {
   useDeleteDelivery
 } from "@/lib/api/planner";
 import { startOfWeek, addDays, formatDate } from "@/lib/utils/dates";
-import { readErrorMessage } from "@/lib/errors/client";
-import { normalizePhotoUrls, resolvePhotoUrl } from "@/lib/utils/photos";
 
 const MONTH_NAMES = [
   "January",
@@ -176,13 +175,7 @@ export default function SchedulePage() {
   const [saveStatus, setSaveStatus] = useState("");
   const [edits, setEdits] = useState<Record<string, any>>({});
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerDelivery, setDrawerDelivery] = useState<any | null>(null);
-  const [drawerDetail, setDrawerDetail] = useState<any | null>(null);
-  const [drawerLoading, setDrawerLoading] = useState(false);
-  const [drawerError, setDrawerError] = useState("");
-  const drawerPanelRef = useRef<HTMLDivElement | null>(null);
-  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
+  const deliveryDetailsModal = useDeliveryDetailsModal();
   const { formError, clearFormError, setFormError } = useFormError("Could not save schedule changes.");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "scheduled_date",
@@ -383,28 +376,10 @@ export default function SchedulePage() {
 
   const openDrawer = (delivery: any) => {
     const deliveryId = String(delivery?.delivery_id || "").trim();
-    setDrawerDelivery({ ...delivery, delivery_id: deliveryId });
-    setDrawerDetail(null);
-    setDrawerError("");
-    setDrawerLoading(true);
-    setDrawerOpen(true);
-    if (!deliveryId) {
-      setDrawerLoading(false);
-      setDrawerError("Missing delivery id.");
-      return;
-    }
-    api
-      .get<Record<string, any>>(`/deliveries/${encodeURIComponent(deliveryId)}/details`)
-      .then((detail) => {
-        setDrawerDetail(detail || null);
-      })
-      .catch((err: unknown) => {
-        const message = readErrorMessage(err, "Could not load delivery details.");
-        setDrawerError(message);
-      })
-      .finally(() => {
-        setDrawerLoading(false);
-      });
+    deliveryDetailsModal.open({
+      deliveryId,
+      preview: { ...delivery, delivery_id: deliveryId }
+    });
   };
 
   const handleDelete = async (deliveryId: string) => {
@@ -419,77 +394,6 @@ export default function SchedulePage() {
     }
   };
 
-  const closeDrawer = useCallback(() => {
-    setDrawerOpen(false);
-    setDrawerDelivery(null);
-    setDrawerDetail(null);
-    setDrawerLoading(false);
-    setDrawerError("");
-  }, []);
-
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const panel = drawerPanelRef.current;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const previouslyLocked = document.body.style.overflow;
-
-    const getFocusable = () =>
-      panel
-        ? Array.from(
-            panel.querySelectorAll<HTMLElement>(
-              'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            )
-          )
-        : [];
-
-    window.setTimeout(() => {
-      drawerCloseRef.current?.focus();
-    }, 0);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeDrawer();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = getFocusable();
-      if (focusable.length === 0) {
-        event.preventDefault();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previouslyLocked;
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocus?.focus();
-    };
-  }, [closeDrawer, drawerOpen]);
-
-  const drawerData = drawerDetail || drawerDelivery;
-  const drawerPhotoUrls = normalizePhotoUrls(drawerData?.photo_urls).map(resolvePhotoUrl);
-  const deliveryLoads = [
-    { label: "Large Skids", value: Number(drawerData?.large_skid || 0) },
-    { label: "Medium Skids", value: Number(drawerData?.med_skid || 0) },
-    { label: "Small Skids", value: Number(drawerData?.small_skid || 0) },
-    { label: "Doors", value: Number(drawerData?.door || 0) },
-    { label: "Frames", value: Number(drawerData?.frame || 0) },
-    { label: "Express Frames", value: Number(drawerData?.exp_frame || 0) },
-    { label: "Boxes", value: Number(drawerData?.box || 0) }
-  ].filter((item) => item.value > 0);
   const listCellClass = canEdit && editMode ? "py-2 text-center align-middle" : "py-2";
   const listNumberInputClass = "hide-number-spin text-center";
 
@@ -1109,112 +1013,19 @@ export default function SchedulePage() {
         </section>
       </div>
 
-      <div id="inlineEditDrawer" className={`delivery-popup ${drawerOpen ? "" : "is-hidden"}`} aria-hidden={!drawerOpen}>
-        <div className="delivery-popup-backdrop" onClick={closeDrawer} />
-        <div
-          className="delivery-popup-panel"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="inlineEditTitle"
-          tabIndex={-1}
-          ref={drawerPanelRef}
-        >
-          <div className="delivery-popup-header">
-            <div>
-              <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
-            </div>
-            <button
-              className="btn btn-secondary icon-only"
-              type="button"
-              aria-label="Close"
-              onClick={closeDrawer}
-              ref={drawerCloseRef}
-            >
-              X
-            </button>
-          </div>
-
-          <div id="inlineEditBody" className="delivery-popup-body">
-            {!drawerData ? (
-              <div className="empty-state">No delivery selected.</div>
-            ) : drawerLoading ? (
-              <div className="empty-state">Loading delivery details...</div>
-            ) : (
-              <div className="delivery-popup-layout">
-                <div className="delivery-popup-left">
-                  <div className="delivery-popup-summary">
-                    <div>
-                      <div className="text-xs text-steel-500">Location</div>
-                      <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Sales Order</div>
-                      <div className="text-sm">{drawerData.sales_order || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Date</div>
-                      <div className="text-sm">{drawerData.scheduled_date || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Window</div>
-                      <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Status</div>
-                      <div className="text-sm">{drawerData.status || "--"}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-steel-500">Assigned Driver</div>
-                      <div className="text-sm">{drawerData.assigned_driver || "--"}</div>
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-xs text-steel-500">Address</div>
-                      <div className="text-sm">{drawerData.job_address || "--"}</div>
-                    </div>
-                  </div>
-
-                  <div className="delivery-popup-summary">
-                    {deliveryLoads.length > 0 ? (
-                      deliveryLoads.map((item) => (
-                        <div key={item.label}>
-                          <div className="text-xs text-steel-500">{item.label}</div>
-                          <div className="text-sm">{item.value}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div>
-                        <div className="text-xs text-steel-500">Load</div>
-                        <div className="text-sm">No load items</div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="text-xs text-steel-500">Driver Notes</div>
-                    <div className="delivery-popup-notes">{drawerData.driver_notes || "No notes"}</div>
-                  </div>
-                </div>
-
-                <div className="delivery-popup-right">
-                  <div className="text-xs text-steel-500">POD Photos</div>
-                  {drawerPhotoUrls.length > 0 ? (
-                    <div className="delivery-popup-pod-stack">
-                      {drawerPhotoUrls.map((url) => (
-                        <a key={url} href={url} target="_blank" rel="noreferrer" className="delivery-popup-pod-link">
-                          <img src={url} alt="POD" className="delivery-popup-pod-image" loading="lazy" />
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-steel-500">No POD photos uploaded yet.</div>
-                  )}
-                </div>
-              </div>
-            )}
-            {drawerError ? <div className="mt-2 text-xs text-red-600">{drawerError}</div> : null}
-          </div>
-        </div>
-      </div>
+      <DeliveryDetailsModal
+        open={deliveryDetailsModal.isOpen}
+        deliveryId={deliveryDetailsModal.deliveryId}
+        data={deliveryDetailsModal.data}
+        loading={deliveryDetailsModal.loading}
+        error={deliveryDetailsModal.error}
+        onClose={deliveryDetailsModal.close}
+        panelRef={deliveryDetailsModal.panelRef}
+        closeRef={deliveryDetailsModal.closeRef}
+        titleId="inlineEditTitle"
+        containerId="inlineEditDrawer"
+        bodyId="inlineEditBody"
+      />
 
       <footer className="site-footer">
         <div>Logistics Operations</div>
