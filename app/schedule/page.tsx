@@ -633,7 +633,7 @@ export default function SchedulePage() {
                       Boxes {sort.key === "box" ? (sort.dir === "asc" ? "▲" : "▼") : ""}
                     </button>
                   </th>
-                  <th className="text-left py-2">Actions</th>
+                  {!editMode && <th className="text-left py-2">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -784,36 +784,50 @@ export default function SchedulePage() {
                         d.box || 0
                       )}
                     </td>
-                    <td className="py-2">
-                      <div className="flex items-center gap-2">
-                        <Button asChild variant="outline" size="sm">
+                    {!editMode && (
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
                           <Link
+                            className="btn btn-secondary icon-only inline-flex items-center justify-center"
                             href={`/deliveries/${encodeURIComponent(String(d.delivery_id || ""))}`}
                             target="_blank"
                             rel="noreferrer"
+                            aria-label="View POD"
                           >
-                            View POD
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+                              <circle cx="12" cy="12" r="2.5" />
+                            </svg>
+                            <span className="sr-only">View POD</span>
                           </Link>
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={async () => {
-                            const ok = window.confirm("Delete this delivery?");
-                            if (!ok) return;
-                            clearFormError();
-                            try {
-                              await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
-                              refetch();
-                            } catch (error: unknown) {
-                              setFormError(error, "Could not delete delivery.");
-                            }
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </td>
+                          <button
+                            type="button"
+                            className="btn btn-secondary icon-only inline-flex items-center justify-center"
+                            aria-label="Delete delivery"
+                            onClick={async () => {
+                              const ok = window.confirm("Delete this delivery?");
+                              if (!ok) return;
+                              clearFormError();
+                              try {
+                                await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
+                                refetch();
+                              } catch (error: unknown) {
+                                setFormError(error, "Could not delete delivery.");
+                              }
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 6h18" />
+                              <path d="M8 6V4h8v2" />
+                              <path d="M19 6l-1 14H6L5 6" />
+                              <path d="M10 11v6" />
+                              <path d="M14 11v6" />
+                            </svg>
+                            <span className="sr-only">Delete delivery</span>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
