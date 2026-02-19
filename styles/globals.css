@@ -32,25 +32,46 @@
   --line-1: 0.0625rem;
   --grid-size: 4.5rem;
   --panel-min: 26.25rem;
+  --shell-gutter: clamp(0.75rem, 2.4vw, 1.5rem);
+  --measure: 72ch;
 }
 
-* {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   border-color: rgba(212, 223, 236, 0.85);
 }
 
 html,
 body {
   min-height: 100%;
+  text-size-adjust: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: "Plus Jakarta Sans", "Space Grotesk", ui-sans-serif, system-ui;
   @apply text-ink-900 antialiased;
+  font-size: clamp(0.95rem, 0.24vw + 0.9rem, 1rem);
+  line-height: 1.5;
   background:
     radial-gradient(circle at 8% -10%, rgba(12, 148, 136, 0.28), transparent 44%),
     radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.22), transparent 38%),
     radial-gradient(circle at 70% 70%, rgba(15, 118, 110, 0.13), transparent 48%),
     linear-gradient(165deg, rgba(251, 253, 255, 1) 0%, rgba(241, 246, 252, 1) 55%, rgba(236, 243, 250, 1) 100%);
+}
+
+img,
+picture,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 h1,
@@ -68,6 +89,16 @@ h6,
 
 a {
   @apply transition-colors;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 0.125rem solid rgba(12, 148, 136, 0.7);
+  outline-offset: 0.125rem;
 }
 
 .page-shell {
@@ -133,13 +164,18 @@ a {
   position: sticky;
   top: 0.75rem;
   margin: 0.75rem auto 0;
-  width: min(92rem, calc(100% - 2rem));
-  padding: 0.875rem 1.125rem;
+  width: min(92rem, calc(100% - (var(--shell-gutter) * 2)));
+  gap: var(--space-3);
+  padding: 0.875rem clamp(0.75rem, 2vw, 1.125rem);
   border-radius: 1.15rem;
   border-color: rgba(212, 223, 236, 0.85);
   background:
     linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(246, 250, 255, 0.78));
   backdrop-filter: blur(0.875rem);
+}
+
+.site-header-top {
+  @apply flex items-center justify-between gap-3;
 }
 
 .brand {
@@ -156,7 +192,8 @@ a {
 }
 
 .brand-title {
-  @apply text-sm font-semibold;
+  @apply font-semibold;
+  font-size: clamp(0.87rem, 0.2vw + 0.82rem, 0.95rem);
 }
 
 .brand-subtitle {
@@ -165,16 +202,26 @@ a {
 
 .site-nav {
   @apply flex items-center gap-2;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   padding: 0.25rem;
   border-radius: 999rem;
   background: rgba(241, 246, 252, 0.75);
   border: 0.0625rem solid rgba(212, 223, 236, 0.85);
 }
 
+.site-nav-toggle {
+  @apply hidden items-center justify-center rounded-xl border bg-white/90 text-sm font-medium text-ink-900;
+  min-height: 2.5rem;
+  min-width: 2.75rem;
+  border-color: rgba(196, 212, 229, 0.9);
+  padding-inline: 0.75rem;
+}
+
 .site-nav-link {
   @apply inline-flex items-center justify-center rounded-full font-medium text-steel-600;
   font-size: 0.8125rem;
-  min-height: 2rem;
+  min-height: 2.5rem;
   padding: 0.375rem 0.8rem;
 }
 
@@ -200,7 +247,7 @@ a {
 
 .shell {
   @apply relative z-10;
-  width: min(92rem, calc(100% - 2rem));
+  width: min(92rem, calc(100% - (var(--shell-gutter) * 2)));
   margin: 0 auto;
   padding: 1rem 0 1.75rem;
 }
@@ -258,11 +305,13 @@ a {
 }
 
 .auth-title {
-  @apply text-3xl font-semibold;
+  @apply font-semibold;
+  font-size: clamp(1.8rem, 1.4rem + 1.2vw, 2rem);
 }
 
 .auth-subtitle {
   @apply text-sm text-steel-600 leading-relaxed;
+  max-width: var(--measure);
 }
 
 .auth-list {
@@ -301,6 +350,7 @@ a {
 
 .card-subtitle {
   @apply text-sm text-steel-500;
+  max-width: var(--measure);
 }
 
 .page-actions {
@@ -391,14 +441,14 @@ a {
 
 .site-footer {
   @apply relative z-10 flex items-center justify-between text-xs text-steel-500;
-  width: min(92rem, calc(100% - 2rem));
+  width: min(92rem, calc(100% - (var(--shell-gutter) * 2)));
   margin: 0 auto;
   padding: var(--space-4) 0 var(--space-6);
 }
 
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition border border-transparent;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
 }
 
@@ -425,7 +475,7 @@ a {
 }
 
 .icon-only {
-  @apply h-10 w-10 p-0;
+  @apply h-11 w-11 p-0;
 }
 
 .hide-number-spin::-webkit-outer-spin-button,
@@ -491,33 +541,62 @@ a {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(244, 249, 255, 0.82));
 }
 
+.meeting-table-wrap {
+  margin-top: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.meeting-grid-head,
+.meeting-grid-row {
+  display: grid;
+  grid-template-columns:
+    minmax(7rem, 0.8fr)
+    minmax(15rem, 2.4fr)
+    minmax(8.5rem, 1fr)
+    minmax(5.25rem, 0.7fr)
+    minmax(5.25rem, 0.7fr)
+    minmax(5.25rem, 0.7fr)
+    minmax(4.8rem, 0.6fr)
+    minmax(4.8rem, 0.6fr)
+    minmax(6.5rem, 0.85fr)
+    minmax(4.8rem, 0.6fr)
+    minmax(3rem, 0.4fr);
+  min-width: 57rem;
+}
+
+.meeting-grid-head > div {
+  border: 0.0625rem solid rgba(212, 223, 236, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+}
+
+.meeting-grid-row {
+  position: relative;
+}
+
+.meeting-grid-row > * {
+  border: 0.0625rem solid rgba(212, 223, 236, 0.9);
+  background: rgba(255, 255, 255, 0.8);
+  min-height: 2.75rem;
+}
+
 .calendar-title {
   @apply font-semibold text-ink-900;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .site-header {
-    @apply flex-col items-start gap-3;
-    width: calc(100% - 1rem);
+    @apply flex-col items-stretch gap-3;
     top: 0.5rem;
     margin-top: 0.5rem;
-    padding: 0.75rem;
   }
 
   .site-nav {
-    @apply w-full flex-wrap gap-1;
-  }
-
-  .site-nav-link {
-    @apply text-xs;
-  }
-
-  .brand-mark {
-    @apply h-10 w-10 text-xs;
+    @apply w-full gap-1;
   }
 
   .shell {
-    width: calc(100% - 1rem);
     padding-top: 0.8rem;
   }
 
@@ -533,10 +612,6 @@ a {
     @apply overflow-x-auto;
   }
 
-  .admin-table-row {
-    @apply md:grid-cols-5;
-  }
-
   .schedule-toolbar-row {
     @apply flex-col items-stretch gap-3;
   }
@@ -545,6 +620,7 @@ a {
   .schedule-toolbar-row .board-field,
   .schedule-toolbar-row .calendar-title-wrap {
     @apply w-full;
+    max-width: none;
   }
 
   .schedule-toolbar-row .calendar-title-wrap {
@@ -552,11 +628,18 @@ a {
   }
 
   .schedule-toolbar-row .view-toggle {
-    @apply w-full justify-between;
+    @apply w-full;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   #scheduleList table {
-    min-width: 57.5rem;
+    min-width: max-content;
+  }
+
+  .meeting-grid-head,
+  .meeting-grid-row {
+    min-width: 52rem;
   }
 
   .card-header {
@@ -564,7 +647,7 @@ a {
   }
 
   .page-actions {
-    @apply flex-col items-start;
+    @apply flex-wrap items-start;
   }
 
   .admin-grid {
@@ -576,49 +659,107 @@ a {
   }
 
   .site-footer {
-    width: calc(100% - 1rem);
+    @apply flex-wrap gap-2;
     padding-bottom: var(--space-4);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .site-header {
+    padding: 0.75rem;
+  }
+
+  .site-header-top {
+    width: 100%;
+  }
+
+  .site-nav-toggle {
+    @apply inline-flex;
+  }
+
   .site-nav {
-    @apply w-full overflow-x-auto;
+    @apply hidden;
+    border-radius: 1rem;
+    padding: 0.35rem;
   }
 
-  .page-actions {
-    @apply flex-wrap;
+  .site-nav.is-open {
+    @apply grid w-full;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .admin-form-grid {
-    @apply grid-cols-1;
+  .site-nav-link {
+    @apply text-sm;
+    width: 100%;
+    justify-content: flex-start;
+    min-height: 2.75rem;
+    padding-inline: 0.85rem;
   }
 
-  .auth-layout {
-    @apply grid-cols-1;
+  .brand-mark {
+    @apply h-10 w-10 text-xs;
   }
 
-  .calendar-shell,
-  .board-shell {
-    margin-inline: calc(var(--space-4) * -1);
-  }
-
-  #scheduleCalendar,
-  #scheduleBoard,
-  #scheduleList {
-    padding-inline: var(--space-4);
-  }
-
-  #scheduleCalendar .grid {
-    min-width: 45rem;
-  }
-
+  .admin-form-grid,
   .admin-table-row {
     @apply grid-cols-1;
   }
 
   .admin-tile {
     padding: var(--space-4);
+  }
+
+  #scheduleCalendar,
+  #scheduleBoard,
+  #scheduleList {
+    padding-inline: var(--space-3);
+  }
+
+  #scheduleCalendar .grid {
+    min-width: 0;
+  }
+
+  .meeting-grid-head,
+  .meeting-grid-row {
+    min-width: 46rem;
+  }
+
+  button,
+  .btn,
+  .toggle-btn,
+  .site-nav-link,
+  .site-nav-toggle {
+    min-height: 2.75rem;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header {
+    top: 0.4rem;
+    margin-top: 0.4rem;
+  }
+
+  .brand {
+    gap: var(--space-2);
+  }
+
+  .toggle-btn {
+    min-width: 0;
+    flex: 1 1 30%;
+    text-align: center;
+    padding-inline: 0.65rem;
+  }
+
+  .meeting-grid-head,
+  .meeting-grid-row {
+    min-width: 42rem;
   }
 }
 
@@ -739,7 +880,7 @@ a {
   background: rgba(241, 246, 252, 0.8);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .delivery-popup-panel {
     max-height: 92vh;
   }
@@ -758,6 +899,17 @@ a {
 
   .delivery-popup-pod-link {
     min-height: 13rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .delivery-popup {
+    padding: 0.5rem;
+  }
+
+  .delivery-popup-header,
+  .delivery-popup-body {
+    padding: 1rem;
   }
 }
 

@@ -17,9 +17,9 @@ const buttonVariants = cva(
         ghost: "text-ink-900 hover:bg-white/70"
       },
       size: {
-        sm: "h-8 px-3",
-        md: "h-10 px-4",
-        lg: "h-11 px-5"
+        sm: "h-9 px-3",
+        md: "h-11 px-4",
+        lg: "h-12 px-5"
       }
     },
     defaultVariants: {

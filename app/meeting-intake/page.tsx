@@ -229,7 +229,7 @@ export default function MeetingIntakePage() {
             <div className="card-subtitle">Add new orders and send them to the delivery calendar.</div>
           </div>
           <div className="page-actions">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {!showJobsiteForm ? (
                 <Button variant="secondary" onClick={() => setShowJobsiteForm(true)}>
                   Add location
@@ -237,11 +237,13 @@ export default function MeetingIntakePage() {
               ) : (
                 <>
                   <Input
+                    className="min-w-[12rem] flex-1"
                     placeholder="Location name"
                     value={jobsiteName}
                     onChange={(e) => setJobsiteName(e.target.value)}
                   />
                   <Input
+                    className="min-w-[12rem] flex-1"
                     placeholder="Location address"
                     value={jobsiteAddress}
                     onChange={(e) => setJobsiteAddress(e.target.value)}
@@ -291,150 +293,150 @@ export default function MeetingIntakePage() {
             <Button onClick={publish} disabled={bulkCreate.isPending}>Publish to calendar</Button>
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 text-xs font-semibold text-steel-600 [&>div]:border [&>div]:border-steel-200 [&>div]:bg-white/90 [&>div]:px-2 [&>div]:py-2">
-          <div>Date</div>
-          <div>Location</div>
-          <div>Sales Order #</div>
-          <div>Large Skids</div>
-          <div>Medium Skids</div>
-          <div>Small Skids</div>
-          <div>Doors</div>
-          <div>Frames</div>
-          <div>Other Frames</div>
-          <div>Boxes</div>
-          <div>Remove</div>
-        </div>
-        <div className="mt-3 space-y-2">
-          {rows.map((row, idx) => (
-            <div
-              key={idx}
-              className={`relative grid grid-cols-[minmax(96px,0.8fr)_minmax(260px,2.6fr)_minmax(120px,1fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(70px,0.7fr)_minmax(70px,0.7fr)_minmax(100px,1fr)_minmax(70px,0.7fr)_minmax(44px,0.4fr)] gap-0 [&>*]:border [&>*]:border-steel-200 [&>*]:bg-white/80 [&>*]:min-h-[2.25rem] ${
-                openJobsiteIndex === idx ? "z-20" : "z-0"
-              }`}
-            >
-              <DatePickerInput
-                className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
-                value={row.scheduled_date}
-                onChange={(value) => updateRow(idx, { scheduled_date: value })}
-              />
+        <div className="meeting-table-wrap">
+          <div className="meeting-grid-head text-xs font-semibold text-steel-600">
+            <div>Date</div>
+            <div>Location</div>
+            <div>Sales Order #</div>
+            <div>Large Skids</div>
+            <div>Medium Skids</div>
+            <div>Small Skids</div>
+            <div>Doors</div>
+            <div>Frames</div>
+            <div>Other Frames</div>
+            <div>Boxes</div>
+            <div>Remove</div>
+          </div>
+          <div className="mt-3 space-y-2">
+            {rows.map((row, idx) => (
               <div
-                className="relative"
-                ref={(el) => {
-                  jobsiteRefs.current[idx] = el;
-                }}
+                key={idx}
+                className={`meeting-grid-row ${openJobsiteIndex === idx ? "z-20" : "z-0"}`}
               >
-                <Input
-                  className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
-                  placeholder="Type location name"
-                  value={row.jobsite_query}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    const match = findJobsiteByName(value);
-                    updateRow(idx, {
-                      jobsite_query: value,
-                      jobsite_id: match ? String(match.id) : ""
-                    });
-                    setOpenJobsiteIndex(idx);
-                  }}
-                  onFocus={() => {
-                    setActiveRowIndex(idx);
-                    setOpenJobsiteIndex(idx);
-                  }}
-                  onBlur={() => {
-                    window.setTimeout(() => {
-                      enforceJobsiteValue(idx);
-                      setOpenJobsiteIndex((prev) => (prev === idx ? null : prev));
-                    }, 120);
-                  }}
+                <DatePickerInput
+                  className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
+                  value={row.scheduled_date}
+                  onChange={(value) => updateRow(idx, { scheduled_date: value })}
                 />
-                {openJobsiteIndex === idx ? (
-                  <div className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
-                    {normalizedJobsites
-                      .filter((jobsite) =>
-                        jobsite.name.toLowerCase().includes(row.jobsite_query.toLowerCase())
-                      )
-                      .slice(0, 8)
-                      .map((jobsite) => (
-                        <button
-                          type="button"
-                          key={jobsite.id}
-                          className="block w-full px-2 py-1 text-left hover:bg-steel-50"
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            selectJobsite(idx, jobsite);
-                          }}
-                        >
-                          {jobsite.name}
-                        </button>
-                      ))}
-                  </div>
-                ) : null}
+                <div
+                  className="relative"
+                  ref={(el) => {
+                    jobsiteRefs.current[idx] = el;
+                  }}
+                >
+                  <Input
+                    className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
+                    placeholder="Type location name"
+                    value={row.jobsite_query}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const match = findJobsiteByName(value);
+                      updateRow(idx, {
+                        jobsite_query: value,
+                        jobsite_id: match ? String(match.id) : ""
+                      });
+                      setOpenJobsiteIndex(idx);
+                    }}
+                    onFocus={() => {
+                      setActiveRowIndex(idx);
+                      setOpenJobsiteIndex(idx);
+                    }}
+                    onBlur={() => {
+                      window.setTimeout(() => {
+                        enforceJobsiteValue(idx);
+                        setOpenJobsiteIndex((prev) => (prev === idx ? null : prev));
+                      }, 120);
+                    }}
+                  />
+                  {openJobsiteIndex === idx ? (
+                    <div className="absolute z-30 mt-1 max-h-40 w-full overflow-auto rounded-md border border-steel-200 bg-white text-xs shadow-soft">
+                      {normalizedJobsites
+                        .filter((jobsite) =>
+                          jobsite.name.toLowerCase().includes(row.jobsite_query.toLowerCase())
+                        )
+                        .slice(0, 8)
+                        .map((jobsite) => (
+                          <button
+                            type="button"
+                            key={jobsite.id}
+                            className="block w-full px-2 py-1 text-left hover:bg-steel-50"
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              selectJobsite(idx, jobsite);
+                            }}
+                          >
+                            {jobsite.name}
+                          </button>
+                        ))}
+                    </div>
+                  ) : null}
+                </div>
+                <Input
+                  className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.sales_order ? "bg-red-50" : ""}`}
+                  value={row.sales_order}
+                  onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.large_skid}
+                  onChange={(e) => updateRow(idx, { large_skid: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.med_skid}
+                  onChange={(e) => updateRow(idx, { med_skid: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.small_skid}
+                  onChange={(e) => updateRow(idx, { small_skid: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.door}
+                  onChange={(e) => updateRow(idx, { door: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.frame}
+                  onChange={(e) => updateRow(idx, { frame: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.exp_frame}
+                  onChange={(e) => updateRow(idx, { exp_frame: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <Input
+                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  type="number"
+                  value={row.box}
+                  onChange={(e) => updateRow(idx, { box: Number(e.target.value) })}
+                  onFocus={() => setActiveRowIndex(idx)}
+                />
+                <button
+                  type="button"
+                  className="h-11 md:h-9 w-full rounded-none border-0 text-xs text-steel-500 hover:bg-steel-100 hover:text-ink-900"
+                  onClick={() => removeRow(idx)}
+                  disabled={rows.length === 1 && isRowEmpty(row)}
+                >
+                  X
+                </button>
               </div>
-              <Input
-                className={`h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.sales_order ? "bg-red-50" : ""}`}
-                value={row.sales_order}
-                onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.large_skid}
-                onChange={(e) => updateRow(idx, { large_skid: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.med_skid}
-                onChange={(e) => updateRow(idx, { med_skid: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.small_skid}
-                onChange={(e) => updateRow(idx, { small_skid: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.door}
-                onChange={(e) => updateRow(idx, { door: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.frame}
-                onChange={(e) => updateRow(idx, { frame: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.exp_frame}
-                onChange={(e) => updateRow(idx, { exp_frame: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <Input
-                className="h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
-                type="number"
-                value={row.box}
-                onChange={(e) => updateRow(idx, { box: Number(e.target.value) })}
-                onFocus={() => setActiveRowIndex(idx)}
-              />
-              <button
-                type="button"
-                className="h-9 w-full rounded-none border-0 text-xs text-steel-500 hover:bg-steel-100 hover:text-ink-900"
-                onClick={() => removeRow(idx)}
-                disabled={rows.length === 1 && isRowEmpty(row)}
-              >
-                X
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         {publishMessage ? (
           <div className="mt-3 text-xs text-steel-500">{publishMessage}</div>

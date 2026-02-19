@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useId, useRef, useState } from "react";
 
 export interface NavLink {
   href: string;
@@ -18,6 +21,32 @@ export default function SiteHeader({
   links: NavLink[];
   currentPath?: string;
 }) {
+  const navId = useId();
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [currentPath]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [menuOpen]);
+
   const isActiveLink = (href: string) => {
     if (!currentPath) return false;
     if (href === "/api-proxy/logout") return false;
@@ -26,58 +55,87 @@ export default function SiteHeader({
   };
 
   return (
-    <header className="site-header">
-      <div className="brand">
-        <div className="brand-mark">LP</div>
-        <div>
-          <div className="brand-title">{title}</div>
-          <div className="brand-subtitle">{subtitle}</div>
+    <header className="site-header" ref={headerRef}>
+      <div className="site-header-top">
+        <div className="brand">
+          <div className="brand-mark">LP</div>
+          <div>
+            <div className="brand-title">{title}</div>
+            <div className="brand-subtitle">{subtitle}</div>
+          </div>
         </div>
+        {links.length > 0 ? (
+          <button
+            type="button"
+            className="site-nav-toggle"
+            aria-expanded={menuOpen}
+            aria-controls={navId}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? "Close" : "Menu"}
+          </button>
+        ) : null}
       </div>
-      <nav className="site-nav">
-        {links.map((link) => {
-          const isLogout = link.href === "/api-proxy/logout";
-          const active = isActiveLink(link.href);
-          const className = `site-nav-link${active ? " is-active" : ""}${isLogout ? " is-logout" : ""}`;
-          if (link.blocked) {
+      {links.length > 0 ? (
+        <nav id={navId} className={`site-nav${menuOpen ? " is-open" : ""}`} aria-label="Primary navigation">
+          {links.map((link) => {
+            const isLogout = link.href === "/api-proxy/logout";
+            const active = isActiveLink(link.href);
+            const className = `site-nav-link${active ? " is-active" : ""}${isLogout ? " is-logout" : ""}`;
+            if (link.blocked) {
+              return (
+                <button
+                  key={link.href}
+                  type="button"
+                  className={`${className} site-nav-blocked`}
+                  aria-disabled="true"
+                  onClick={() => {
+                    link.onClick?.();
+                    setMenuOpen(false);
+                  }}
+                >
+                  {link.label}
+                </button>
+              );
+            }
+            if (link.onClick && !isLogout) {
+              return (
+                <button
+                  key={link.href}
+                  type="button"
+                  onClick={() => {
+                    link.onClick?.();
+                    setMenuOpen(false);
+                  }}
+                  className={className}
+                >
+                  {link.label}
+                </button>
+              );
+            }
+            if (isLogout) {
+              return (
+                <button
+                  key={link.href}
+                  type="button"
+                  className={className}
+                  onClick={() => {
+                    (link.onClick || (() => (window.location.href = "/auth/login")))();
+                    setMenuOpen(false);
+                  }}
+                >
+                  {link.label}
+                </button>
+              );
+            }
             return (
-              <button
-                key={link.href}
-                type="button"
-                className={`${className} site-nav-blocked`}
-                aria-disabled="true"
-                onClick={link.onClick}
-              >
+              <Link key={link.href} href={link.href} className={className} onClick={() => setMenuOpen(false)}>
                 {link.label}
-              </button>
+              </Link>
             );
-          }
-          if (link.onClick && !isLogout) {
-            return (
-              <button key={link.href} type="button" onClick={link.onClick} className={className}>
-                {link.label}
-              </button>
-            );
-          }
-          if (isLogout) {
-            return (
-              <button
-                key={link.href}
-                type="button"
-                className={className}
-                onClick={link.onClick || (() => (window.location.href = "/auth/login"))}
-              >
-                {link.label}
-              </button>
-            );
-          }
-          return (
-            <Link key={link.href} href={link.href} className={className}>
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
+          })}
+        </nav>
+      ) : null}
     </header>
   );
 }

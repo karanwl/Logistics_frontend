@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndContext, closestCenter, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -177,6 +177,8 @@ export default function SchedulePage() {
   const [drawerDetail, setDrawerDetail] = useState<any | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState("");
+  const drawerPanelRef = useRef<HTMLDivElement | null>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
   const { formError, clearFormError, setFormError } = useFormError("Could not save schedule changes.");
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "scheduled_date",
@@ -397,13 +399,66 @@ export default function SchedulePage() {
       });
   };
 
-  const closeDrawer = () => {
+  const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
     setDrawerDelivery(null);
     setDrawerDetail(null);
     setDrawerLoading(false);
     setDrawerError("");
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const panel = drawerPanelRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previouslyLocked = document.body.style.overflow;
+
+    const getFocusable = () =>
+      panel
+        ? Array.from(
+            panel.querySelectorAll<HTMLElement>(
+              'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+          )
+        : [];
+
+    window.setTimeout(() => {
+      drawerCloseRef.current?.focus();
+    }, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeDrawer();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previouslyLocked;
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [closeDrawer, drawerOpen]);
+
   const drawerData = drawerDetail || drawerDelivery;
   const drawerPhotoUrls = normalizePhotoUrls(drawerData?.photo_urls).map(resolvePhotoUrl);
   const deliveryLoads = [
@@ -423,20 +478,20 @@ export default function SchedulePage() {
       <section className="card schedule-toolbar" id="scheduleToolbar">
         <div className={view === "board" ? "" : "hidden"} id="boardToolbarControls">
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
-            <div className="board-field board-search w-72">
+            <div className="board-field board-search w-full md:max-w-sm">
               <label htmlFor="boardSearch" className="sr-only">Search deliveries</label>
               <Input id="boardSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="board-field board-week w-48 text-center">
+            <div className="board-field board-week w-full sm:max-w-[14rem] text-left sm:text-center">
               <label htmlFor="boardWeek" className="text-xs text-steel-500 block">Week starting</label>
               <DatePickerInput
                 id="boardWeek"
-                className="h-9"
+                className="h-11 md:h-9"
                 value={weekDate}
                 onChange={(value) => setWeekDate(value)}
               />
             </div>
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
                 <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
                 <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
@@ -448,11 +503,11 @@ export default function SchedulePage() {
 
         <div id="calendarToolbarControls" className={view === "calendar" ? "" : "hidden"}>
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
-            <div className="calendar-filters w-72">
+            <div className="calendar-filters w-full md:max-w-sm">
               <label htmlFor="calendarSearch" className="sr-only">Search deliveries</label>
               <Input id="calendarSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="calendar-title-wrap flex items-center gap-3 justify-center w-64">
+            <div className="calendar-title-wrap flex w-full items-center justify-between gap-3 md:w-auto md:justify-center">
               <button className="btn btn-secondary icon-only" type="button" onClick={() => setMonthDate(addMonths(monthDate, -1))} aria-label="Previous month">
                 {"<"}
               </button>
@@ -461,7 +516,7 @@ export default function SchedulePage() {
                 {">"}
               </button>
             </div>
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex w-full items-center justify-end gap-3 md:w-auto">
               <div className="view-toggle" role="group" aria-label="View type">
                 <button className={`toggle-btn ${view === "board" ? "is-active" : ""}`} type="button" onClick={() => setView("board")}>Board view</button>
                 <button className={`toggle-btn ${view === "calendar" ? "is-active" : ""}`} type="button" onClick={() => setView("calendar")}>Calendar view</button>
@@ -473,20 +528,20 @@ export default function SchedulePage() {
 
         <div id="listToolbarControls" className={view === "list" ? "" : "hidden"}>
           <div className="flex items-center justify-between gap-4 schedule-toolbar-row">
-            <div className="calendar-filters w-72">
+            <div className="calendar-filters w-full md:max-w-sm">
               <label htmlFor="listSearch" className="sr-only">Search deliveries</label>
               <Input id="listSearch" type="search" placeholder="Search deliveries" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <div className="flex items-center gap-2 justify-center w-64">
+            <div className="flex w-full items-center gap-2 md:w-auto md:justify-center">
               <label htmlFor="listDate" className="text-xs text-steel-500">Date</label>
                 <DatePickerInput
                   id="listDate"
-                  className="h-9"
+                  className="h-11 md:h-9"
                   value={listDate}
                   onChange={(value) => setListDate(value)}
                 />
               </div>
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex w-full flex-wrap items-center justify-end gap-3 md:w-auto md:flex-nowrap">
                 {canEdit ? (
                   <>
                     <label className="text-xs text-steel-500">
@@ -513,7 +568,7 @@ export default function SchedulePage() {
         <section className="board-shell">
           <div id="scheduleBoard" className="planner-board scroll-area">
             <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <div className="grid grid-cols-[repeat(6,minmax(220px,1fr))] gap-4 p-4">
+              <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 {days.map((d) => {
                   const key = formatDate(d);
                   return (
@@ -663,7 +718,7 @@ export default function SchedulePage() {
                     <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <DatePickerInput
-                          className="h-9 text-xs mx-auto text-center"
+                          className="h-11 md:h-9 text-xs mx-auto text-center"
                           defaultValue={d.scheduled_date || ""}
                           onChange={(value) => updateEdit(d.delivery_id, { scheduled_date: value })}
                         />
@@ -722,10 +777,10 @@ export default function SchedulePage() {
                         d.pickup ? "Yes" : "No"
                       )}
                     </td>
-                    <td className={listCellClass}>
+                    <td className={`${listCellClass} min-w-[8rem]`}>
                       {canEdit && editMode ? (
                         <select
-                          className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
+                          className="h-10 w-full rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                           defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
                           onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
                         >
@@ -751,49 +806,49 @@ export default function SchedulePage() {
                         d.requires_empty_truck ? "Yes" : "No"
                       )}
                     </td>
-                    <td className={`${listCellClass} w-20`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
                       ) : (
                         d.large_skid || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-20`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.med_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { med_skid: Number(e.target.value) })} />
                       ) : (
                         d.med_skid || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-20`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.small_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { small_skid: Number(e.target.value) })} />
                       ) : (
                         d.small_skid || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-16`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.door || 0} onChange={(e) => updateEdit(d.delivery_id, { door: Number(e.target.value) })} />
                       ) : (
                         d.door || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-16`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.frame || 0} onChange={(e) => updateEdit(d.delivery_id, { frame: Number(e.target.value) })} />
                       ) : (
                         d.frame || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-20`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.exp_frame || 0} onChange={(e) => updateEdit(d.delivery_id, { exp_frame: Number(e.target.value) })} />
                       ) : (
                         d.exp_frame || 0
                       )}
                     </td>
-                    <td className={`${listCellClass} w-16`}>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <Input className={listNumberInputClass} type="number" defaultValue={d.box || 0} onChange={(e) => updateEdit(d.delivery_id, { box: Number(e.target.value) })} />
                       ) : (
@@ -853,12 +908,25 @@ export default function SchedulePage() {
 
       <div id="inlineEditDrawer" className={`delivery-popup ${drawerOpen ? "" : "is-hidden"}`} aria-hidden={!drawerOpen}>
         <div className="delivery-popup-backdrop" onClick={closeDrawer} />
-        <div className="delivery-popup-panel" role="dialog" aria-modal="true" aria-labelledby="inlineEditTitle">
+        <div
+          className="delivery-popup-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="inlineEditTitle"
+          tabIndex={-1}
+          ref={drawerPanelRef}
+        >
           <div className="delivery-popup-header">
             <div>
               <h2 id="inlineEditTitle" className="text-xl font-semibold">Delivery Details</h2>
             </div>
-            <button className="btn btn-secondary icon-only" type="button" aria-label="Close" onClick={closeDrawer}>
+            <button
+              className="btn btn-secondary icon-only"
+              type="button"
+              aria-label="Close"
+              onClick={closeDrawer}
+              ref={drawerCloseRef}
+            >
               X
             </button>
           </div>
