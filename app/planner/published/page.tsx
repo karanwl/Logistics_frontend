@@ -38,8 +38,8 @@ export default function PublishedPlansPage() {
   return (
     <AppShell>
       <PlannerStateProvider>
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="card xl:col-span-3">
+        <div className="grid gap-4 xl:grid-cols-12">
+          <div className="card order-2 xl:order-1 xl:col-span-3">
             <div className="card-header">
               <div>
                 <div className="text-xl font-semibold">Final Plans</div>
@@ -66,7 +66,7 @@ export default function PublishedPlansPage() {
               ) : null}
             </div>
           </div>
-          <div className="xl:col-span-9">
+          <div className="order-1 xl:order-2 xl:col-span-9">
             <PublishedPlanToolbar
               selectedDate={selectedDate}
               today={today}
@@ -90,7 +90,7 @@ function PublishedPlanToolbar({
   source: string;
 }) {
   return (
-    <section className="card mb-6">
+    <section className="card mb-4">
       <div className="card-header">
         <div>
           <div className="text-lg font-semibold">Final Plan Preview</div>
@@ -143,8 +143,8 @@ function PublishedPlanPreview({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-12">
-      <div className="space-y-6 xl:col-span-8">
+    <div className="grid gap-4 xl:grid-cols-12">
+      <div className="space-y-4 xl:col-span-8">
         {source === "deliveries" ? (
           <div className="card !py-2">
             <div className="text-xs text-steel-500">
@@ -154,7 +154,7 @@ function PublishedPlanPreview({
         ) : null}
         <RouteBoard editable={false} />
       </div>
-      <div className="space-y-6 xl:col-span-4">
+      <div className="space-y-4 xl:col-span-4">
         <MapPanel />
         <UnassignedPanel editable={false} />
       </div>

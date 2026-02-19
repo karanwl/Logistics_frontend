@@ -316,7 +316,7 @@ export default function PlannerDashboardPage() {
 
   return (
     <AppShell>
-      <div className="grid gap-6">
+      <div className="page-stack">
         <section className="card">
           <div className="card-header">
             <div>
@@ -415,15 +415,15 @@ export default function PlannerDashboardPage() {
           </div>
         </section>
 
-        <section className="card">
-          <div className="card-header">
+        <details className="compact-disclosure" open>
+          <summary>
             <div>
               <div className="text-lg font-semibold">Savings and Output</div>
               <div className="card-subtitle">Simple numbers showing what improved.</div>
             </div>
-          </div>
+          </summary>
 
-          <div className="rounded-lg border border-steel-100 bg-steel-50 p-3">
+          <div className="mt-3 rounded-lg border border-steel-100 bg-steel-50 p-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-steel-500">Cost settings</div>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               <label className="text-xs text-steel-600">
@@ -534,9 +534,9 @@ export default function PlannerDashboardPage() {
             ))}
             {highlights.length === 0 ? <div>No highlights available for the selected range.</div> : null}
           </div>
-        </section>
+        </details>
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           <section className="card">
             <div className="card-header">
               <div>
@@ -558,15 +558,15 @@ export default function PlannerDashboardPage() {
           </section>
         </div>
 
-        <section className="card">
-          <div className="card-header">
+        <details className="compact-disclosure">
+          <summary>
             <div>
               <div className="text-lg font-semibold">Daily Results</div>
               <div className="card-subtitle">Day-by-day performance changes.</div>
             </div>
-          </div>
+          </summary>
 
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-3 mt-3 flex flex-wrap gap-2">
             <FilterChip label="All days" active={focusFilter === "all"} onClick={() => setFocusFilter("all")} />
             <FilterChip
               label="Better days"
@@ -597,7 +597,7 @@ export default function PlannerDashboardPage() {
           ) : filteredTimeline.length === 0 ? (
             <div className="text-sm text-steel-500">No days match this view. Choose another view to see results.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-auto max-h-[56vh]">
               <table className="min-w-full text-xs">
                 <thead>
                   <tr className="border-b border-steel-100 text-steel-500">
@@ -642,7 +642,7 @@ export default function PlannerDashboardPage() {
               </table>
             </div>
           )}
-        </section>
+        </details>
       </div>
     </AppShell>
   );

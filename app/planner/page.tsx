@@ -31,7 +31,7 @@ function PlannerWorkspace() {
   }, [selectedDate, setPlan]);
 
   return (
-    <div className="grid gap-6">
+    <div className="page-stack">
       <PlannerHeader />
 
       {!plan ? (
@@ -41,11 +41,11 @@ function PlannerWorkspace() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="space-y-6 xl:col-span-8">
+        <div className="grid gap-4 xl:grid-cols-12">
+          <div className="space-y-4 xl:col-span-8">
             <RouteBoard editable />
           </div>
-          <div className="space-y-6 xl:col-span-4 xl:sticky xl:top-24 xl:self-start">
+          <div className="space-y-4 xl:col-span-4 xl:sticky xl:top-20 xl:self-start">
             <MapPanel />
             <UnassignedPanel editable planDate={selectedDate} />
           </div>

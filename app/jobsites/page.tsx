@@ -142,7 +142,7 @@ export default function AdminJobsitesPage() {
         {formError ? <div className="mt-2"><ErrorBanner error={formError} /></div> : null}
         <div className="mt-2 text-xs text-steel-500">Coordinates are filled automatically after saving.</div>
       </div>
-      <div className="admin-section mt-6">
+      <div className="admin-section mt-4">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Locations</div>

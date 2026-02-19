@@ -53,6 +53,10 @@ function monthLabel(date: Date) {
   return `${MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
+function weekdayLabel(date: Date) {
+  return date.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+}
+
 function parseDateKey(key: string) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(Date.UTC(year, (month || 1) - 1, day || 1));
@@ -193,6 +197,10 @@ export default function SchedulePage() {
     const nextView = params.get("view");
     if (nextView === "board" || nextView === "calendar" || nextView === "list") {
       setView(nextView);
+      return;
+    }
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      setView("list");
     }
   }, []);
 
@@ -399,6 +407,18 @@ export default function SchedulePage() {
       });
   };
 
+  const handleDelete = async (deliveryId: string) => {
+    const ok = window.confirm("Delete this delivery?");
+    if (!ok) return;
+    clearFormError();
+    try {
+      await deleteDelivery.mutateAsync({ delivery_id: deliveryId });
+      refetch();
+    } catch (error: unknown) {
+      setFormError(error, "Could not delete delivery.");
+    }
+  };
+
   const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
     setDrawerDelivery(null);
@@ -568,7 +588,7 @@ export default function SchedulePage() {
         <section className="board-shell">
           <div id="scheduleBoard" className="planner-board scroll-area">
             <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <div className="schedule-board-grid grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+              <div className="schedule-board-grid grid gap-3 p-3">
                 {days.map((d) => {
                   const key = formatDate(d);
                   return (
@@ -584,7 +604,7 @@ export default function SchedulePage() {
 
       <div id="calendarView" className={view === "calendar" ? "" : "hidden"}>
         <section className="calendar-shell">
-          <div id="scheduleCalendar" className="planner-calendar scroll-area p-4">
+          <div id="scheduleCalendar" className="planner-calendar scroll-area p-3 md:p-4">
             <div className="schedule-calendar-head grid grid-cols-7 gap-2 text-xs text-steel-500">
               {"Mon Tue Wed Thu Fri Sat Sun".split(" ").map((d) => (
                 <div key={d}>{d}</div>
@@ -617,8 +637,194 @@ export default function SchedulePage() {
 
       <div id="listView" className={view === "list" ? "" : "hidden"}>
         <section className="card">
-          <div id="scheduleList" className="table-wrap table-full p-4 max-h-[70vh] overflow-auto">
-            <table className="w-full text-sm border-collapse [&_th]:border [&_th]:border-steel-200 [&_th]:bg-white/95 [&_th]:px-2 [&_th]:py-2 [&_td]:border [&_td]:border-steel-100 [&_td]:px-2 [&_td]:py-2">
+          <div id="scheduleList" className="table-wrap table-full p-3 md:p-4 max-h-[72vh] overflow-auto">
+            <div className="grid gap-2 xl:hidden">
+              {listRows.map((d: any) => (
+                <details key={`mobile-${d.delivery_id}`} className="rounded-xl border border-steel-200 bg-white/90 p-3">
+                  <summary className="flex cursor-pointer items-start justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-semibold text-ink-900">{d.job_name || "--"}</div>
+                      <div className="text-xs text-steel-500">
+                        {d.scheduled_date || "No date"} {d.sales_order ? `| SO #${d.sales_order}` : ""}
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${d.ps_delivered ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                      {d.ps_delivered ? "PS sent" : "Pending"}
+                    </span>
+                  </summary>
+
+                  <div className="mt-3 grid gap-3">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Scheduled Date</div>
+                        {canEdit && editMode ? (
+                          <DatePickerInput
+                            className="mt-1 h-11 text-sm"
+                            defaultValue={d.scheduled_date || ""}
+                            aria-label={`Scheduled date for ${d.job_name || d.delivery_id}`}
+                            onChange={(value) => updateEdit(d.delivery_id, { scheduled_date: value })}
+                          />
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{d.scheduled_date || "--"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Delivery Window</div>
+                        {canEdit && editMode ? (
+                          <div className="mt-1 grid grid-cols-2 gap-2">
+                            <select
+                              className="h-11 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                              defaultValue={d.window_start || ""}
+                              aria-label={`Window start for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { window_start: e.target.value })}
+                            >
+                              <option value="">Start</option>
+                              {TIME_OPTIONS.map((t) => (
+                                <option key={`mobile-start-${d.delivery_id}-${t || "any"}`} value={t}>
+                                  {t || "--"}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              className="h-11 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                              defaultValue={d.window_end || ""}
+                              aria-label={`Window end for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { window_end: e.target.value })}
+                            >
+                              <option value="">End</option>
+                              {TIME_OPTIONS.map((t) => (
+                                <option key={`mobile-end-${d.delivery_id}-${t || "any"}`} value={t}>
+                                  {t || "--"}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{`${d.window_start || "--"} - ${d.window_end || "--"}`}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Pickup</div>
+                        {canEdit && editMode ? (
+                          <label className="mt-1 inline-flex items-center gap-2 text-sm text-steel-600">
+                            <input
+                              type="checkbox"
+                              defaultChecked={Boolean(d.pickup)}
+                              aria-label={`Pickup for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
+                            />
+                            Required
+                          </label>
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{d.pickup ? "Yes" : "No"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Pickup Vehicle</div>
+                        {canEdit && editMode ? (
+                          <select
+                            className="mt-1 h-11 w-full rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                            defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
+                            aria-label={`Pickup vehicle for ${d.job_name || d.delivery_id}`}
+                            onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
+                          >
+                            <option value="">--</option>
+                            {PICKUP_VEHICLE_OPTIONS.map((opt) => (
+                              <option key={`mobile-vehicle-${d.delivery_id}-${opt.value}`} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{d.pickup ? pickupVehicleLabel(d.pickup_vehicle || "both") : "--"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Needs Empty Truck</div>
+                        {canEdit && editMode ? (
+                          <label className="mt-1 inline-flex items-center gap-2 text-sm text-steel-600">
+                            <input
+                              type="checkbox"
+                              defaultChecked={Boolean(d.requires_empty_truck)}
+                              aria-label={`Requires empty truck for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
+                            />
+                            Required
+                          </label>
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{d.requires_empty_truck ? "Yes" : "No"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">Packing Slip Sent</div>
+                        {canEdit && editMode ? (
+                          <label className="mt-1 inline-flex items-center gap-2 text-sm text-steel-600">
+                            <input
+                              type="checkbox"
+                              defaultChecked={Boolean(d.ps_delivered)}
+                              aria-label={`Packing slip status for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { ps_delivered: e.target.checked })}
+                            />
+                            Sent
+                          </label>
+                        ) : (
+                          <div className="mt-1 text-sm text-ink-900">{d.ps_delivered ? "Yes" : "No"}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
+                      {[
+                        { key: "large_skid", label: "Large", value: d.large_skid || 0 },
+                        { key: "med_skid", label: "Medium", value: d.med_skid || 0 },
+                        { key: "small_skid", label: "Small", value: d.small_skid || 0 },
+                        { key: "door", label: "Doors", value: d.door || 0 },
+                        { key: "frame", label: "Frames", value: d.frame || 0 },
+                        { key: "exp_frame", label: "Exp Frames", value: d.exp_frame || 0 },
+                        { key: "box", label: "Boxes", value: d.box || 0 }
+                      ].map((field) => (
+                        <div key={`mobile-load-${d.delivery_id}-${field.key}`}>
+                          <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">{field.label}</div>
+                          {canEdit && editMode ? (
+                            <Input
+                              className="hide-number-spin mt-1 text-center"
+                              type="number"
+                              defaultValue={field.value}
+                              aria-label={`${field.label} for ${d.job_name || d.delivery_id}`}
+                              onChange={(e) => updateEdit(d.delivery_id, { [field.key]: Number(e.target.value) })}
+                            />
+                          ) : (
+                            <div className="mt-1 rounded-md border border-steel-100 bg-steel-50 px-2 py-1.5 text-sm text-ink-900">
+                              {field.value}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => openDrawer(d)}>
+                        View details
+                      </Button>
+                      {!editMode ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(String(d.delivery_id))}
+                        >
+                          Delete
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </details>
+              ))}
+            </div>
+
+            <table className="hidden xl:table w-full text-sm border-collapse [&_th]:border [&_th]:border-steel-200 [&_th]:bg-white/95 [&_th]:px-2 [&_th]:py-2 [&_td]:border [&_td]:border-steel-100 [&_td]:px-2 [&_td]:py-2">
               <thead className="text-xs text-steel-500 sticky top-0 bg-white/90 backdrop-blur z-10">
                 <tr>
                 {canEdit && editMode && (
@@ -710,6 +916,7 @@ export default function SchedulePage() {
                           <input
                             type="checkbox"
                             defaultChecked={Boolean(d.ps_delivered)}
+                            aria-label={`Packing slip status for ${d.job_name || d.delivery_id}`}
                             onChange={(e) => updateEdit(d.delivery_id, { ps_delivered: e.target.checked })}
                           />
                         </div>
@@ -720,6 +927,7 @@ export default function SchedulePage() {
                         <DatePickerInput
                           className="h-11 md:h-9 text-xs mx-auto text-center"
                           defaultValue={d.scheduled_date || ""}
+                          aria-label={`Scheduled date for ${d.job_name || d.delivery_id}`}
                           onChange={(value) => updateEdit(d.delivery_id, { scheduled_date: value })}
                         />
                       ) : (
@@ -742,6 +950,7 @@ export default function SchedulePage() {
                           <select
                             className="h-11 md:h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_start || ""}
+                            aria-label={`Window start for ${d.job_name || d.delivery_id}`}
                             onChange={(e) => updateEdit(d.delivery_id, { window_start: e.target.value })}
                           >
                             <option value="">Start</option>
@@ -752,6 +961,7 @@ export default function SchedulePage() {
                           <select
                             className="h-11 md:h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_end || ""}
+                            aria-label={`Window end for ${d.job_name || d.delivery_id}`}
                             onChange={(e) => updateEdit(d.delivery_id, { window_end: e.target.value })}
                           >
                             <option value="">End</option>
@@ -770,6 +980,7 @@ export default function SchedulePage() {
                           <input
                             type="checkbox"
                             defaultChecked={Boolean(d.pickup)}
+                            aria-label={`Pickup for ${d.job_name || d.delivery_id}`}
                             onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
                           />
                         </div>
@@ -782,6 +993,7 @@ export default function SchedulePage() {
                         <select
                           className="h-11 md:h-10 w-full rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                           defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
+                          aria-label={`Pickup vehicle for ${d.job_name || d.delivery_id}`}
                           onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
                         >
                           <option value="">--</option>
@@ -799,6 +1011,7 @@ export default function SchedulePage() {
                           <input
                             type="checkbox"
                             defaultChecked={Boolean(d.requires_empty_truck)}
+                            aria-label={`Requires empty truck for ${d.job_name || d.delivery_id}`}
                             onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
                           />
                         </div>
@@ -874,17 +1087,7 @@ export default function SchedulePage() {
                             type="button"
                             className="btn btn-secondary icon-only inline-flex items-center justify-center"
                             aria-label="Delete delivery"
-                            onClick={async () => {
-                              const ok = window.confirm("Delete this delivery?");
-                              if (!ok) return;
-                              clearFormError();
-                              try {
-                                await deleteDelivery.mutateAsync({ delivery_id: d.delivery_id });
-                                refetch();
-                              } catch (error: unknown) {
-                                setFormError(error, "Could not delete delivery.");
-                              }
-                            }}
+                            onClick={() => handleDelete(String(d.delivery_id))}
                           >
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                               <path d="M3 6h18" />
@@ -1041,14 +1244,18 @@ function CalendarDay({
   onOpen: (item: any) => void;
 }) {
   const { setNodeRef } = useDroppable({ id: dateKey, data: { columnKey: dateKey } });
-  const visible = expanded ? items : items.slice(0, 3);
+  const visible = expanded ? items : items.slice(0, 2);
+  const weekday = weekdayLabel(date);
 
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg border border-steel-100 p-2 min-h-[110px] ${inMonth ? "bg-white" : "bg-steel-50"}`}
+      className={`schedule-calendar-day rounded-lg border border-steel-100 p-2 ${inMonth ? "bg-white" : "bg-steel-50"}`}
     >
-      <div className="text-xs text-steel-500">{date.getUTCDate()}</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-steel-500">{weekday}</div>
+        <div className="text-xs text-steel-500">{date.getUTCDate()}</div>
+      </div>
       <div className="mt-1 space-y-1">
         <SortableContext items={items.map((i: any) => i.delivery_id)} strategy={verticalListSortingStrategy}>
           {visible.map((item) => (
@@ -1061,9 +1268,9 @@ function CalendarDay({
             />
           ))}
         </SortableContext>
-        {items.length > 3 && (
+        {items.length > 2 && (
           <button type="button" className="text-[10px] text-steel-500 underline" onClick={onToggleExpand}>
-            {expanded ? "Show less" : `+${items.length - 3} more`}
+            {expanded ? "Show less" : `+${items.length - 2} more`}
           </button>
         )}
       </div>

@@ -247,8 +247,8 @@ function ManualPlannerWorkspace() {
   };
 
   return (
-    <div className="grid gap-6 xl:grid-cols-12">
-      <section className="card xl:col-span-3">
+    <div className="grid gap-4 xl:grid-cols-12">
+      <section className="card order-2 xl:order-1 xl:col-span-3">
         <div className="card-header">
           <div>
             <div className="text-xl font-semibold">Custom Plans</div>
@@ -279,7 +279,7 @@ function ManualPlannerWorkspace() {
         </div>
       </section>
 
-      <div className="space-y-6 xl:col-span-9">
+      <div className="order-1 space-y-4 xl:order-2 xl:col-span-9">
         <section className="card">
           <div className="card-header">
             <div>
@@ -366,8 +366,8 @@ function ManualPlannerWorkspace() {
           {message ? <div className="mt-2 text-xs text-steel-500">{message}</div> : null}
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="space-y-6 xl:col-span-8">
+        <div className="grid gap-4 xl:grid-cols-12">
+          <div className="space-y-4 xl:col-span-8">
             {planQuery.isLoading ? (
               <section className="card">
                 <div className="empty-state">Loading deliveries for {selectedDate}...</div>
@@ -376,7 +376,7 @@ function ManualPlannerWorkspace() {
               <RouteBoard editable />
             )}
           </div>
-          <div className="space-y-6 xl:col-span-4">
+          <div className="space-y-4 xl:col-span-4">
             <UnassignedPanel editable planDate={selectedDate} allowAssignToRoute />
           </div>
         </div>

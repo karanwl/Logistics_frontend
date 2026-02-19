@@ -14,6 +14,7 @@ type DatePickerInputProps = {
   className?: string;
   id?: string;
   disabled?: boolean;
+  "aria-label"?: string;
 };
 
 function formatDate(date: Date) {
@@ -41,7 +42,8 @@ export function DatePickerInput({
   placeholder = "YYYY-MM-DD",
   className,
   id,
-  disabled
+  disabled,
+  "aria-label": ariaLabel
 }: DatePickerInputProps) {
   const isControlled = value !== undefined;
   const [internal, setInternal] = useState(defaultValue || "");
@@ -124,6 +126,7 @@ export function DatePickerInput({
         className={className}
         type="text"
         placeholder={placeholder}
+        aria-label={ariaLabel}
         value={displayValue}
         onChange={(e) => setValue(e.target.value)}
         onFocus={() => setOpen(true)}

@@ -237,13 +237,13 @@ export default function MeetingIntakePage() {
               ) : (
                 <>
                   <Input
-                    className="min-w-[12rem] flex-1"
+                    className="w-full sm:min-w-[12rem] sm:flex-1"
                     placeholder="Location name"
                     value={jobsiteName}
                     onChange={(e) => setJobsiteName(e.target.value)}
                   />
                   <Input
-                    className="min-w-[12rem] flex-1"
+                    className="w-full sm:min-w-[12rem] sm:flex-1"
                     placeholder="Location address"
                     value={jobsiteAddress}
                     onChange={(e) => setJobsiteAddress(e.target.value)}
@@ -314,7 +314,8 @@ export default function MeetingIntakePage() {
                 className={`meeting-grid-row ${openJobsiteIndex === idx ? "z-20" : "z-0"}`}
               >
                 <DatePickerInput
-                  className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
+                  className={`h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.date ? "bg-red-50" : ""}`}
+                  aria-label={`Delivery date for row ${idx + 1}`}
                   value={row.scheduled_date}
                   onChange={(value) => updateRow(idx, { scheduled_date: value })}
                 />
@@ -325,8 +326,9 @@ export default function MeetingIntakePage() {
                   }}
                 >
                   <Input
-                    className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
+                    className={`h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.jobsite ? "bg-red-50" : ""}`}
                     placeholder="Type location name"
+                    aria-label={`Location for row ${idx + 1}`}
                     value={row.jobsite_query}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -377,63 +379,78 @@ export default function MeetingIntakePage() {
                   ) : null}
                 </div>
                 <Input
-                  className={`h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.sales_order ? "bg-red-50" : ""}`}
+                  className={`h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0 ${rowErrors[idx]?.sales_order ? "bg-red-50" : ""}`}
+                  aria-label={`Sales order for row ${idx + 1}`}
                   value={row.sales_order}
                   onChange={(e) => updateRow(idx, { sales_order: e.target.value })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Large"
+                  aria-label={`Large skids for row ${idx + 1}`}
                   value={row.large_skid}
                   onChange={(e) => updateRow(idx, { large_skid: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Medium"
+                  aria-label={`Medium skids for row ${idx + 1}`}
                   value={row.med_skid}
                   onChange={(e) => updateRow(idx, { med_skid: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Small"
+                  aria-label={`Small skids for row ${idx + 1}`}
                   value={row.small_skid}
                   onChange={(e) => updateRow(idx, { small_skid: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Doors"
+                  aria-label={`Doors for row ${idx + 1}`}
                   value={row.door}
                   onChange={(e) => updateRow(idx, { door: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Frames"
+                  aria-label={`Frames for row ${idx + 1}`}
                   value={row.frame}
                   onChange={(e) => updateRow(idx, { frame: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Other Frames"
+                  aria-label={`Other frames for row ${idx + 1}`}
                   value={row.exp_frame}
                   onChange={(e) => updateRow(idx, { exp_frame: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <Input
-                  className="h-11 md:h-9 text-xs rounded-none border-0 shadow-none focus:ring-0"
+                  className="h-11 md:h-10 text-sm rounded-none border-0 shadow-none focus:ring-0"
                   type="number"
+                  placeholder="Boxes"
+                  aria-label={`Boxes for row ${idx + 1}`}
                   value={row.box}
                   onChange={(e) => updateRow(idx, { box: Number(e.target.value) })}
                   onFocus={() => setActiveRowIndex(idx)}
                 />
                 <button
                   type="button"
-                  className="h-11 md:h-9 w-full rounded-none border-0 text-xs text-steel-500 hover:bg-steel-100 hover:text-ink-900"
+                  className="h-11 md:h-10 w-full rounded-none border-0 text-sm text-steel-500 hover:bg-steel-100 hover:text-ink-900"
                   onClick={() => removeRow(idx)}
                   disabled={rows.length === 1 && isRowEmpty(row)}
                   aria-label={`Remove row ${idx + 1}`}

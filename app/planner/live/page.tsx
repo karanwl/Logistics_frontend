@@ -176,7 +176,7 @@ function LivePlannerWorkspace({
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="page-stack">
       <section className="card !p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -242,8 +242,8 @@ function LivePlannerWorkspace({
         {saveMessage ? <div className="mt-2 text-xs text-steel-500">{saveMessage}</div> : null}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-8">
+      <div className="grid gap-4 xl:grid-cols-12">
+        <div className="space-y-4 xl:col-span-8">
           {planQuery.isLoading ? (
             <section className="card">
               <div className="empty-state">Loading today&apos;s editable plan...</div>
@@ -257,7 +257,7 @@ function LivePlannerWorkspace({
           )}
         </div>
 
-        <div className="space-y-6 xl:col-span-4">
+        <div className="space-y-4 xl:col-span-4">
           <UnassignedPanel editable={editMode && canEdit} planDate={selectedDate} />
         </div>
       </div>

@@ -23,6 +23,8 @@ export default function SiteHeader({
 }) {
   const navId = useId();
   const headerRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -44,6 +46,55 @@ export default function SiteHeader({
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const navRoot = navRef.current;
+    if (!navRoot) return;
+    const focusable = Array.from(
+      navRoot.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const targets = Array.from(
+        navRoot.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (targets.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = targets[0];
+      const last = targets[targets.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
     };
   }, [menuOpen]);
 
@@ -72,13 +123,19 @@ export default function SiteHeader({
             aria-controls={navId}
             aria-label="Toggle navigation menu"
             onClick={() => setMenuOpen((open) => !open)}
+            ref={toggleRef}
           >
             {menuOpen ? "Close" : "Menu"}
           </button>
         ) : null}
       </div>
       {links.length > 0 ? (
-        <nav id={navId} className={`site-nav${menuOpen ? " is-open" : ""}`} aria-label="Primary navigation">
+        <nav
+          id={navId}
+          className={`site-nav${menuOpen ? " is-open" : ""}`}
+          aria-label="Primary navigation"
+          ref={navRef}
+        >
           {links.map((link) => {
             const isLogout = link.href === "/api-proxy/logout";
             const active = isActiveLink(link.href);
