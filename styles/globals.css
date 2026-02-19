@@ -428,6 +428,17 @@ a {
   @apply h-10 w-10 p-0;
 }
 
+.hide-number-spin::-webkit-outer-spin-button,
+.hide-number-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hide-number-spin[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .schedule-toolbar {
   @apply flex flex-col gap-4;
 }

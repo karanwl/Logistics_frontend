@@ -406,6 +406,8 @@ export default function SchedulePage() {
   };
   const drawerData = drawerDetail || drawerDelivery;
   const drawerPhotoUrls = normalizePhotoUrls(drawerData?.photo_urls).map(resolvePhotoUrl);
+  const listCellClass = canEdit && editMode ? "py-2 text-center align-middle" : "py-2";
+  const listNumberInputClass = "hide-number-spin text-center";
 
   return (
     <AppShell>
@@ -639,18 +641,20 @@ export default function SchedulePage() {
                 {listRows.map((d: any) => (
                   <tr key={d.delivery_id} className="border-t border-steel-100">
                     {canEdit && editMode && (
-                      <td className="py-2">
-                        <input
-                          type="checkbox"
-                          defaultChecked={Boolean(d.ps_delivered)}
-                          onChange={(e) => updateEdit(d.delivery_id, { ps_delivered: e.target.checked })}
-                        />
+                      <td className={listCellClass}>
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            defaultChecked={Boolean(d.ps_delivered)}
+                            onChange={(e) => updateEdit(d.delivery_id, { ps_delivered: e.target.checked })}
+                          />
+                        </div>
                       </td>
                     )}
-                    <td className="py-2">
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <DatePickerInput
-                          className="h-9 text-xs"
+                          className="h-9 text-xs mx-auto text-center"
                           defaultValue={d.scheduled_date || ""}
                           onChange={(value) => updateEdit(d.delivery_id, { scheduled_date: value })}
                         />
@@ -658,21 +662,21 @@ export default function SchedulePage() {
                         d.scheduled_date || "--"
                       )}
                     </td>
-                    <td className="py-2">
+                    <td className={listCellClass}>
                       <button
                         type="button"
-                        className="font-semibold text-left hover:text-ink-900"
+                        className={`font-semibold hover:text-ink-900 ${canEdit && editMode ? "mx-auto block text-center" : "text-left"}`}
                         onClick={() => openDrawer(d)}
                       >
                         {d.job_name}
                       </button>
                     </td>
-                    <td className="py-2">{d.sales_order || "--"}</td>
-                    <td className="py-2">
+                    <td className={listCellClass}>{d.sales_order || "--"}</td>
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2 justify-center">
                           <select
-                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_start || ""}
                             onChange={(e) => updateEdit(d.delivery_id, { window_start: e.target.value })}
                           >
@@ -682,7 +686,7 @@ export default function SchedulePage() {
                             ))}
                           </select>
                           <select
-                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                            className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                             defaultValue={d.window_end || ""}
                             onChange={(e) => updateEdit(d.delivery_id, { window_end: e.target.value })}
                           >
@@ -696,21 +700,23 @@ export default function SchedulePage() {
                         `${d.window_start || "--"} - ${d.window_end || "--"}`
                       )}
                     </td>
-                    <td className="py-2">
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
-                        <input
-                          type="checkbox"
-                          defaultChecked={Boolean(d.pickup)}
-                          onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
-                        />
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            defaultChecked={Boolean(d.pickup)}
+                            onChange={(e) => updateEdit(d.delivery_id, { pickup: e.target.checked })}
+                          />
+                        </div>
                       ) : (
                         d.pickup ? "Yes" : "No"
                       )}
                     </td>
-                    <td className="py-2">
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
                         <select
-                          className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm"
+                          className="h-10 rounded-lg border border-steel-200 bg-white px-2 text-sm text-center"
                           defaultValue={d.pickup ? (d.pickup_vehicle || "both") : ""}
                           onChange={(e) => updateEdit(d.delivery_id, { pickup_vehicle: e.target.value })}
                         >
@@ -723,62 +729,64 @@ export default function SchedulePage() {
                         d.pickup ? pickupVehicleLabel(d.pickup_vehicle || "both") : "--"
                       )}
                     </td>
-                    <td className="py-2">
+                    <td className={listCellClass}>
                       {canEdit && editMode ? (
-                        <input
-                          type="checkbox"
-                          defaultChecked={Boolean(d.requires_empty_truck)}
-                          onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
-                        />
+                        <div className="flex justify-center">
+                          <input
+                            type="checkbox"
+                            defaultChecked={Boolean(d.requires_empty_truck)}
+                            onChange={(e) => updateEdit(d.delivery_id, { requires_empty_truck: e.target.checked })}
+                          />
+                        </div>
                       ) : (
                         d.requires_empty_truck ? "Yes" : "No"
                       )}
                     </td>
-                    <td className="py-2 w-20">
+                    <td className={`${listCellClass} w-20`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.large_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { large_skid: Number(e.target.value) })} />
                       ) : (
                         d.large_skid || 0
                       )}
                     </td>
-                    <td className="py-2 w-20">
+                    <td className={`${listCellClass} w-20`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.med_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { med_skid: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.med_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { med_skid: Number(e.target.value) })} />
                       ) : (
                         d.med_skid || 0
                       )}
                     </td>
-                    <td className="py-2 w-20">
+                    <td className={`${listCellClass} w-20`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.small_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { small_skid: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.small_skid || 0} onChange={(e) => updateEdit(d.delivery_id, { small_skid: Number(e.target.value) })} />
                       ) : (
                         d.small_skid || 0
                       )}
                     </td>
-                    <td className="py-2 w-16">
+                    <td className={`${listCellClass} w-16`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.door || 0} onChange={(e) => updateEdit(d.delivery_id, { door: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.door || 0} onChange={(e) => updateEdit(d.delivery_id, { door: Number(e.target.value) })} />
                       ) : (
                         d.door || 0
                       )}
                     </td>
-                    <td className="py-2 w-16">
+                    <td className={`${listCellClass} w-16`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.frame || 0} onChange={(e) => updateEdit(d.delivery_id, { frame: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.frame || 0} onChange={(e) => updateEdit(d.delivery_id, { frame: Number(e.target.value) })} />
                       ) : (
                         d.frame || 0
                       )}
                     </td>
-                    <td className="py-2 w-20">
+                    <td className={`${listCellClass} w-20`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.exp_frame || 0} onChange={(e) => updateEdit(d.delivery_id, { exp_frame: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.exp_frame || 0} onChange={(e) => updateEdit(d.delivery_id, { exp_frame: Number(e.target.value) })} />
                       ) : (
                         d.exp_frame || 0
                       )}
                     </td>
-                    <td className="py-2 w-16">
+                    <td className={`${listCellClass} w-16`}>
                       {canEdit && editMode ? (
-                        <Input type="number" defaultValue={d.box || 0} onChange={(e) => updateEdit(d.delivery_id, { box: Number(e.target.value) })} />
+                        <Input className={listNumberInputClass} type="number" defaultValue={d.box || 0} onChange={(e) => updateEdit(d.delivery_id, { box: Number(e.target.value) })} />
                       ) : (
                         d.box || 0
                       )}
@@ -789,14 +797,14 @@ export default function SchedulePage() {
                           <button
                             type="button"
                             className="btn btn-secondary icon-only inline-flex items-center justify-center"
-                            aria-label="View POD"
+                            aria-label="View details"
                             onClick={() => openDrawer(d)}
                           >
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                               <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
                               <circle cx="12" cy="12" r="2.5" />
                             </svg>
-                            <span className="sr-only">View POD</span>
+                            <span className="sr-only">View details</span>
                           </button>
                           <button
                             type="button"
@@ -858,12 +866,36 @@ export default function SchedulePage() {
                 <div className="delivery-popup-left">
                   <div className="delivery-popup-summary">
                     <div>
+                      <div className="text-xs text-steel-500">Delivery ID</div>
+                      <div className="text-sm font-semibold">{drawerData.delivery_id || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Sales Order</div>
+                      <div className="text-sm">{drawerData.sales_order || "--"}</div>
+                    </div>
+                    <div>
                       <div className="text-xs text-steel-500">Location</div>
                       <div className="text-sm font-semibold">{drawerData.job_name || "--"}</div>
                     </div>
                     <div>
+                      <div className="text-xs text-steel-500">Address</div>
+                      <div className="text-sm">{drawerData.job_address || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Site Contact</div>
+                      <div className="text-sm">{drawerData.site_contact || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Contact Number</div>
+                      <div className="text-sm">{drawerData.site_contact_number || "--"}</div>
+                    </div>
+                    <div>
                       <div className="text-xs text-steel-500">Status</div>
                       <div className="text-sm">{drawerData.status || "--"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Assigned Driver</div>
+                      <div className="text-sm">{drawerData.assigned_driver || "--"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-steel-500">Date</div>
@@ -872,6 +904,55 @@ export default function SchedulePage() {
                     <div>
                       <div className="text-xs text-steel-500">Window</div>
                       <div className="text-sm">{`${drawerData.window_start || "--"} - ${drawerData.window_end || "--"}`}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Status Updated</div>
+                      <div className="text-sm">{drawerData.status_updated_at || "--"}</div>
+                    </div>
+                  </div>
+
+                  <div className="delivery-popup-summary">
+                    <div>
+                      <div className="text-xs text-steel-500">Large Skids</div>
+                      <div className="text-sm">{Number(drawerData.large_skid || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Medium Skids</div>
+                      <div className="text-sm">{Number(drawerData.med_skid || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Small Skids</div>
+                      <div className="text-sm">{Number(drawerData.small_skid || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Doors</div>
+                      <div className="text-sm">{Number(drawerData.door || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Frames</div>
+                      <div className="text-sm">{Number(drawerData.frame || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Express Frames</div>
+                      <div className="text-sm">{Number(drawerData.exp_frame || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Boxes</div>
+                      <div className="text-sm">{Number(drawerData.box || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Pickup</div>
+                      <div className="text-sm">{drawerData.pickup ? "Yes" : "No"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Pickup Vehicle</div>
+                      <div className="text-sm">
+                        {drawerData.pickup ? pickupVehicleLabel(drawerData.pickup_vehicle || "both") : "--"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-steel-500">Requires Empty Truck</div>
+                      <div className="text-sm">{drawerData.requires_empty_truck ? "Yes" : "No"}</div>
                     </div>
                   </div>
 
@@ -977,10 +1058,9 @@ function CalendarJob({
   });
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
-      className={`text-xs text-ink-900 text-left rounded-md px-2 py-1 w-full ${statusColor(dateKey, Boolean(item.ps_delivered), todayKey)}`}
+      className={`text-xs text-ink-900 text-left rounded-md px-2 py-1 w-full flex items-center justify-between gap-2 cursor-pointer ${statusColor(dateKey, Boolean(item.ps_delivered), todayKey)}`}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -990,8 +1070,24 @@ function CalendarJob({
       {...attributes}
       {...listeners}
     >
-      {item.job_name}
-    </button>
+      <span className="truncate">{item.job_name}</span>
+      <button
+        type="button"
+        className="btn btn-secondary icon-only h-7 w-7 inline-flex items-center justify-center shrink-0"
+        aria-label="View details"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </svg>
+        <span className="sr-only">View details</span>
+      </button>
+    </div>
   );
 }
 
