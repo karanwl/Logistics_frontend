@@ -142,15 +142,16 @@ function LivePlannerWorkspace({
   );
   const selectedDate = String(planQuery.data?.plan_date || today);
   const source = String(planQuery.data?.source || "published_plans");
-  const canEdit = Boolean(planQuery.data?.published) && selectedDate === today;
+  const hasPublishedPlan = Boolean(planQuery.data?.published) && source === "published_plans";
+  const canEdit = hasPublishedPlan && selectedDate === today;
 
   useEffect(() => {
-    if (!planQuery.data || !planQuery.data.published) {
+    if (!planQuery.data || !hasPublishedPlan) {
       setPlan(null);
       return;
     }
     setPlan(mergePlanWithLive(planQuery.data, liveRoutes));
-  }, [planQuery.data, liveRoutes, setPlan]);
+  }, [planQuery.data, hasPublishedPlan, liveRoutes, setPlan]);
 
   const saveChanges = async () => {
     if (!selectedDate || !plan || !canEdit) return;
@@ -247,7 +248,7 @@ function LivePlannerWorkspace({
             <section className="card">
               <div className="empty-state">Loading today&apos;s editable plan...</div>
             </section>
-          ) : !planQuery.data?.published ? (
+          ) : !hasPublishedPlan ? (
             <section className="card">
               <div className="empty-state">No final plan is available for today yet.</div>
             </section>
